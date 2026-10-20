@@ -15,8 +15,8 @@ struct GroupDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                 groupHeaderCard
-                quickWitnessCard
-                feedSection
+                subTabSelector
+                activeSubTabContent
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.vertical, MassMatesSpacing.md)
@@ -53,6 +53,60 @@ struct GroupDetailView: View {
         }
     }
 
+    private var subTabSelector: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(GroupDetailSubTab.allCases) { tab in
+                subTabChip(for: tab)
+            }
+        }
+    }
+
+    private func subTabChip(for tab: GroupDetailSubTab) -> some View {
+        let isSelected = viewModel.selectedSubTab == tab
+        return Button {
+            viewModel.selectedSubTab = tab
+        } label: {
+            Label(tab.title, systemImage: tab.systemImage)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+                .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .overlay(
+                    RoundedRectangle(cornerRadius: MassMatesRadius.chip)
+                        .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var activeSubTabContent: some View {
+        switch viewModel.selectedSubTab {
+        case .feed:
+            quickWitnessCard
+            feedSection
+        case .progress:
+            GroupProgressTabView(
+                summary: viewModel.scoringSummary,
+                guardianAngelState: viewModel.guardianAngelState,
+                onOptInGuardianAngel: { viewModel.optInGuardianAngel() },
+                onSendGuardianAngelNudge: { viewModel.sendGuardianAngelPrayerNudge() },
+                onRevealGuardianAngelCycle: { viewModel.revealGuardianAngelCycle() }
+            )
+        case .intentions:
+            GroupPrayerWallTabView(
+                newIntentionDraft: $viewModel.newPrayerIntentionDraft,
+                intentions: viewModel.prayerIntentions,
+                errorMessage: viewModel.errorMessage,
+                onSubmitIntention: { viewModel.submitPrayerIntention() },
+                onTogglePrayed: { id in viewModel.togglePrayedForIntention(id) }
+            )
+        }
+    }
+
     private var quickWitnessCard: some View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
@@ -85,9 +139,7 @@ struct GroupDetailView: View {
             Text("Feed da Comunidade")
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            ForEach(viewModel.feedItems) { item in
-                feedItemView(for: item)
-            }
+            ForEach(viewModel.feedItems) { item in feedItemView(for: item) }
         }
     }
 
@@ -98,12 +150,8 @@ struct GroupDetailView: View {
             GroupFeedPostCardView(
                 post: post,
                 commentDraft: commentBinding(for: post.id),
-                onReaction: { reaction in
-                    viewModel.toggleReaction(reaction, for: post.id)
-                },
-                onSubmitComment: {
-                    viewModel.submitComment(for: post.id)
-                }
+                onReaction: { reaction in viewModel.toggleReaction(reaction, for: post.id) },
+                onSubmitComment: { viewModel.submitComment(for: post.id) }
             )
         case .sponsoredAd(_, let sponsorName, let headline, let bodyText, let couponCode):
             SponsoredNativeCardView(
@@ -125,8 +173,6 @@ struct GroupDetailView: View {
 
 #Preview("Group Detail — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        GroupDetailView(
-            viewModel: GroupDetailViewModel(group: CommunitySampleData.parishFraternity)
-        )
+        GroupDetailView(viewModel: GroupDetailViewModel(group: CommunitySampleData.parishFraternity))
     }
 }

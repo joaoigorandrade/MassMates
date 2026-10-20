@@ -54,6 +54,19 @@ enum SpiritualPractice: String, CaseIterable, Identifiable, Sendable, Equatable,
     var isStrictlyPrivate: Bool {
         self == .confession
     }
+
+    var defaultCustomPoints: Int {
+        switch self {
+        case .holyMass: 30
+        case .adoration: 25
+        case .fasting: 25
+        case .rosary: 20
+        case .mentalPrayer: 20
+        case .spiritualReading: 15
+        case .dailyGospel: 10
+        case .confession: 0
+        }
+    }
 }
 
 enum RuleOfLifePreset: String, CaseIterable, Identifiable, Sendable, Equatable, Codable {

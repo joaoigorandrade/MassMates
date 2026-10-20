@@ -50,6 +50,7 @@ struct GroupSlotCapacity: Sendable, Equatable {
 
 enum CommunityGroupError: Error, Sendable, Equatable {
     case emptyGroupName
+    case emptyPrayerIntention
     case invalidInviteCode
     case groupNotFound
     case personalSlotLimitReached
@@ -60,6 +61,8 @@ enum CommunityGroupError: Error, Sendable, Equatable {
         switch self {
         case .emptyGroupName:
             "Informe o nome da fraternidade ou desafio."
+        case .emptyPrayerIntention:
+            "Escreva sua intenção antes de publicar no mural."
         case .invalidInviteCode:
             "O código precisa conter 6 caracteres alfanuméricos."
         case .groupNotFound:

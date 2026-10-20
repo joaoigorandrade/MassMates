@@ -62,6 +62,7 @@ extension LocalCommunityGroupsService: GroupFeedManaging {
         )
         posts.insert(newPost, at: 0)
         postsByGroupId[groupId] = posts
+        _ = recordPracticeScore(practice, in: groupId)
         return posts
     }
 

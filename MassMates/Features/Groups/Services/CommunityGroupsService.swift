@@ -43,6 +43,9 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     var activeGroups: [CommunityGroup]
     var catalogGroups: [CommunityGroup]
     var postsByGroupId: [String: [GroupFeedPost]]
+    var scoringByGroupId: [String: GroupScoringSummary] = [:]
+    var guardianAngelByGroupId: [String: GuardianAngelState] = [:]
+    var prayerIntentionsByGroupId: [String: [PrayerIntention]] = [:]
     let maxBasePersonalSlots: Int
     var hasUnlockedBonusSlot: Bool
     var generatedCounter: Int = 100
@@ -72,16 +75,14 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
 
     func featuredChallenges() -> [FeaturedChallenge] {
         let joinedIds = Set(activeGroups.map(\.id))
-        return catalogGroups
-            .filter(\.isOfficialSeasonalChallenge)
-            .map { group in
-                FeaturedChallenge(
-                    group: group,
-                    durationLabel: group.id == "chal-aparecida" ? "Novena • 9 dias" : "Jornada • 30 dias",
-                    subtitle: group.collectiveGoalLabel,
-                    isJoined: joinedIds.contains(group.id)
-                )
-            }
+        return catalogGroups.filter(\.isOfficialSeasonalChallenge).map { group in
+            FeaturedChallenge(
+                group: group,
+                durationLabel: group.id == "chal-aparecida" ? "Novena • 9 dias" : "Jornada • 30 dias",
+                subtitle: group.collectiveGoalLabel,
+                isJoined: joinedIds.contains(group.id)
+            )
+        }
     }
 
     func slotCapacity() -> GroupSlotCapacity {
@@ -100,13 +101,9 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     }
 
     func previewGroup(forInviteInput rawInput: String) throws(CommunityGroupError) -> CommunityGroup {
-        guard let normalized = InviteCodeParser.normalize(rawInput) else {
-            throw .invalidInviteCode
-        }
+        guard let normalized = InviteCodeParser.normalize(rawInput) else { throw .invalidInviteCode }
         let allGroups = activeGroups + catalogGroups
-        guard let match = allGroups.first(where: { $0.inviteCode == normalized }) else {
-            throw .groupNotFound
-        }
+        guard let match = allGroups.first(where: { $0.inviteCode == normalized }) else { throw .groupNotFound }
         return match
     }
 

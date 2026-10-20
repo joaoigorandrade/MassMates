@@ -7,6 +7,7 @@ enum AppRoute: ModalRoute, URLRoutable {
     case prayerTimer(mode: PrayerTimerMode, season: LiturgicalColor)
     case createJoinGroup(initialTab: CreateJoinGroupTab, prefilledInviteCode: String?, season: LiturgicalColor)
     case groupDetail(group: CommunityGroup, season: LiturgicalColor)
+    case newCheckIn(preselectedPractice: SpiritualPractice?, season: LiturgicalColor)
 
     var presentationStyle: ModalPresentation {
         .sheet
@@ -27,6 +28,11 @@ enum AppRoute: ModalRoute, URLRoutable {
             )
         case .groupDetail(let group, let season):
             GroupDetailRouteHostView(group: group, season: season)
+        case .newCheckIn(let preselectedPractice, let season):
+            NewCheckInRouteHostView(
+                preselectedPractice: preselectedPractice ?? .rosary,
+                season: season
+            )
         }
     }
 
@@ -84,4 +90,5 @@ extension EnvironmentValues {
     @Entry var sharedTodayViewModel: TodayDashboardViewModel? = nil
     @Entry var sharedGroupsHomeViewModel: GroupsHomeViewModel? = nil
     @Entry var sharedCommunityService: LocalCommunityGroupsService? = nil
+    @Entry var sharedCheckInEngine: LocalCheckInEngineService? = nil
 }

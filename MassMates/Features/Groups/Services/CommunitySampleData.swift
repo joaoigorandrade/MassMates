@@ -40,7 +40,7 @@ enum CommunitySampleData {
             parishOrCommunity: "Capela Santa Teresinha",
             inviteCode: "ST1925",
             type: .fraternity,
-            scoringMode: .faithfulDays,
+            scoringMode: .customPoints,
             sharingRequirement: .openHonor,
             memberCount: 12,
             collectiveGoalProgress: 0.80,

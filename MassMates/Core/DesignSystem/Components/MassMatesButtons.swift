@@ -85,11 +85,38 @@ struct MassMatesSecondaryButton: View {
     }
 }
 
+struct MassMatesTextButton: View {
+    // MARK: - Dependencies & State
+    @Environment(\.liturgicalTheme) private var theme
+    private let title: String
+    private let action: () -> Void
+
+    // MARK: - Init
+    init(title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    // MARK: - Body / Public API
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(MassMatesFont.callout)
+                .foregroundStyle(theme.tint)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Subviews / Private Helpers
+}
+
 #Preview("Buttons — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(title: "Concluir e refletir", systemImage: "checkmark") {}
             MassMatesSecondaryButton(title: "Pausar oração") {}
+            MassMatesTextButton(title: "Fechar") {}
         }
     }
 }

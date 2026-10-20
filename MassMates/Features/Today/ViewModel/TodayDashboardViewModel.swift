@@ -64,6 +64,13 @@ final class TodayDashboardViewModel {
         return Theme(season: data.activeSeasonColor)
     }
 
+    var currentStreakDays: Int {
+        guard case .loaded(let data) = viewState else {
+            return ruleReader.loadTodayProgress().activeStreakDays
+        }
+        return data.progress.activeStreakDays
+    }
+
     func loadDashboard() {
         let day = calendarService.liturgicalDay(for: referenceDate)
         let progress = ruleReader.loadTodayProgress()

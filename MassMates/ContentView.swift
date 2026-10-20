@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var todayViewModel: TodayDashboardViewModel
     @State private var communityService: LocalCommunityGroupsService
     @State private var groupsHomeViewModel: GroupsHomeViewModel
+    @State private var checkInEngine: LocalCheckInEngineService
     private let deepLinkHandler: DeepLinkHandler<AppRoute>
 
     // MARK: - Init
@@ -23,6 +24,15 @@ struct ContentView: View {
             initialValue: GroupsHomeViewModel(
                 listingService: communityService,
                 mutatingService: communityService
+            )
+        )
+        _checkInEngine = State(
+            initialValue: LocalCheckInEngineService(
+                groupsListing: communityService,
+                feedService: communityService,
+                onPracticeCompleted: { practice in
+                    todayViewModel.markPracticeCompleted(practice)
+                }
             )
         )
         let handler = DeepLinkHandler<AppRoute>()
@@ -41,21 +51,38 @@ struct ContentView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        NavigationTabView(tabNavigator)
-            .tint(todayViewModel.currentTheme.tint)
-            .environment(\.liturgicalTheme, todayViewModel.currentTheme)
-            .environment(\.sharedTodayViewModel, todayViewModel)
-            .environment(\.sharedGroupsHomeViewModel, groupsHomeViewModel)
-            .environment(\.sharedCommunityService, communityService)
-            .environment(\.onCompleteSpiritualPractice) { practice in
-                todayViewModel.markPracticeCompleted(practice)
+        ZStack(alignment: .bottom) {
+            NavigationTabView(tabNavigator)
+            FloatingCheckInButton {
+                presentNewCheckInModal()
             }
-            .onOpenURL { url in
-                handleInviteURL(url)
-            }
+            .padding(.bottom, MassMatesSpacing.xs)
+        }
+        .tint(todayViewModel.currentTheme.tint)
+        .environment(\.liturgicalTheme, todayViewModel.currentTheme)
+        .environment(\.sharedTodayViewModel, todayViewModel)
+        .environment(\.sharedGroupsHomeViewModel, groupsHomeViewModel)
+        .environment(\.sharedCommunityService, communityService)
+        .environment(\.sharedCheckInEngine, checkInEngine)
+        .environment(\.onCompleteSpiritualPractice) { practice in
+            todayViewModel.markPracticeCompleted(practice)
+        }
+        .onOpenURL { url in
+            handleInviteURL(url)
+        }
     }
 
     // MARK: - Subviews / Private Helpers
+    private func presentNewCheckInModal() {
+        let activeTab = tabNavigator.selectedTab
+        tabNavigator.navigator(for: activeTab).present(
+            .newCheckIn(
+                preselectedPractice: nil,
+                season: todayViewModel.currentTheme.season
+            )
+        )
+    }
+
     private func handleInviteURL(_ url: URL) {
         guard let route = deepLinkHandler.handle(url: url) else { return }
         tabNavigator.switchTab(to: .groups)
