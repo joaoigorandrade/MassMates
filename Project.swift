@@ -16,8 +16,6 @@ let project = Project(
         base: [
             "SWIFT_VERSION": "6.0",
             "SWIFT_STRICT_CONCURRENCY": "complete",
-            "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
-            "SWIFT_APPROACHABLE_CONCURRENCY": "YES",
             "SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY": "YES",
             "DEVELOPMENT_TEAM": "G57UV8U7UG",
         ]

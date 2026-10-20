@@ -36,9 +36,9 @@ The tint is used **only** for: the Today header accent, the streak ring, the pri
 | :-- | :-- | :-- | :-- | :-- |
 | `green` | `#4C7A5B` | `#7FB08E` | `#E9F1EB` / `#1C2A20` | Ordinary Time |
 | `purple` | `#6A4C8C` | `#B49AD6` | `#EFEAF4` / `#262034` | Advent, Lent |
-| `white` | `#9C8247` | `#D2B976` | `#F4EFE2` / `#2C2719` | Christmas, Easter, feasts of the Lord and Mary |
+| `white` | `#7D6632` | `#D2B976` | `#F4EFE2` / `#2C2719` | Christmas, Easter, feasts of the Lord and Mary |
 | `red` | `#A33F43` | `#E08A8D` | `#F5E9E9` / `#321D1E` | Pentecost, martyrs, Palm Sunday, Good Friday |
-| `rose` | `#C2677F` | `#E7A0B3` | `#F7ECEF` / `#331F26` | Gaudete, Laetare (twice a year) |
+| `rose` | `#9E4760` | `#E7A0B3` | `#F7ECEF` / `#331F26` | Gaudete, Laetare (twice a year) |
 
 Rules:
 - `white` season uses a muted gold so it remains visible on a light background. Never use pure white as a tint.
