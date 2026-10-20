@@ -1,9 +1,26 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Tuist (Generated Projects & Cache)
+*.xcodeproj
+*.xcworkspace
+Derived/
+.tuist-bin/
+Tuist/.build/
+graph.dot
+project.json
+
+# Xcode & SwiftPM
+build/
+DerivedData/
+.build/
+.swiftpm/
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
-build/
-DerivedData/
 *.moved-aside
 *.pbxuser
 !default.pbxuser
@@ -17,9 +34,12 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcresult
 timeline.xctimeline
 playground.xcworkspace
-.build/
-.swiftpm/
-Derived/
-.tuist-bin/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.local.xcconfig

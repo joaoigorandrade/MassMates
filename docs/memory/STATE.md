@@ -1,7 +1,7 @@
-Current Focus: Makefile automation for Tuist generation and zero-bloat builds/tests.
+Current Focus: Comprehensive `.gitignore` for Tuist, Xcode, SwiftPM, and local secrets.
 Completed:
-- `Makefile`: Added `generate`, `build`, `rebuild`, `test-build`, `test`, and `clean` targets with auto-detected Simulator UUID and `-quiet` flags.
-- `AGENTS.md`: Updated Section 6 to mandate `make rebuild`, `make build`, `make test-build`, and `make test`.
-- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Recorded Makefile decision and updated state.
+- `.gitignore`: Updated to ignore Tuist-generated `*.xcodeproj` and `*.xcworkspace`, `Derived/`, Xcode/SwiftPM build artifacts, `.xcresult`, and `.env` files, and untracked generated project bundles from git index.
+- `Makefile` & `AGENTS.md`: Configured Tuist generation and quiet build/test targets.
+- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Updated persistent memory.
 Next Step: Define root `AppRoute` (`Routable`) and wire `Navigator` + `NavigationStackWrapper` in `MassMates/MassMatesApp.swift`.
-Blockers/Quirks: None.
+Blockers/Quirks: Fresh clones must run `make generate` (or `make rebuild`) once to generate `MassMates.xcworkspace`.

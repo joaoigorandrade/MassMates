@@ -2,3 +2,4 @@
 [2026-10-19] [Rules]: Established AGENTS.md with Swift 6 strict concurrency, SOLID limits, mandatory Navigation/Networking package usage, and Persistent Memory Protocol -> Enforce zero-bloat deterministic engineering rules across sessions.
 [2026-10-19] [Tuist]: Adopted Tuist (`Project.swift` + `Tuist.swift`) with mandatory `--no-open` and `xcodebuild ... -quiet` -> Eliminates manual `.pbxproj` merge conflicts/errors and reduces build output from >300KB to 0 bytes on clean builds.
 [2026-10-19] [Build]: Added `Makefile` (`make generate`, `make build`, `make rebuild`, `make test-build`, `make test`) -> Standardizes single-command execution with silent `@` prefixes, `-quiet` xcodebuild flags, and automatic simulator UUID resolution.
+[2026-10-20] [Git]: Ignored and untracked `*.xcodeproj` and `*.xcworkspace` in `.gitignore` -> Tuist generates Xcode projects deterministically via `make generate` / `make rebuild`, avoiding git diffs on generated project files.
