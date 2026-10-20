@@ -54,23 +54,18 @@
   3. `// MARK: - Body / Public API`
   4. `// MARK: - Subviews / Private Helpers`
 
-## 6. Tuist & Token-Efficient Build Protocol (Zero-Error, Zero-Log-Bloat)
-- **Single Source of Truth:** `Project.swift` and `Tuist.swift` own project configuration.
-  - BANNED: Manually editing `.xcodeproj/project.pbxproj` or `.xcworkspace`.
-- **When to Run `tuist generate --no-open`:**
-  - **REQUIRED:** Immediately after creating, deleting, renaming, or moving any `.swift` file or resource in `MassMates/` or `MassMatesTests/`, or after editing `Project.swift` / `Tuist.swift`.
-  - **SKIP:** When only editing existing, already-indexed `.swift` files.
-  - **MANDATORY FLAG:** Always include `--no-open` (`tuist generate --no-open`) to avoid launching the Xcode GUI.
-- **Token-Efficient Build & Test Commands (`-quiet` is MANDATORY):**
-  - Raw `xcodebuild` without `-quiet` outputs 300KB+ of logs and wastes context tokens. Always pass `-quiet` (exit code `0` with empty output = success; only warnings/errors are printed).
-  - **Generate + Build (after adding/moving/deleting files):**
-    `tuist generate --no-open && xcodebuild -workspace MassMates.xcworkspace -scheme MassMates -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO -quiet`
-  - **Fast Incremental Build (after editing existing files only):**
-    `xcodebuild -workspace MassMates.xcworkspace -scheme MassMates -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO -quiet`
-  - **Compile Unit Tests (`MassMatesTests`):**
-    `xcodebuild -workspace MassMates.xcworkspace -scheme MassMates -destination 'generic/platform=iOS Simulator' build-for-testing CODE_SIGNING_ALLOWED=NO -quiet`
-  - **Run Unit Tests (Swift Testing):**
-    `tuist test --no-upload` or `xcodebuild -workspace MassMates.xcworkspace -scheme MassMates -destination 'platform=iOS Simulator,name=Simulator' test CODE_SIGNING_ALLOWED=NO -quiet`
+## 6. Tuist, Makefile & Token-Efficient Build Protocol (Zero-Error, Zero-Log-Bloat)
+- **Single Source of Truth:** `Project.swift`, `Tuist.swift`, and `Makefile` own project configuration and build execution.
+  - BANNED: Manually editing `.xcodeproj/project.pbxproj` or `.xcworkspace`, or running raw `xcodebuild` without `-quiet`.
+- **When to Generate vs Build (MANDATORY `make` targets):**
+  - **After creating, deleting, renaming, or moving any `.swift` file/resource, or editing `Project.swift`:**
+    Run `make rebuild` (runs `tuist generate --no-open` + quiet `xcodebuild build`) or `make generate`.
+  - **After editing existing, already-indexed `.swift` files only:**
+    Run `make build` (skips `tuist generate` for fast incremental compilation with `-quiet`).
+  - **To compile unit tests (`MassMatesTests`):**
+    Run `make test-build`.
+  - **To execute unit tests (Swift Testing on auto-detected Simulator):**
+    Run `make test`.
 
 ## 7. Persistent Memory Protocol (Zero-Bloat)
 Do NOT bloat this file with project history or task plans. Use progressive disclosure via `docs/memory/`:

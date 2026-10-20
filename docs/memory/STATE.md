@@ -1,8 +1,7 @@
-Current Focus: Tuist project generation setup and token-efficient build/test workflow in AGENTS.md.
+Current Focus: Makefile automation for Tuist generation and zero-bloat builds/tests.
 Completed:
-- `Tuist.swift` & `Project.swift`: Configured `MassMates` and `MassMatesTests` targets with Swift 6 strict concurrency (`SWIFT_STRICT_CONCURRENCY = complete`) and `Navigation` / `Networking` / `NetworkingTestSupport` SPM packages.
-- `MassMatesTests/MassMatesTests.swift`: Added initial Swift Testing suite.
-- `AGENTS.md`: Updated Section 6 with deterministic Tuist generation triggers (`tuist generate --no-open`) and zero-bloat `-quiet` build/test commands.
-- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Recorded Tuist decision and updated project state.
+- `Makefile`: Added `generate`, `build`, `rebuild`, `test-build`, `test`, and `clean` targets with auto-detected Simulator UUID and `-quiet` flags.
+- `AGENTS.md`: Updated Section 6 to mandate `make rebuild`, `make build`, `make test-build`, and `make test`.
+- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Recorded Makefile decision and updated state.
 Next Step: Define root `AppRoute` (`Routable`) and wire `Navigator` + `NavigationStackWrapper` in `MassMates/MassMatesApp.swift`.
 Blockers/Quirks: None.
