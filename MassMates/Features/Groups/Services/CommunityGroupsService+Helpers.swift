@@ -1,8 +1,27 @@
 import Foundation
 
+@MainActor
+protocol GroupFeedManaging {
+    func feedPosts(for groupId: String) -> [GroupFeedPost]
+    func feedItemsWithSponsoredAds(for groupId: String) -> [GroupFeedItem]
+    @discardableResult
+    func toggleReaction(_ reaction: FeedReactionType, postId: String, in groupId: String) -> [GroupFeedPost]
+    @discardableResult
+    func addComment(_ text: String, postId: String, in groupId: String) -> [GroupFeedPost]
+    @discardableResult
+    func createPost(
+        in groupId: String,
+        practice: SpiritualPractice,
+        fruitOfPrayer: String?,
+        photoCaption: String?
+    ) throws(CommunityGroupError) -> [GroupFeedPost]
+}
+
 extension LocalCommunityGroupsService: GroupFeedManaging {
     func feedPosts(for groupId: String) -> [GroupFeedPost] {
-        postsByGroupId[groupId] ?? CommunitySampleData.initialPosts(for: groupId)
+        let all = postsByGroupId[groupId] ?? CommunitySampleData.initialPosts(for: groupId)
+        postsByGroupId[groupId] = all
+        return all.filter { !blockedUsers.contains($0.authorName) }
     }
 
     func feedItemsWithSponsoredAds(for groupId: String) -> [GroupFeedItem] {

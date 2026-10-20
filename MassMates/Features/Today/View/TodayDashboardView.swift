@@ -71,6 +71,9 @@ struct TodayDashboardView: View {
                         progress: data.progress,
                         onSelectSeason: { season in
                             viewModel.selectSeasonColor(season)
+                        },
+                        onOpenOnboarding: {
+                            navigator?.present(.onboarding(season: data.activeSeasonColor))
                         }
                     )
                     VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {

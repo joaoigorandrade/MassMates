@@ -21,23 +21,6 @@ protocol CommunityGroupMutating {
 }
 
 @MainActor
-protocol GroupFeedManaging {
-    func feedPosts(for groupId: String) -> [GroupFeedPost]
-    func feedItemsWithSponsoredAds(for groupId: String) -> [GroupFeedItem]
-    @discardableResult
-    func toggleReaction(_ reaction: FeedReactionType, postId: String, in groupId: String) -> [GroupFeedPost]
-    @discardableResult
-    func addComment(_ text: String, postId: String, in groupId: String) -> [GroupFeedPost]
-    @discardableResult
-    func createPost(
-        in groupId: String,
-        practice: SpiritualPractice,
-        fruitOfPrayer: String?,
-        photoCaption: String?
-    ) throws(CommunityGroupError) -> [GroupFeedPost]
-}
-
-@MainActor
 final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupMutating {
     // MARK: - Dependencies & State
     var activeGroups: [CommunityGroup]
@@ -46,6 +29,11 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     var scoringByGroupId: [String: GroupScoringSummary] = [:]
     var guardianAngelByGroupId: [String: GuardianAngelState] = [:]
     var prayerIntentionsByGroupId: [String: [PrayerIntention]] = [:]
+    var pinnedNoticeByGroupId: [String: GroupPinnedNotice] = [:]
+    var chatMessagesByGroupId: [String: [GroupChatMessage]] = [:]
+    var membersByGroupId: [String: [GroupMemberSummary]] = [:]
+    var reportsByGroupId: [String: [ModerationReportEntry]] = [:]
+    var blockedUsers: Set<String> = []
     let maxBasePersonalSlots: Int
     var hasUnlockedBonusSlot: Bool
     var generatedCounter: Int = 100

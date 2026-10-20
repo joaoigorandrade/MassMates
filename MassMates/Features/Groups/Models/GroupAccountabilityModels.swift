@@ -4,6 +4,7 @@ enum GroupDetailSubTab: String, CaseIterable, Identifiable, Sendable, Equatable 
     case feed
     case progress
     case intentions
+    case chat
 
     var id: String { rawValue }
 
@@ -12,6 +13,7 @@ enum GroupDetailSubTab: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .feed: "Feed"
         case .progress: "Progresso"
         case .intentions: "Intenções"
+        case .chat: "Chat"
         }
     }
 
@@ -20,6 +22,7 @@ enum GroupDetailSubTab: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .feed: "rectangle.stack"
         case .progress: "chart.bar"
         case .intentions: "hands.sparkles"
+        case .chat: "bubble.left.and.bubble.right"
         }
     }
 }

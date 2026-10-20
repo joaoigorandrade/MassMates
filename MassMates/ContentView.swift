@@ -9,17 +9,23 @@ struct ContentView: View {
     @State private var communityService: LocalCommunityGroupsService
     @State private var groupsHomeViewModel: GroupsHomeViewModel
     @State private var checkInEngine: LocalCheckInEngineService
+    @State private var myPathService: LocalMyPathService
+    @State private var onboardingService: LocalOnboardingService
     private let deepLinkHandler: DeepLinkHandler<AppRoute>
 
     // MARK: - Init
     init(
         tabNavigator: TabNavigator<AppTab, AppRoute> = TabNavigator(initialTab: .today),
         todayViewModel: TodayDashboardViewModel = TodayDashboardViewModel(),
-        communityService: LocalCommunityGroupsService = LocalCommunityGroupsService()
+        communityService: LocalCommunityGroupsService = LocalCommunityGroupsService(),
+        myPathService: LocalMyPathService = LocalMyPathService(),
+        onboardingService: LocalOnboardingService = LocalOnboardingService()
     ) {
         _tabNavigator = State(initialValue: tabNavigator)
         _todayViewModel = State(initialValue: todayViewModel)
         _communityService = State(initialValue: communityService)
+        _myPathService = State(initialValue: myPathService)
+        _onboardingService = State(initialValue: onboardingService)
         _groupsHomeViewModel = State(
             initialValue: GroupsHomeViewModel(
                 listingService: communityService,
@@ -64,6 +70,8 @@ struct ContentView: View {
         .environment(\.sharedGroupsHomeViewModel, groupsHomeViewModel)
         .environment(\.sharedCommunityService, communityService)
         .environment(\.sharedCheckInEngine, checkInEngine)
+        .environment(\.sharedMyPathService, myPathService)
+        .environment(\.sharedOnboardingService, onboardingService)
         .environment(\.onCompleteSpiritualPractice) { practice in
             todayViewModel.markPracticeCompleted(practice)
         }

@@ -7,18 +7,21 @@ struct TodayHeaderView: View {
     private let saintOrFeast: String
     private let progress: TodayProgressSummary
     private let onSelectSeason: (LiturgicalColor) -> Void
+    private let onOpenOnboarding: (() -> Void)?
 
     // MARK: - Init
     init(
         seasonTitle: String,
         saintOrFeast: String,
         progress: TodayProgressSummary,
-        onSelectSeason: @escaping (LiturgicalColor) -> Void = { _ in }
+        onSelectSeason: @escaping (LiturgicalColor) -> Void = { _ in },
+        onOpenOnboarding: (() -> Void)? = nil
     ) {
         self.seasonTitle = seasonTitle
         self.saintOrFeast = saintOrFeast
         self.progress = progress
         self.onSelectSeason = onSelectSeason
+        self.onOpenOnboarding = onOpenOnboarding
     }
 
     // MARK: - Body / Public API
@@ -62,6 +65,12 @@ struct TodayHeaderView: View {
             Text(progress.encouragementText)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+            Spacer()
+            if let onOpenOnboarding {
+                MassMatesTextButton(title: "Compromisso") {
+                    onOpenOnboarding()
+                }
+            }
         }
     }
 

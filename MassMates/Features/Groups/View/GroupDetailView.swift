@@ -15,6 +15,9 @@ struct GroupDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                 groupHeaderCard
+                if viewModel.isShowingModerationPanel {
+                    GroupSafetyModerationView(viewModel: viewModel)
+                }
                 subTabSelector
                 activeSubTabContent
             }
@@ -34,42 +37,39 @@ struct GroupDetailView: View {
                         .font(MassMatesFont.caption)
                         .foregroundStyle(theme.tint)
                     Spacer()
-                    Text("Convite: \(viewModel.group.inviteCode)")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
+                    Button {
+                        viewModel.isShowingModerationPanel.toggle()
+                    } label: {
+                        Label("Moderação", systemImage: "shield.lefthalf.filled")
+                            .font(MassMatesFont.caption)
+                            .foregroundStyle(theme.tint)
+                            .frame(minHeight: MassMatesLayout.minTapTarget)
+                    }
+                    .buttonStyle(.plain)
                 }
-                Text(viewModel.group.parishOrCommunity)
+                Text("\(viewModel.group.parishOrCommunity) • Convite: \(viewModel.currentInviteCode)")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                 Text(viewModel.group.collectiveGoalLabel)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                if let link = viewModel.group.inviteLinkURL {
-                    Text("Link: \(link.absoluteString)")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
             }
         }
     }
 
     private var subTabSelector: some View {
         HStack(spacing: MassMatesSpacing.xs) {
-            ForEach(GroupDetailSubTab.allCases) { tab in
-                subTabChip(for: tab)
-            }
+            ForEach(GroupDetailSubTab.allCases) { tab in subTabChip(for: tab) }
         }
     }
 
     private func subTabChip(for tab: GroupDetailSubTab) -> some View {
         let isSelected = viewModel.selectedSubTab == tab
-        return Button {
-            viewModel.selectedSubTab = tab
-        } label: {
+        return Button { viewModel.selectedSubTab = tab } label: {
             Label(tab.title, systemImage: tab.systemImage)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                .padding(.horizontal, MassMatesSpacing.sm)
+                .padding(.horizontal, MassMatesSpacing.xs)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
                 .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
@@ -104,6 +104,17 @@ struct GroupDetailView: View {
                 onSubmitIntention: { viewModel.submitPrayerIntention() },
                 onTogglePrayed: { id in viewModel.togglePrayedForIntention(id) }
             )
+        case .chat:
+            GroupChatTabView(
+                pinnedNotice: viewModel.pinnedNotice,
+                messages: viewModel.chatMessages,
+                isEditingNotice: $viewModel.isEditingPinnedNotice,
+                noticeDraft: $viewModel.pinnedNoticeDraft,
+                messageDraft: $viewModel.chatMessageDraft,
+                errorMessage: viewModel.errorMessage,
+                onSaveNotice: { viewModel.savePinnedNotice() },
+                onSendMessage: { viewModel.sendChatMessage() }
+            )
         }
     }
 
@@ -123,9 +134,7 @@ struct GroupDetailView: View {
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.button))
                 if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.danger)
+                    Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
                 }
                 MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane") {
                     viewModel.submitQuickWitness()
@@ -136,9 +145,7 @@ struct GroupDetailView: View {
 
     private var feedSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Text("Feed da Comunidade")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Feed da Comunidade").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
             ForEach(viewModel.feedItems) { item in feedItemView(for: item) }
         }
     }
@@ -154,20 +161,12 @@ struct GroupDetailView: View {
                 onSubmitComment: { viewModel.submitComment(for: post.id) }
             )
         case .sponsoredAd(_, let sponsorName, let headline, let bodyText, let couponCode):
-            SponsoredNativeCardView(
-                sponsorName: sponsorName,
-                headline: headline,
-                bodyText: bodyText,
-                couponCode: couponCode
-            )
+            SponsoredNativeCardView(sponsorName: sponsorName, headline: headline, bodyText: bodyText, couponCode: couponCode)
         }
     }
 
     private func commentBinding(for postId: String) -> Binding<String> {
-        Binding(
-            get: { viewModel.draftCommentByPostId[postId] ?? "" },
-            set: { viewModel.draftCommentByPostId[postId] = $0 }
-        )
+        Binding(get: { viewModel.draftCommentByPostId[postId] ?? "" }, set: { viewModel.draftCommentByPostId[postId] = $0 })
     }
 }
 

@@ -8,6 +8,9 @@ enum AppRoute: ModalRoute, URLRoutable {
     case createJoinGroup(initialTab: CreateJoinGroupTab, prefilledInviteCode: String?, season: LiturgicalColor)
     case groupDetail(group: CommunityGroup, season: LiturgicalColor)
     case newCheckIn(preselectedPractice: SpiritualPractice?, season: LiturgicalColor)
+    case spiritualDiary(season: LiturgicalColor)
+    case settings(season: LiturgicalColor)
+    case onboarding(season: LiturgicalColor)
 
     var presentationStyle: ModalPresentation {
         .sheet
@@ -33,6 +36,12 @@ enum AppRoute: ModalRoute, URLRoutable {
                 preselectedPractice: preselectedPractice ?? .rosary,
                 season: season
             )
+        case .spiritualDiary(let season):
+            SpiritualDiaryRouteHostView(season: season)
+        case .settings(let season):
+            SettingsRouteHostView(season: season)
+        case .onboarding(let season):
+            OnboardingRouteHostView(season: season)
         }
     }
 
@@ -63,6 +72,7 @@ enum AppRoute: ModalRoute, URLRoutable {
 enum AppTab: String, TabRoute {
     case today
     case groups
+    case myPath
 
     @ViewBuilder
     var tabLabel: some View {
@@ -71,6 +81,8 @@ enum AppTab: String, TabRoute {
             Label("Hoje", systemImage: "sun.max")
         case .groups:
             Label("Meus Grupos", systemImage: "person.3")
+        case .myPath:
+            Label("Meu Caminho", systemImage: "person.crop.circle")
         }
     }
 
@@ -81,6 +93,8 @@ enum AppTab: String, TabRoute {
             TodayTabRootHostView()
         case .groups:
             GroupsTabRootHostView()
+        case .myPath:
+            MyPathTabRootHostView()
         }
     }
 }
@@ -91,4 +105,6 @@ extension EnvironmentValues {
     @Entry var sharedGroupsHomeViewModel: GroupsHomeViewModel? = nil
     @Entry var sharedCommunityService: LocalCommunityGroupsService? = nil
     @Entry var sharedCheckInEngine: LocalCheckInEngineService? = nil
+    @Entry var sharedMyPathService: LocalMyPathService? = nil
+    @Entry var sharedOnboardingService: LocalOnboardingService? = nil
 }

@@ -121,12 +121,9 @@ extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManagi
     }
 
     func prayerIntentions(for groupId: String) -> [PrayerIntention] {
-        if let existing = prayerIntentionsByGroupId[groupId] {
-            return existing
-        }
-        let initial = CommunitySampleData.initialPrayerIntentions(for: groupId)
-        prayerIntentionsByGroupId[groupId] = initial
-        return initial
+        let all = prayerIntentionsByGroupId[groupId] ?? CommunitySampleData.initialPrayerIntentions(for: groupId)
+        prayerIntentionsByGroupId[groupId] = all
+        return all.filter { !blockedUsers.contains($0.authorName) }
     }
 
     @discardableResult

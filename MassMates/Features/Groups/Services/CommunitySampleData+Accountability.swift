@@ -112,4 +112,47 @@ extension CommunitySampleData {
             )
         ]
     }
+
+    static func initialPinnedNotice(for groupId: String) -> GroupPinnedNotice {
+        GroupPinnedNotice(
+            id: "\(groupId)-notice-1",
+            groupId: groupId,
+            leaderName: "Pe. Lucas Mendes",
+            noticeText: "Quinta-feira às 19h30: Adoração Comunitária e bênção do Santíssimo na Capela.",
+            updatedAtLabel: "Atualizado hoje"
+        )
+    }
+
+    static func initialChatMessages(for groupId: String) -> [GroupChatMessage] {
+        [
+            GroupChatMessage(
+                id: "\(groupId)-msg-1",
+                groupId: groupId,
+                authorName: "Clara Ribeiro",
+                authorInitials: "CR",
+                messageText: "Paz e bem, irmãos! Quem conseguirá chegar 15 minutos antes para o Terço?",
+                relativeTimeLabel: "há 25 min",
+                isCurrentUser: false
+            ),
+            GroupChatMessage(
+                id: "\(groupId)-msg-2",
+                groupId: groupId,
+                authorName: "Mateus Almeida",
+                authorInitials: "MA",
+                messageText: "Eu estarei lá com os folhetos dos mistérios luminosos.",
+                relativeTimeLabel: "há 12 min",
+                isCurrentUser: false
+            )
+        ]
+    }
+
+    static func initialMembers(for groupId: String) -> [GroupMemberSummary] {
+        [
+            GroupMemberSummary(id: "\(groupId)-mem-leader", name: "Pe. Lucas Mendes", initials: "LM", roleLabel: "Líder", isCurrentUser: false),
+            GroupMemberSummary(id: "\(groupId)-mem-you", name: "Você", initials: "VC", roleLabel: "Líder", isCurrentUser: true),
+            GroupMemberSummary(id: "\(groupId)-mem-clara", name: "Clara Ribeiro", initials: "CR", roleLabel: "Membro", isCurrentUser: false),
+            GroupMemberSummary(id: "\(groupId)-mem-mateus", name: "Mateus Almeida", initials: "MA", roleLabel: "Membro", isCurrentUser: false),
+            GroupMemberSummary(id: "\(groupId)-mem-helena", name: "Helena Costa", initials: "HC", roleLabel: "Membro", isCurrentUser: false)
+        ]
+    }
 }

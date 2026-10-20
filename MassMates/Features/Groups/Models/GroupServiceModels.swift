@@ -51,6 +51,8 @@ struct GroupSlotCapacity: Sendable, Equatable {
 enum CommunityGroupError: Error, Sendable, Equatable {
     case emptyGroupName
     case emptyPrayerIntention
+    case emptyChatMessage
+    case emptyPinnedNotice
     case invalidInviteCode
     case groupNotFound
     case personalSlotLimitReached
@@ -63,6 +65,10 @@ enum CommunityGroupError: Error, Sendable, Equatable {
             "Informe o nome da fraternidade ou desafio."
         case .emptyPrayerIntention:
             "Escreva sua intenção antes de publicar no mural."
+        case .emptyChatMessage:
+            "Escreva uma mensagem antes de enviar no chat fraterno."
+        case .emptyPinnedNotice:
+            "Informe o texto do aviso paroquial ou semanal."
         case .invalidInviteCode:
             "O código precisa conter 6 caracteres alfanuméricos."
         case .groupNotFound:
@@ -76,6 +82,8 @@ enum CommunityGroupError: Error, Sendable, Equatable {
         }
     }
 }
+
+typealias CommunityGroupsError = CommunityGroupError
 
 enum InviteCodeParser {
     private static let allowedChars = CharacterSet.alphanumerics
