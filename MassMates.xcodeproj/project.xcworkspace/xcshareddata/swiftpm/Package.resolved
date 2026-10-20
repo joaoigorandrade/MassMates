@@ -1,0 +1,24 @@
+{
+  "originHash" : "a20f6520c221565aa49dd083b6f661c041ccb560b67dbec68bacbe56f0c2e83e",
+  "pins" : [
+    {
+      "identity" : "navigationpackage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/joaoigorandrade/NavigationPackage",
+      "state" : {
+        "branch" : "main",
+        "revision" : "16c6e45b0a0a2db5a44b30b9c62b49d1678664c4"
+      }
+    },
+    {
+      "identity" : "networkingpackage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/joaoigorandrade/NetworkingPackage",
+      "state" : {
+        "branch" : "main",
+        "revision" : "8e08ca3a0f491dbbc22d39f26361fb8e4abfe97e"
+      }
+    }
+  ],
+  "version" : 3
+}
