@@ -1,8 +1,8 @@
-Current Focus: Initial project setup, engineering rules, SPM package integration, and GitHub repository connection.
+Current Focus: Tuist project generation setup and token-efficient build/test workflow in AGENTS.md.
 Completed:
-- `AGENTS.md`: Created iOS Engineering Rules (SOLID, Swift 6, Navigation & Networking package enforcement, Persistent Memory Protocol).
-- `MassMates.xcodeproj/project.pbxproj`: Linked `NavigationPackage` (`Navigation`) and `NetworkingPackage` (`Networking`) and enabled Swift 6 language mode.
-- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Initialized persistent memory files.
-- `README.md`: Initialized and pushed to `origin/main` (`https://github.com/joaoigorandrade/MassMates.git`).
+- `Tuist.swift` & `Project.swift`: Configured `MassMates` and `MassMatesTests` targets with Swift 6 strict concurrency (`SWIFT_STRICT_CONCURRENCY = complete`) and `Navigation` / `Networking` / `NetworkingTestSupport` SPM packages.
+- `MassMatesTests/MassMatesTests.swift`: Added initial Swift Testing suite.
+- `AGENTS.md`: Updated Section 6 with deterministic Tuist generation triggers (`tuist generate --no-open`) and zero-bloat `-quiet` build/test commands.
+- `docs/memory/DECISIONS.md` & `docs/memory/STATE.md`: Recorded Tuist decision and updated project state.
 Next Step: Define root `AppRoute` (`Routable`) and wire `Navigator` + `NavigationStackWrapper` in `MassMates/MassMatesApp.swift`.
 Blockers/Quirks: None.

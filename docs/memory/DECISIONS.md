@@ -1,2 +1,3 @@
 [2026-10-19] [Dependencies]: Linked NavigationPackage (Navigation) and NetworkingPackage (Networking) on branch `main` -> Required first-party packages for all routing and HTTP/SSE networking; neither repository defines semver tags so branch requirement (`main`) is used.
 [2026-10-19] [Rules]: Established AGENTS.md with Swift 6 strict concurrency, SOLID limits, mandatory Navigation/Networking package usage, and Persistent Memory Protocol -> Enforce zero-bloat deterministic engineering rules across sessions.
+[2026-10-19] [Tuist]: Adopted Tuist (`Project.swift` + `Tuist.swift`) with mandatory `--no-open` and `xcodebuild ... -quiet` -> Eliminates manual `.pbxproj` merge conflicts/errors and reduces build output from >300KB to 0 bytes on clean builds.
