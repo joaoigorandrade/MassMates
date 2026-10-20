@@ -43,3 +43,4 @@ playground.xcworkspace
 .env.*
 !.env.example
 *.local.xcconfig
+.package.resolved
