@@ -82,6 +82,7 @@ enum AppTab: String, TabRoute {
     case today
     case groups
     case myPath
+    case sacredRites
 
     @ViewBuilder
     var tabLabel: some View {
@@ -89,9 +90,11 @@ enum AppTab: String, TabRoute {
         case .today:
             Label("Hoje", systemImage: "sun.max")
         case .groups:
-            Label("Meus Grupos", systemImage: "person.3")
+            Label("Grupos", systemImage: "person.2")
         case .myPath:
             Label("Meu Caminho", systemImage: "person.crop.circle")
+        case .sacredRites:
+            Label("Mais", systemImage: "book.closed")
         }
     }
 
@@ -104,6 +107,8 @@ enum AppTab: String, TabRoute {
             GroupsTabRootHostView()
         case .myPath:
             MyPathTabRootHostView()
+        case .sacredRites:
+            SacredRitesTabRootHostView()
         }
     }
 }

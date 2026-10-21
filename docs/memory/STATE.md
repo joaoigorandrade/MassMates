@@ -1,13 +1,10 @@
-Current Focus: Complete 1:1 refactor of MassMates to match all 16 Stitch design specifications with strict Swift 6 and SOLID architecture.
+Current Focus: Align TabBar with 1:1 Stitch MCP design specification (Screens 05, 08, 12) and eliminate tab occlusion.
 Completed:
-- `Features/Onboarding` (Screens 02–04): Welcome hero, value proposition cards, full social & magic link auth, profile & Rule of Life setup with guided templates.
-- `Features/Today` (Screen 05): Top app bar, Santa Clara liturgical greeting & streak ring banner, Rule of Life checklist above devotionals, editorial reflection card, CNBB native sponsored ad.
-- `Features/DailyGospel` (Screen 06): Liturgical header, AA font size switcher, audio player banner, Mt 18, 15-20 reading, 4-step Lectio Divina accordion cards.
-- `Features/PrayerTimer` (Screen 07): 256pt dial, ambient chime toggle, guided 10-bead tactile Rosary track, today's mystery card, Conselho dos Santos quote.
-- `Features/Groups` (Screens 08–10): 3-segment communion slot bar, active fraternities cards, Quaresma de São Miguel hero card, discovery showcase, 6-box PIN code join, saint patron picker, intimacy slider, Guardian Angel card, unified collective treasure & faithful days card.
-- `Features/CheckIn` (Screen 11): Practice capsule chips, sacramental confession privacy lock card, fruit notes, zero-cloud private destination.
-- `Features/MyPath` (Screens 12–14): Profile identity with liturgical halo, monthly consistency calendar, rule distribution, encrypted diary fruits preview, full expanded diary with filters, and Screen 14 Immersive Diary Entry Reader.
-- `Features/SacredRites` (Screens 15–17): Screen 15 Nightly Ignatian Examen with 5 steps & blessing, Screen 16 Confession Preparation with commandment checklist, auto-syncing confidential notes & full-screen dark Confessional Mode, Screen 17 Holy Mass Guide with 4 rite tabs, dynamic postures, and Mass check-in card.
-- `MassMatesTests`: Added `SacredRitesStitchScreensTests.swift`, all unit tests pass (100% green).
-Next Step: Release tagging or UI automation testing when ready.
+- Verified Stitch project `4744816768065646201` navigation bar: 4 tabs (`Hoje`, `Grupos`, `Meu Caminho`, `Mais`) and 1 center floating action button (`+`).
+- `MassMatesTabBarView`: Custom frosted glass translucent bar with 1pt line, subtle elevation, 5 equal slots, and floating -14pt circular `+` button in liturgical tint.
+- `AppTab`: Expanded to include `.sacredRites` ("Mais") connecting directly to Santa Missa, Confissão, and Exame da Noite.
+- `SacredRitesHomeView` & `SacredRitesTabRootHostView`: Ritos Sagrados directory for quick access to Screens 15, 16, and 17.
+- `ContentView`: Layered tab content using `NavigationStackWrapper` with 64pt bottom safe area insets to prevent bottom card clipping.
+- `MassMatesTests/NavigationTabBarTests.swift`: Comprehensive unit tests for tab sequencing, tab switching, and pop-to-root on re-selection.
+Next Step: Release preparation or UI automation tests.
 Blockers/Quirks: None.

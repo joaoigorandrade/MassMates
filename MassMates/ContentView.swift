@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ContentView: View {
     // MARK: - Dependencies & State
-    @State private var tabNavigator: TabNavigator<AppTab, AppRoute>
+    @ObservedObject private var tabNavigator: TabNavigator<AppTab, AppRoute>
     @State private var todayViewModel: TodayDashboardViewModel
     @State private var communityService: LocalCommunityGroupsService
     @State private var groupsHomeViewModel: GroupsHomeViewModel
@@ -21,7 +21,7 @@ struct ContentView: View {
         myPathService: LocalMyPathService = LocalMyPathService(),
         onboardingService: LocalOnboardingService = LocalOnboardingService()
     ) {
-        _tabNavigator = State(initialValue: tabNavigator)
+        _tabNavigator = ObservedObject(wrappedValue: tabNavigator)
         _todayViewModel = State(initialValue: todayViewModel)
         _communityService = State(initialValue: communityService)
         _myPathService = State(initialValue: myPathService)
@@ -58,11 +58,14 @@ struct ContentView: View {
     // MARK: - Body / Public API
     var body: some View {
         ZStack(alignment: .bottom) {
-            NavigationTabView(tabNavigator)
-            FloatingCheckInButton {
-                presentNewCheckInModal()
-            }
-            .padding(.bottom, MassMatesSpacing.xs)
+            tabContentView
+
+            MassMatesTabBarView(
+                tabNavigator: tabNavigator,
+                onCenterAction: {
+                    presentNewCheckInModal()
+                }
+            )
         }
         .tint(todayViewModel.currentTheme.tint)
         .environment(\.liturgicalTheme, todayViewModel.currentTheme)
@@ -81,6 +84,22 @@ struct ContentView: View {
     }
 
     // MARK: - Subviews / Private Helpers
+    private var tabContentView: some View {
+        ZStack {
+            ForEach(Array(AppTab.allCases), id: \.self) { tab in
+                NavigationStackWrapper(navigator: tabNavigator.navigator(for: tab)) {
+                    tab.tabContent
+                        .safeAreaInset(edge: .bottom) {
+                            Color.clear.frame(height: 64)
+                        }
+                }
+                .environmentObject(tabNavigator.navigator(for: tab))
+                .opacity(tabNavigator.selectedTab == tab ? 1 : 0)
+                .allowsHitTesting(tabNavigator.selectedTab == tab)
+            }
+        }
+    }
+
     private func presentNewCheckInModal() {
         let activeTab = tabNavigator.selectedTab
         tabNavigator.navigator(for: activeTab).present(

@@ -34,3 +34,17 @@ struct SacredRiteRouteHostView: View {
         }
     }
 }
+
+struct SacredRitesTabRootHostView: View {
+    // MARK: - Dependencies & State
+
+    // MARK: - Init
+    init() {}
+
+    // MARK: - Body / Public API
+    var body: some View {
+        SacredRitesHomeView()
+    }
+
+    // MARK: - Subviews / Private Helpers
+}
