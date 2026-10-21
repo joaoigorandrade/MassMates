@@ -22,27 +22,32 @@ struct DiaryEntryIlluminatingWordView: View {
     // MARK: - Subviews / Private Helpers
     private var scriptureCard: some View {
         MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Label("PALAVRA ILUMINADORA", systemImage: "book.closed")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                        .tracking(0.5)
-                    Spacer()
-                    Button { isFullPericopeExpanded.toggle() } label: {
-                        Label("Ver perícope integral", systemImage: "arrow.right")
+            HStack(spacing: MassMatesSpacing.sm) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(theme.tint)
+                    .frame(width: 4)
+                VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+                    HStack {
+                        Label("PALAVRA ILUMINADORA", systemImage: "book.closed")
                             .font(MassMatesFont.caption)
-                            .foregroundStyle(MassMatesPalette.textSecondary)
+                            .foregroundStyle(theme.tint)
+                            .tracking(0.5)
+                        Spacer()
+                        Button { isFullPericopeExpanded.toggle() } label: {
+                            Label("Ver perícope integral", systemImage: "arrow.right")
+                                .font(MassMatesFont.caption)
+                                .foregroundStyle(MassMatesPalette.textSecondary)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                }
-                Text("«Todo aquele que me reconhecer diante dos homens, também o Filho do Homem o reconhecerá diante dos anjos de Deus; mas quem me renegar diante dos homens será renegado diante dos anjos de Deus.»")
-                    .font(MassMatesFont.scriptureEmphasis)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                HStack {
-                    Text("São Lucas 12, 8-9").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-                    Spacer()
-                    Label("Ouvir Evangelho", systemImage: "play.circle").font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                    Text("«Todo aquele que me reconhecer diante dos homens, também o Filho do Homem o reconhecerá diante dos anjos de Deus; mas quem me renegar diante dos homens será renegado diante dos anjos de Deus.»")
+                        .font(MassMatesFont.scriptureEmphasis)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    HStack {
+                        Text("São Lucas 12, 8-9").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                        Spacer()
+                        Label("Ouvir Evangelho", systemImage: "play.circle").font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                    }
                 }
             }
         }

@@ -59,7 +59,7 @@ struct PrayerTimerModalView: View {
                     .font(MassMatesFont.callout)
                     .foregroundStyle(theme.tint)
                     .frame(width: 44, height: 44)
-                    .background(MassMatesPalette.surfaceMuted)
+                    .background(theme.tintSoft)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             }
             .buttonStyle(.plain)

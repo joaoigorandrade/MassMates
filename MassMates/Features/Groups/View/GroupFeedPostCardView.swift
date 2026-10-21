@@ -4,6 +4,7 @@ struct GroupFeedPostCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let post: GroupFeedPost
+    private let showsComments: Bool
     @Binding private var commentDraft: String
     private let onReaction: (FeedReactionType) -> Void
     private let onSubmitComment: () -> Void
@@ -12,11 +13,13 @@ struct GroupFeedPostCardView: View {
     init(
         post: GroupFeedPost,
         commentDraft: Binding<String>,
+        showsComments: Bool = true,
         onReaction: @escaping (FeedReactionType) -> Void,
         onSubmitComment: @escaping () -> Void
     ) {
         self.post = post
         self._commentDraft = commentDraft
+        self.showsComments = showsComments
         self.onReaction = onReaction
         self.onSubmitComment = onSubmitComment
     }
@@ -32,7 +35,9 @@ struct GroupFeedPostCardView: View {
                     fruitQuoteBox(fruit: fruit)
                 }
                 reactionRow
-                commentsSection
+                if showsComments {
+                    commentsSection
+                }
             }
         }
     }
@@ -113,13 +118,10 @@ struct GroupFeedPostCardView: View {
 
     private func fruitQuoteBox(fruit: String) -> some View {
         Text("“\(fruit)”")
-            .font(MassMatesFont.scriptureEmphasis)
-            .foregroundStyle(MassMatesPalette.textPrimary)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(MassMatesSpacing.sm)
+            .font(MassMatesFont.scriptureEmphasis).foregroundStyle(MassMatesPalette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true).padding(MassMatesSpacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+            .background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 
     private var reactionRow: some View {
@@ -128,18 +130,16 @@ struct GroupFeedPostCardView: View {
                 title: "Ámen",
                 systemImage: "heart.fill",
                 count: post.amenCount,
-                isActive: post.isAmenSelected
-            ) {
-                onReaction(.amen)
-            }
+                isActive: post.isAmenSelected,
+                action: { onReaction(.amen) }
+            )
             ReactionPillButton(
                 title: "Unido em Oração",
                 systemImage: "hands.sparkles.fill",
                 count: post.unitedCount,
-                isActive: post.isUnitedSelected
-            ) {
-                onReaction(.unitedInPrayer)
-            }
+                isActive: post.isUnitedSelected,
+                action: { onReaction(.unitedInPrayer) }
+            )
             Spacer()
         }
     }

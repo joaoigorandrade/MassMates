@@ -58,7 +58,7 @@ struct ConfessionPreparationModalView: View {
             HStack(spacing: MassMatesSpacing.xxs) {
                 Image(systemName: "lock.fill")
                     .foregroundStyle(theme.tint)
-                Text("Preparacao Para A Confissao")
+                Text("Preparação para a Confissão")
                     .foregroundStyle(MassMatesPalette.textPrimary)
             }
             .font(MassMatesFont.caption)

@@ -5,7 +5,7 @@ struct CreateGroupFormTabView: View {
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: CreateJoinGroupViewModel
     private let onCreated: () -> Void
-    private let saintOptions = ["Sta. Teresinha", "São José Operário", "São Bento", "N. Sra. Desatadora"]
+    private let saintOptions = ["Sta. Teresinha", "São José Operário", "São Bento", "N. Sra. Desatadora", "Outro"]
 
     // MARK: - Init
     init(viewModel: CreateJoinGroupViewModel, onCreated: @escaping () -> Void) {
@@ -55,7 +55,7 @@ struct CreateGroupFormTabView: View {
 
     private var saintShowcaseRow: some View {
         HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "camera.macro").font(MassMatesFont.title).foregroundStyle(theme.tint)
+            Image(systemName: "cross.case.fill").font(MassMatesFont.title).foregroundStyle(theme.tint)
                 .frame(width: 44, height: 44).background(theme.tintSoft).clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Santa Teresinha do Menino Jesus").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)

@@ -65,7 +65,7 @@ struct SponsoredNativeCardView: View {
             Image(systemName: "bookmark")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-            Text("Cupom: \(code)")
+            Text(code.contains(" ") ? code : "Cupom: \(code)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textPrimary)
         }

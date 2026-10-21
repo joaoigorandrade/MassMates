@@ -33,15 +33,24 @@ struct SpiritualDiaryEntryCardView: View {
     }
 
     // MARK: - Subviews / Private Helpers
+    private var practiceTheme: Theme {
+        switch entry.practice {
+        case .dailyGospel: Theme(season: .green)
+        case .rosary: Theme(season: .rose)
+        case .mentalPrayer: Theme(season: .purple)
+        default: theme
+        }
+    }
+
     private var topBadgeRow: some View {
         HStack {
             HStack(spacing: 6) {
                 Label(practiceHeaderLabel, systemImage: entry.practice.systemImage)
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
+                    .foregroundStyle(practiceTheme.tint)
                     .padding(.horizontal, MassMatesSpacing.xs)
                     .padding(.vertical, 4)
-                    .background(theme.tintSoft)
+                    .background(practiceTheme.tintSoft)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
                 Label("Privado", systemImage: "lock.fill")
                     .font(MassMatesFont.caption)

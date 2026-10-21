@@ -4,43 +4,43 @@ extension CommunitySampleData {
     static func initialScoringSummary(for group: CommunityGroup) -> GroupScoringSummary {
         let entries: [GroupMemberScoreEntry] = [
             GroupMemberScoreEntry(
-                id: "\(group.id)-m-clara",
-                memberName: "Clara Ribeiro",
-                memberInitials: "CR",
+                id: "\(group.id)-m-mariana",
+                memberName: "Mariana Silva",
+                memberInitials: "MS",
+                isCurrentUser: false,
+                faithfulDaysCount: 19,
+                customPointsTotal: 342,
+                collectiveContributionsCount: 38,
+                hasRecordedPracticeToday: true
+            ),
+            GroupMemberScoreEntry(
+                id: "\(group.id)-m-gabriel",
+                memberName: "Gabriel Prado",
+                memberInitials: "GP",
                 isCurrentUser: false,
                 faithfulDaysCount: 14,
-                customPointsTotal: 290,
+                customPointsTotal: 280,
                 collectiveContributionsCount: 28,
                 hasRecordedPracticeToday: true
+            ),
+            GroupMemberScoreEntry(
+                id: "\(group.id)-m-teresa",
+                memberName: "Dona Teresa",
+                memberInitials: "DT",
+                isCurrentUser: false,
+                faithfulDaysCount: 12,
+                customPointsTotal: 240,
+                collectiveContributionsCount: 24,
+                hasRecordedPracticeToday: false
             ),
             GroupMemberScoreEntry(
                 id: "\(group.id)-m-you",
                 memberName: "Você",
                 memberInitials: "VC",
                 isCurrentUser: true,
-                faithfulDaysCount: 12,
-                customPointsTotal: 250,
-                collectiveContributionsCount: 24,
-                hasRecordedPracticeToday: false
-            ),
-            GroupMemberScoreEntry(
-                id: "\(group.id)-m-mateus",
-                memberName: "Mateus Almeida",
-                memberInitials: "MA",
-                isCurrentUser: false,
                 faithfulDaysCount: 11,
-                customPointsTotal: 230,
-                collectiveContributionsCount: 21,
-                hasRecordedPracticeToday: true
-            ),
-            GroupMemberScoreEntry(
-                id: "\(group.id)-m-helena",
-                memberName: "Helena Costa",
-                memberInitials: "HC",
-                isCurrentUser: false,
-                faithfulDaysCount: 9,
-                customPointsTotal: 185,
-                collectiveContributionsCount: 18,
+                customPointsTotal: 220,
+                collectiveContributionsCount: 22,
                 hasRecordedPracticeToday: false
             )
         ]
@@ -64,14 +64,14 @@ extension CommunitySampleData {
             groupId: group.id,
             cycleTitle: cycleTitle,
             isOptedIn: group.id == parishFraternity.id,
-            protectedSoulName: "Helena Costa",
-            protectedSoulInitials: "HC",
-            protectedSoulIntention: "Pela perseverança na oração mental matinal e pela saúde de sua mãe.",
+            protectedSoulName: "Lucas M.",
+            protectedSoulInitials: "LM",
+            protectedSoulIntention: "Pela saúde de minha mãe e discernimento profissional.",
             hasPrayedForProtectedSoulToday: false,
             prayersSentInCycle: 4,
             receivedGuardianAngelPrayerToday: true,
             isCycleRevealed: false,
-            revealedGuardianAngelName: "Mateus Almeida"
+            revealedGuardianAngelName: "Mateus Silva"
         )
     }
 

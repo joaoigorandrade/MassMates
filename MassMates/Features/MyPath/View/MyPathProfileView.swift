@@ -33,13 +33,14 @@ struct MyPathProfileView: View {
                     canClaimStreakMercy: viewModel.milestones.canClaimStreakMercyThisMonth,
                     onClaimStreakMercy: { _ = viewModel.claimStreakMercy() }
                 )
+                MyPathRuleOfLifeDistributionCardView()
+                milestonesCard
+                saintIconsCard
+                widgetAndQuickShortcutsCard
                 MyPathDiaryPreviewAndPrivacySectionView(
                     onOpenDiary: triggerOpenDiary,
                     onOpenSettings: triggerOpenSettings
                 )
-                milestonesCard
-                saintIconsCard
-                widgetAndQuickShortcutsCard
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.vertical, MassMatesSpacing.lg)

@@ -13,7 +13,7 @@ final class GroupDetailViewModel {
     private let chatService: any GroupChatManaging
     private let moderationService: any GroupModerationManaging
 
-    var selectedSubTab: GroupDetailSubTab = .feed
+    var selectedSubTab: GroupDetailSubTab = .progress
     private(set) var currentInviteCode: String
     private(set) var feedItems: [GroupFeedItem] = []
     private(set) var scoringSummary: GroupScoringSummary

@@ -43,8 +43,10 @@ struct JoinGroupByCodeTabView: View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 codeCardHeader
-                segmentedPinBoxes
-                hiddenCodeField
+                ZStack {
+                    segmentedPinBoxes
+                    hiddenCodeField
+                }
                 liveValidationBadge
                 cameraDividerRow
                 qrScannerButton
@@ -94,13 +96,11 @@ struct JoinGroupByCodeTabView: View {
     }
 
     private var hiddenCodeField: some View {
-        TextField("Código de 6 dígitos (ex: ST1925)", text: $viewModel.inviteCodeInput)
+        TextField("", text: $viewModel.inviteCodeInput)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
-            .font(MassMatesFont.caption)
-            .padding(MassMatesSpacing.xs)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
+            .opacity(0.01)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .onChange(of: viewModel.inviteCodeInput) { _, _ in
                 if InviteCodeParser.normalize(viewModel.inviteCodeInput) != nil {
                     viewModel.previewInviteCode()

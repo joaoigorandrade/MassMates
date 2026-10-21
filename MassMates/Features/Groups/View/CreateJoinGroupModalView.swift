@@ -108,7 +108,7 @@ struct CreateJoinGroupModalView: View {
                 Image(systemName: "icloud.and.arrow.up")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
-                Text("Você possui \(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups + 1) fraternidades ativas")
+                Text("Você possui \(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups) fraternidades ativas")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
             }

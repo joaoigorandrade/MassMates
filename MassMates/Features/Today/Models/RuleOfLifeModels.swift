@@ -16,12 +16,12 @@ enum SpiritualPractice: String, CaseIterable, Identifiable, Sendable, Equatable,
         switch self {
         case .rosary: "Santo Terço"
         case .holyMass: "Santa Missa"
-        case .dailyGospel: "Evangelho Diário e Lectio"
+        case .dailyGospel: "Evangelho do Dia (Lectio Divina)"
         case .adoration: "Adoração Eucarística"
-        case .mentalPrayer: "Oração Mental"
+        case .mentalPrayer: "Oração da Manhã"
         case .spiritualReading: "Leitura Espiritual"
         case .fasting: "Jejum e Abstinência"
-        case .confession: "Confissão Sacramental"
+        case .confession: "Exame de Consciência"
         }
     }
 
@@ -44,10 +44,10 @@ enum SpiritualPractice: String, CaseIterable, Identifiable, Sendable, Equatable,
         case .holyMass: "cup.and.saucer"
         case .dailyGospel: "book.closed"
         case .adoration: "sun.max"
-        case .mentalPrayer: "hourglass"
+        case .mentalPrayer: "sun.horizon.fill"
         case .spiritualReading: "text.book.closed"
         case .fasting: "leaf"
-        case .confession: "lock.shield"
+        case .confession: "moon.stars"
         }
     }
 

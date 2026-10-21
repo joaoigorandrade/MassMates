@@ -43,14 +43,9 @@ struct StreakRingView: View {
     }
 
     private var centerLabel: some View {
-        VStack(spacing: 0) {
-            Text("\(streakDays)")
-                .font(MassMatesFont.numeral)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("dias")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
+        Text("\(streakDays)")
+            .font(MassMatesFont.numeral)
+            .foregroundStyle(MassMatesPalette.textPrimary)
     }
 }
 

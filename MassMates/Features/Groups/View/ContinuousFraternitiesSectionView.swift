@@ -110,7 +110,7 @@ struct ContinuousFraternitiesSectionView: View {
             Text("MS")
                 .font(MassMatesFont.caption).foregroundStyle(theme.tint)
                 .frame(width: 24, height: 24).background(theme.tintSoft).clipShape(Circle())
-            Text("Seu anjo da semana é Mateus Silva")
+            Text("Seu anjo da semana é **Mateus Silva**")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             Spacer()
             HStack(spacing: 2) {

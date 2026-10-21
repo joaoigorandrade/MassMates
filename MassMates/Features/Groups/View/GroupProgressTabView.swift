@@ -133,9 +133,18 @@ struct GroupProgressTabView: View {
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
-            Text(entry.formattedScoreLabel(for: summary.scoringMode))
-                .font(MassMatesFont.headline)
-                .foregroundStyle(theme.tint)
+            HStack(spacing: 4) {
+                Image(systemName: "sun.max.fill")
+                    .font(MassMatesFont.caption)
+                Text(entry.formattedScoreLabel(for: summary.scoringMode))
+                    .font(MassMatesFont.caption)
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(theme.tint)
+            .padding(.horizontal, MassMatesSpacing.xs)
+            .padding(.vertical, 4)
+            .background(theme.tintSoft)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .frame(minHeight: MassMatesLayout.minTapTarget)
     }

@@ -76,7 +76,7 @@ struct HolyMassCommunionAndFinalRitesView: View {
     private var agnusDeiLinesBox: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             ForEach(Array(HolyMassRitesCatalog.agnusDeiLines.enumerated()), id: \.offset) { _, line in
-                Text(line.lead + line.response)
+                Text("\(Text(line.lead)) \(Text(line.response).bold().foregroundStyle(theme.tint))")
                     .font(MassMatesFont.scripture)
                     .foregroundStyle(MassMatesPalette.textPrimary)
             }

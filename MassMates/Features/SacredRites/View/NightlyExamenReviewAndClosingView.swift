@@ -23,8 +23,7 @@ struct NightlyExamenReviewAndClosingView: View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 stepHeader(
-                    number: "3",
-                    title: "Passar em Revista as Horas",
+                    number: "3", title: "Passar em Revista as Horas",
                     subtitle: "Percorrer as ações, palavras, silêncios e afetos."
                 )
                 morningLectioBox
@@ -44,7 +43,11 @@ struct NightlyExamenReviewAndClosingView: View {
             Text("“Guardar o recolhimento nas conversas de trabalho e não alimentar queixas nem murmurações.”")
                 .font(MassMatesFont.customScripture(size: 15, italic: true))
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            ForEach(LectioResolutionEvaluation.allCases) { evaluationPillButton($0) }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: MassMatesSpacing.xs) {
+                    ForEach(LectioResolutionEvaluation.allCases) { evaluationPillButton($0) }
+                }
+            }
         }
         .padding(MassMatesSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)

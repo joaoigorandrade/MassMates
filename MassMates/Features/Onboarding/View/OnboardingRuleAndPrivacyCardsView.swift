@@ -132,14 +132,12 @@ struct OnboardingRuleAndPrivacyCardsView: View {
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
             Spacer()
-            Button {
-                viewModel.togglePracticePreview(id: item.id)
-            } label: {
-                Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.line)
-            }
-            .buttonStyle(.plain)
+            Toggle("", isOn: Binding(
+                get: { item.isEnabled },
+                set: { _ in viewModel.togglePracticePreview(id: item.id) }
+            ))
+            .labelsHidden()
+            .tint(theme.tint)
         }
         .padding(MassMatesSpacing.sm)
         .background(MassMatesPalette.surfaceMuted)

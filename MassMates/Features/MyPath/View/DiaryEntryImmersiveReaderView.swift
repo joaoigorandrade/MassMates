@@ -62,6 +62,17 @@ struct DiaryEntryImmersiveReaderView: View {
                         .frame(width: 36, height: 36)
                 }
                 .buttonStyle(.plain)
+                Menu {
+                    Button("Editar reflexão") { toastMessage = "Modo de edição aberto." }
+                    Button("Vincular virtudes") { toastMessage = "Virtudes vinculadas." }
+                    Button("Fixar como graça") { toastMessage = "Entrada fixada como graça no Diário." }
+                    Button("Excluir entrada", role: .destructive) { toastMessage = "Ação de exclusão em sigilo." }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .frame(width: 36, height: 36)
+                }
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
                         .font(MassMatesFont.caption)

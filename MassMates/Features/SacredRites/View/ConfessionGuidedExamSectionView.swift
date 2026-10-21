@@ -23,7 +23,7 @@ struct ConfessionGuidedExamSectionView: View {
                     .foregroundStyle(theme.tint)
             }
             categoryTabsRow
-            ForEach(viewModel.commandmentGroups) { group in
+            ForEach(viewModel.filteredCommandmentGroups) { group in
                 commandmentGroupCard(group)
             }
         }

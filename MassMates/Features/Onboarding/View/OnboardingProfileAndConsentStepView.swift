@@ -36,7 +36,7 @@ struct OnboardingProfileAndConsentStepView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("Profile Setup")
+            Text("Configuração do Perfil")
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
@@ -86,7 +86,7 @@ struct OnboardingProfileAndConsentStepView: View {
                 avatarPickerSection
                 labeledInputField(
                     label: "Nome Completo ou Fraterno",
-                    placeholder: "Maria Clara de Jesus",
+                    placeholder: "Como prefere ser chamada",
                     text: $viewModel.userName,
                     trailingIcon: "checkmark.circle.fill",
                     trailingColor: theme.tint

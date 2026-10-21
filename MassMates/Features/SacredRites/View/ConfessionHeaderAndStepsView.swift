@@ -137,7 +137,12 @@ struct ConfessionHeaderAndStepsView: View {
             }
             MassMatesCard {
                 VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                    ForEach(viewModel.fiveSteps) { stepRow($0) }
+                    ForEach(Array(viewModel.fiveSteps.enumerated()), id: \.element.id) { index, step in
+                        if index > 0 {
+                            Divider()
+                        }
+                        stepRow(step)
+                    }
                 }
             }
         }

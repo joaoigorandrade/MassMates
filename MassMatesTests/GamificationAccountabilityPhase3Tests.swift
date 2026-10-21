@@ -139,7 +139,7 @@ struct GamificationAccountabilityPhase3Tests {
 
         viewModel.revealGuardianAngelCycle()
         #expect(viewModel.guardianAngelState.isCycleRevealed)
-        #expect(viewModel.guardianAngelState.anonymousNudgeStatusText?.contains("Mateus Almeida") == true)
+        #expect(viewModel.guardianAngelState.anonymousNudgeStatusText?.contains("Mateus Silva") == true)
     }
 
     @Test("Prayer Wall creates intentions and increments 'Rezei por você' counter with comfort notification")

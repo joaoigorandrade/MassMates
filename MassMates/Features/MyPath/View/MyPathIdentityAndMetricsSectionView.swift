@@ -18,7 +18,6 @@ struct MyPathIdentityAndMetricsSectionView: View {
             topNavigationBar
             identityHeaderSection
             devotionalMetricsGrid
-            MyPathRuleOfLifeDistributionCardView()
         }
     }
 

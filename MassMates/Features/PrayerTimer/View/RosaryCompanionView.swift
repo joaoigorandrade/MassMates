@@ -152,7 +152,7 @@ struct RosaryCompanionView: View {
             .font(MassMatesFont.callout)
             .foregroundStyle(theme.tint)
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
-            .background(MassMatesPalette.surfaceMuted)
+            .background(theme.tintSoft)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)

@@ -110,9 +110,9 @@ struct DailyGospelModalView: View {
         }
         .padding(MassMatesSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
+        .background(theme.tintSoft.opacity(0.7))
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
+        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(theme.tint.opacity(0.2), lineWidth: 1) }
     }
 
     private var completionFooterSection: some View {

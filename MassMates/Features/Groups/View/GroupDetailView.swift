@@ -43,7 +43,7 @@ struct GroupDetailView: View {
                     .foregroundStyle(theme.tint)
                     .buttonStyle(.plain)
             }
-            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item) }
+            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item, showsComments: false) }
             SponsoredNativeCardView(
                 sponsorName: "Livraria Paulus",
                 headline: "Livraria Paulus — Retiro Inaciano Guiado",
@@ -123,12 +123,13 @@ struct GroupDetailView: View {
     }
 
     @ViewBuilder
-    private func feedItemView(for item: GroupFeedItem) -> some View {
+    private func feedItemView(for item: GroupFeedItem, showsComments: Bool = true) -> some View {
         switch item {
         case .post(let post):
             GroupFeedPostCardView(
                 post: post,
                 commentDraft: commentBinding(for: post.id),
+                showsComments: showsComments,
                 onReaction: { reaction in viewModel.toggleReaction(reaction, for: post.id) },
                 onSubmitComment: { viewModel.submitComment(for: post.id) }
             )

@@ -72,7 +72,7 @@ struct DailyGospelSubHeaderView: View {
                     .font(MassMatesFont.callout)
                     .foregroundStyle(theme.tint)
                     .frame(width: 40, height: 40)
-                    .background(MassMatesPalette.surfaceMuted)
+                    .background(theme.tintSoft)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             }
             .buttonStyle(.plain)

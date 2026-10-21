@@ -3,6 +3,7 @@ import SwiftUI
 struct CenaculoFatimaCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @State private var isLiked = false
     private let group: CommunityGroup
     private let onSelectGroup: (CommunityGroup) -> Void
 
@@ -60,7 +61,7 @@ struct CenaculoFatimaCardView: View {
                 .background(theme.tintSoft)
                 .clipShape(Circle())
             VStack(alignment: .leading, spacing: 2) {
-                Text("Gabriel cumpriu o Terço da Tarde")
+                Text("**Gabriel** cumpriu o Terço da Tarde")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Text("há 20 minutos")
@@ -68,12 +69,17 @@ struct CenaculoFatimaCardView: View {
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
-            Image(systemName: "heart.fill")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 28, height: 28)
-                .background(MassMatesPalette.surface)
-                .clipShape(Circle())
+            Button {
+                isLiked.toggle()
+            } label: {
+                Image(systemName: isLiked ? "heart.fill" : "heart")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(isLiked ? Theme(season: .red).tint : MassMatesPalette.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(MassMatesPalette.surface)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(MassMatesSpacing.sm)
         .background(MassMatesPalette.surfaceMuted)

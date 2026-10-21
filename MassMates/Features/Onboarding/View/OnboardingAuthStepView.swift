@@ -37,7 +37,7 @@ struct OnboardingAuthStepView: View {
             .buttonStyle(.plain)
             Spacer()
             HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "building.columns.fill")
+                Image(systemName: "cross.fill")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(theme.tint)
                 Text("MassMates")

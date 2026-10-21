@@ -8,15 +8,10 @@ struct NewCheckInModalView: View {
     @Bindable private var viewModel: NewCheckInViewModel
     private let activeStreakDays: Int
 
-    private let chipColumns = [
-        GridItem(.adaptive(minimum: 150), spacing: MassMatesSpacing.xs)
-    ]
+    private let chipColumns = [GridItem(.adaptive(minimum: 150), spacing: MassMatesSpacing.xs)]
 
     // MARK: - Init
-    init(
-        viewModel: NewCheckInViewModel,
-        activeStreakDays: Int = 14
-    ) {
+    init(viewModel: NewCheckInViewModel, activeStreakDays: Int = 14) {
         self.viewModel = viewModel
         self.activeStreakDays = activeStreakDays
     }
@@ -153,6 +148,7 @@ struct NewCheckInModalView: View {
         switch practice {
         case .dailyGospel: "Evangelho do Dia"
         case .fasting: "Jejum & Penitência"
+        case .confession: "Confissão Sacramental"
         default: practice.title
         }
     }

@@ -25,7 +25,7 @@ struct MentalPrayerSectionView: View {
             Circle()
                 .stroke(MassMatesPalette.line, lineWidth: 6)
             Circle()
-                .trim(from: 0, to: max(viewModel.progress, 0.72))
+                .trim(from: 0, to: viewModel.progress)
                 .stroke(
                     theme.tint,
                     style: StrokeStyle(lineWidth: 6, lineCap: .round)

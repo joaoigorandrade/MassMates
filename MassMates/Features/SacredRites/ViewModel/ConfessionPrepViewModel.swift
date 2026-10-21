@@ -48,6 +48,10 @@ final class ConfessionPrepViewModel {
     }
 
     // MARK: - Body / Public API
+    var filteredCommandmentGroups: [CommandmentExamGroup] {
+        commandmentGroups.filter { $0.category == selectedCategory }
+    }
+
     var selectionCounterText: String {
         let count = privateNotes.count
         return "\(count) anotado\(count == 1 ? "" : "s")"
