@@ -13,16 +13,16 @@ enum GroupDetailSubTab: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .feed: "Feed"
         case .progress: "Progresso"
         case .intentions: "Intenções"
-        case .chat: "Chat"
+        case .chat: "Chat Fraterno"
         }
     }
 
     var systemImage: String {
         switch self {
         case .feed: "rectangle.stack"
-        case .progress: "chart.bar"
-        case .intentions: "hands.sparkles"
-        case .chat: "bubble.left.and.bubble.right"
+        case .progress: "checkmark.seal.fill"
+        case .intentions: "heart.fill"
+        case .chat: "bubble.left.and.bubble.right.fill"
         }
     }
 }

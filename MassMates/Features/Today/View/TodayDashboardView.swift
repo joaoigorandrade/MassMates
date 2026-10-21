@@ -29,10 +29,7 @@ struct TodayDashboardView: View {
         .environment(\.onCompleteSpiritualPractice) { practice in
             viewModel.markPracticeCompleted(practice)
         }
-        .animation(
-            reduceMotion ? nil : .easeInOut(duration: 0.4),
-            value: viewModel.currentTheme.season
-        )
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: viewModel.currentTheme.season)
         .task {
             if case .idle = viewModel.viewState {
                 viewModel.loadDashboard()
@@ -43,8 +40,7 @@ struct TodayDashboardView: View {
     // MARK: - Subviews / Private Helpers
     private var loadingContent: some View {
         VStack {
-            ProgressView()
-                .tint(viewModel.currentTheme.tint)
+            ProgressView().tint(viewModel.currentTheme.tint)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -63,55 +59,110 @@ struct TodayDashboardView: View {
 
     private func loadedContent(_ data: TodayDashboardData) -> some View {
         VStack(spacing: 0) {
+            topAppBar(data: data)
             ScrollView {
                 VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                     TodayHeaderView(
                         seasonTitle: data.activeSeasonTitle,
                         saintOrFeast: data.liturgicalDay.saintOrFeast,
+                        feastRankLabel: data.liturgicalDay.feastRankLabel,
+                        weekdayAndWeekLabel: data.liturgicalDay.weekdayAndWeekLabel,
+                        saintQuote: data.liturgicalDay.saintQuote,
                         progress: data.progress,
-                        onSelectSeason: { season in
-                            viewModel.selectSeasonColor(season)
-                        },
-                        onOpenOnboarding: {
-                            navigator?.present(.onboarding(season: data.activeSeasonColor))
-                        }
+                        onSelectSeason: { season in viewModel.selectSeasonColor(season) },
+                        onOpenOnboarding: { navigator?.present(.onboarding(season: data.activeSeasonColor)) },
+                        onOpenHistory: { navigator?.present(.spiritualDiary(season: data.activeSeasonColor)) }
                     )
-                    VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                        DevotionalQuickCardsView(
-                            reading: data.liturgicalDay.reading,
-                            onOpenGospel: {
-                                navigator?.present(
-                                    .dailyGospel(
-                                        reading: data.liturgicalDay.reading,
-                                        season: data.activeSeasonColor
-                                    )
-                                )
-                            },
-                            onOpenTimer: { mode in
-                                navigator?.present(
-                                    .prayerTimer(
-                                        mode: mode,
-                                        season: data.activeSeasonColor
-                                    )
-                                )
-                            }
-                        )
-                        RuleOfLifeSectionView(
-                            progress: data.progress,
-                            onSelectPreset: { preset in
-                                viewModel.selectPreset(preset)
-                            },
-                            onTogglePractice: { practice in
-                                viewModel.togglePractice(practice)
-                            }
-                        )
-                    }
-                    .padding(.horizontal, MassMatesLayout.screenMargin)
-                    .padding(.bottom, MassMatesSpacing.xl)
+                    mainSectionsStack(data)
                 }
             }
-            SponsoredBannerView()
         }
+    }
+
+    private func mainSectionsStack(_ data: TodayDashboardData) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            RuleOfLifeSectionView(
+                progress: data.progress,
+                onSelectPreset: { preset in viewModel.selectPreset(preset) },
+                onTogglePractice: { practice in viewModel.togglePractice(practice) }
+            )
+            DevotionalQuickCardsView(
+                reading: data.liturgicalDay.reading,
+                onOpenGospel: {
+                    navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor))
+                },
+                onOpenTimer: { mode in
+                    navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor))
+                }
+            )
+            editorialReflectionCard
+            SponsoredNativeCardView(
+                sponsorName: "Edições CNBB",
+                headline: "Edições CNBB — Bíblia Sagrada Edição Pastoral",
+                bodyText: "Apoio à evangelização e oração diária com notas explicativas e mapas litúrgicos.",
+                couponCode: "Frete fraterno disponível • Conhecer"
+            )
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.bottom, MassMatesSpacing.xxl)
+    }
+
+    private func topAppBar(data: TodayDashboardData) -> some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Image(systemName: "cross.circle.fill")
+                .font(MassMatesFont.title)
+                .foregroundStyle(viewModel.currentTheme.tint)
+            Text("MassMates").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+            seasonSelectorMenu(activeTitle: data.activeSeasonTitle)
+            Spacer()
+            Button {
+                navigator?.present(.onboarding(season: data.activeSeasonColor))
+            } label: {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(MassMatesFont.title)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Perfil e configurações")
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.vertical, MassMatesSpacing.sm)
+        .background(MassMatesPalette.surface)
+        .overlay(alignment: .bottom) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
+    }
+
+    private func seasonSelectorMenu(activeTitle: String) -> some View {
+        Menu {
+            ForEach(LiturgicalColor.allCases) { season in
+                Button(season.defaultSeasonName) { viewModel.selectSeasonColor(season) }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Circle().fill(viewModel.currentTheme.tint).frame(width: 6, height: 6)
+                Text(activeTitle.uppercased()).font(MassMatesFont.caption).lineLimit(1)
+            }
+            .foregroundStyle(viewModel.currentTheme.tint)
+            .padding(.horizontal, MassMatesSpacing.xs)
+            .padding(.vertical, 4)
+            .background(viewModel.currentTheme.tintSoft)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        }
+    }
+
+    private var editorialReflectionCard: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("REFLEXÃO DO DIA").font(MassMatesFont.caption).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
+            Text("“Não percas de vista teu ponto de partida; conserva o que tens, faze o que fazes.”")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("— Carta de Santa Clara a Santa Inês").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+        }
+        .padding(MassMatesSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
     }
 }
 

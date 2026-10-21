@@ -9,9 +9,10 @@ struct ConsistencyHeatmapCardView: View {
     private let onClaimStreakMercy: () -> Void
 
     private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: MassMatesSpacing.xs),
+        repeating: GridItem(.flexible(), spacing: 6),
         count: 7
     )
+    private let weekdays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"]
 
     // MARK: - Init
     init(
@@ -31,72 +32,109 @@ struct ConsistencyHeatmapCardView: View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
                 headerRow
-                LazyVGrid(columns: columns, spacing: MassMatesSpacing.xs) {
+                weekdayHeaderRow
+                LazyVGrid(columns: columns, spacing: 6) {
+                    Color.clear.frame(height: 32)
+                    Color.clear.frame(height: 32)
                     ForEach(days) { day in
                         dayCell(day)
                     }
                 }
-                legendAndMercySection
+                pastoralLegendRow
+                mercySection
             }
         }
     }
 
     // MARK: - Subviews / Private Helpers
     private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Mapa de Constância • 28 dias")
+        HStack {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "calendar")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(theme.tint)
+                Text("Outubro 2024")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Sem culpa nos dias silenciosos: recomece sempre em paz.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
-            Text("\(activeStreakDays) d")
-                .font(MassMatesFont.numeral)
-                .foregroundStyle(theme.tint)
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.left")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.circle)
+                Image(systemName: "chevron.right")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.circle)
+            }
+        }
+    }
+
+    private var weekdayHeaderRow: some View {
+        LazyVGrid(columns: columns, spacing: 4) {
+            ForEach(weekdays, id: \.self) { label in
+                Text(label)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .frame(maxWidth: .infinity)
+            }
         }
     }
 
     private func dayCell(_ day: ConsistencyHeatmapDay) -> some View {
-        VStack(spacing: 2) {
+        ZStack {
+            Circle()
+                .fill(dayBackground(for: day))
+            if day.dayNumber == 27 || day.isRepairedByStreakMercy {
+                Circle()
+                    .stroke(
+                        day.isRepairedByStreakMercy ? MassMatesPalette.warning : theme.tint,
+                        lineWidth: 2
+                    )
+            }
             Text("\(day.dayNumber)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(dayTextColor(for: day))
-            if day.isRepairedByStreakMercy {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(MassMatesPalette.warning)
-            }
         }
-        .frame(maxWidth: .infinity, minHeight: 36)
-        .background(dayBackground(for: day))
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.photo)
-                .stroke(dayBorderColor(for: day), lineWidth: 1)
-        )
+        .frame(height: 32)
         .accessibilityLabel("\(day.dateLabel), \(day.practiceCount) práticas")
     }
 
-    private var legendAndMercySection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("Misericórdia da Constância (1×/mês): restaure 1 dia silencioso assistindo a um breve vídeo de apoio.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            if canClaimStreakMercy {
-                MassMatesSecondaryButton(
-                    title: "Restaurar 1 dia (Vídeo de Apoio)",
-                    systemImage: "sparkles"
-                ) {
-                    onClaimStreakMercy()
-                }
-            } else {
-                Text("Misericórdia mensal já aplicada neste ciclo.")
+    private var pastoralLegendRow: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Circle().fill(theme.tint).frame(width: 10, height: 10)
+                Text("Oração vivida")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle( theme.tint)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
+            Spacer()
+            HStack(spacing: 6) {
+                Circle().fill(MassMatesPalette.surfaceMuted).frame(width: 10, height: 10)
+                Text("Recomeço suave")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            Spacer()
+            Text(theme.season.defaultSeasonName)
+                .font(MassMatesFont.caption.italic())
+                .foregroundStyle(MassMatesPalette.textTertiary)
+        }
+    }
+
+    @ViewBuilder
+    private var mercySection: some View {
+        if canClaimStreakMercy {
+            MassMatesSecondaryButton(
+                title: "Misericórdia da Constância (Restaurar 1 dia)",
+                systemImage: "sparkles",
+                action: onClaimStreakMercy
+            )
         }
     }
 
@@ -107,19 +145,15 @@ struct ConsistencyHeatmapCardView: View {
         switch day.intensityLevel {
         case 0: return MassMatesPalette.surfaceMuted
         case 1: return theme.tintSoft
-        case 2: return theme.tint.opacity(0.65)
         default: return theme.tint
         }
     }
 
     private func dayTextColor(for day: ConsistencyHeatmapDay) -> Color {
-        day.intensityLevel >= 2 && !day.isRepairedByStreakMercy
-            ? theme.onTint
-            : MassMatesPalette.textPrimary
-    }
-
-    private func dayBorderColor(for day: ConsistencyHeatmapDay) -> Color {
-        day.isRepairedByStreakMercy ? MassMatesPalette.warning : MassMatesPalette.line
+        if day.isRepairedByStreakMercy || day.intensityLevel == 1 {
+            return theme.tint
+        }
+        return day.intensityLevel >= 2 ? theme.onTint : MassMatesPalette.textSecondary
     }
 }
 
@@ -127,7 +161,7 @@ struct ConsistencyHeatmapCardView: View {
     LiturgicalSeasonPreviewMatrix { _ in
         ConsistencyHeatmapCardView(
             days: LocalMyPathService.defaultHeatmapDays(),
-            activeStreakDays: 12,
+            activeStreakDays: 28,
             canClaimStreakMercy: true,
             onClaimStreakMercy: {}
         )

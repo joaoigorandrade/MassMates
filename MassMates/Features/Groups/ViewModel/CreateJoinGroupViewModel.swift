@@ -10,7 +10,7 @@ enum CreateJoinGroupTab: String, CaseIterable, Identifiable, Sendable, Equatable
     var title: String {
         switch self {
         case .joinByCode: "Entrar com Código"
-        case .createNew: "Criar Grupo"
+        case .createNew: "Criar Fraternidade"
         }
     }
 }
@@ -25,9 +25,18 @@ final class CreateJoinGroupViewModel {
     var selectedTab: CreateJoinGroupTab
     var inviteInput: String
     var draft: GroupCreationDraft = GroupCreationDraft()
+    var selectedPatronSaint: String = "Sta. Teresinha"
+    var isSecretGuardianAngelEnabled: Bool = true
+    var isPhotoCheckInEnabled: Bool = false
+    var pilgrimLimit: Double = 12
     private(set) var previewedGroup: CommunityGroup?
     private(set) var slotCapacity: GroupSlotCapacity
     private(set) var errorMessage: String?
+
+    var inviteCodeInput: String {
+        get { inviteInput }
+        set { inviteInput = newValue }
+    }
 
     // MARK: - Init
     init(

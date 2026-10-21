@@ -89,24 +89,24 @@ final class LocalOnboardingService: OnboardingStateReading, OnboardingCompleting
     private static let defaultSlides: [OnboardingSlide] = [
         OnboardingSlide(
             id: "slide-consistency",
-            badgeTitle: "Ritmo Litúrgico & Constância",
-            title: "Fidelidade diária sem peso nem culpa",
-            bodyText: "Acompanhe sua Regra de Vida e mantenha a chama de oração acesa em sintonia com o calendário da Igreja.",
-            systemImage: "flame.fill"
+            badgeTitle: "Tempo Comum • Fidelidade Diária",
+            title: "Regra de Vida e Hábitos",
+            bodyText: "Acompanhamento diário sem pressa ou culpa, focado na fidelidade a Deus.",
+            systemImage: "calendar"
         ),
         OnboardingSlide(
             id: "slide-fraternities",
-            badgeTitle: "Fraternidades & Desafios",
-            title: "Caminhe em comunidade na sua paróquia",
-            bodyText: "Participe de grupos por Dias Fiéis, Tesouro Coletivo ou Pontos, e reze em segredo pelo seu protegido no Anjo da Guarda.",
+            badgeTitle: "Comunhão • Intercessão Mútua",
+            title: "Anjo da Guarda & Grupos",
+            bodyText: "Fraternidades vivas com metas comunitárias e intercessão mútua em segredo.",
             systemImage: "person.3.fill"
         ),
         OnboardingSlide(
             id: "slide-privacy",
-            badgeTitle: "Privacidade Sagrada por Padrão",
-            title: "Seu Diário e Confissão ficam só no aparelho",
-            bodyText: "Reflexões íntimas e registros de confissão nunca vão para servidores ou anúncios, com proteção por Face ID e backup criptografado.",
-            systemImage: "lock.shield.fill"
+            badgeTitle: "Criptografia Local • Paz Interior",
+            title: "Sigilo Sagrado por Padrão",
+            bodyText: "Confissões e diário íntimo criptografados exclusivamente no seu aparelho.",
+            systemImage: "lock.fill"
         )
     ]
 }

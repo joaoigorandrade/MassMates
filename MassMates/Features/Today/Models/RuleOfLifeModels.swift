@@ -27,14 +27,14 @@ enum SpiritualPractice: String, CaseIterable, Identifiable, Sendable, Equatable,
 
     var subtitle: String {
         switch self {
-        case .rosary: "Meditação dos mistérios do dia"
+        case .rosary: "Mistérios Gloriosos • Em comunidade"
         case .holyMass: "Participação no Santo Sacrifício"
-        case .dailyGospel: "Leitura orante da Palavra"
+        case .dailyGospel: "Mateus 18, 15-20 • 20 min"
         case .adoration: "Visita ou vigília diante do Sacrário"
-        case .mentalPrayer: "Recolhimento silencioso com Deus"
-        case .spiritualReading: "Obras dos santos e vida interior"
+        case .mentalPrayer: "15 min dedicados • 07:15"
+        case .spiritualReading: "Imitação de Cristo • 15 min"
         case .fasting: "Mortificação oferecida com caridade"
-        case .confession: "Registro estritamente privado no dispositivo"
+        case .confession: "Noite • 10 min sugeridos"
         }
     }
 

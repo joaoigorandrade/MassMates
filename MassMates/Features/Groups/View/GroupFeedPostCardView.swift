@@ -26,14 +26,10 @@ struct GroupFeedPostCardView: View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 authorHeader
+                practiceDetailBadge
+                devotionalShowcaseBox
                 if let fruit = post.fruitOfPrayer, !fruit.isEmpty {
-                    Text(fruit)
-                        .font(MassMatesFont.scriptureEmphasis)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if let photoCaption = post.photoCaption, !photoCaption.isEmpty {
-                    photoWitnessCard(caption: photoCaption)
+                    fruitQuoteBox(fruit: fruit)
                 }
                 reactionRow
                 commentsSection
@@ -43,58 +39,102 @@ struct GroupFeedPostCardView: View {
 
     // MARK: - Subviews / Private Helpers
     private var authorHeader: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
+        HStack(spacing: MassMatesSpacing.xs) {
             Text(post.authorInitials)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(theme.tint)
                 .frame(width: 40, height: 40)
                 .background(theme.tintSoft)
                 .clipShape(Circle())
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(post.authorName)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: post.practice.systemImage)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                    Text("\(post.practice.title) • \(post.relativeTimeLabel)")
+                    Text(post.relativeTimeLabel)
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.textSecondary)
+                    Circle().fill(MassMatesPalette.textTertiary).frame(width: 4, height: 4)
+                    Text("São Paulo, SP")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(theme.tint)
                 }
             }
             Spacer()
+            practicePill
         }
     }
 
-    private func photoWitnessCard(caption: String) -> some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "photo")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(caption)
+    private var practicePill: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Image(systemName: post.practice.systemImage)
+                .font(MassMatesFont.caption)
+            Text(post.practice.title)
+                .font(MassMatesFont.caption)
+        }
+        .foregroundStyle(theme.tint)
+        .padding(.horizontal, MassMatesSpacing.xs)
+        .padding(.vertical, MassMatesSpacing.xxs)
+        .background(theme.tintSoft)
+        .clipShape(Capsule())
+    }
+
+    private var practiceDetailBadge: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Image(systemName: "sparkles")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(Theme(season: .white).tint)
+            Text(post.photoCaption ?? "Mistérios Dolorosos rezados na capela")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, MassMatesSpacing.xxs)
         .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
+    }
+
+    private var devotionalShowcaseBox: some View {
+        ZStack {
+            theme.tintSoft
+            VStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "book.pages.fill")
+                    .font(MassMatesFont.display)
+                    .foregroundStyle(theme.tint.opacity(0.6))
+                Text("Registro Devocional Partilhado")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 132)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+    }
+
+    private func fruitQuoteBox(fruit: String) -> some View {
+        Text("“\(fruit)”")
+            .font(MassMatesFont.scriptureEmphasis)
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(MassMatesSpacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 
     private var reactionRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             ReactionPillButton(
-                title: FeedReactionType.amen.title,
-                systemImage: FeedReactionType.amen.systemImage,
+                title: "Ámen",
+                systemImage: "heart.fill",
                 count: post.amenCount,
                 isActive: post.isAmenSelected
             ) {
                 onReaction(.amen)
             }
             ReactionPillButton(
-                title: FeedReactionType.unitedInPrayer.title,
-                systemImage: FeedReactionType.unitedInPrayer.systemImage,
+                title: "Unido em Oração",
+                systemImage: "hands.sparkles.fill",
                 count: post.unitedCount,
                 isActive: post.isUnitedSelected
             ) {
@@ -108,12 +148,8 @@ struct GroupFeedPostCardView: View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             ForEach(post.comments) { comment in
                 HStack(alignment: .top, spacing: MassMatesSpacing.xxs) {
-                    Text("\(comment.authorName):")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(comment.text)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
+                    Text("\(comment.authorName):").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(comment.text).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 }
             }
             HStack(spacing: MassMatesSpacing.xs) {
@@ -122,13 +158,11 @@ struct GroupFeedPostCardView: View {
                     .padding(.horizontal, MassMatesSpacing.sm)
                     .padding(.vertical, MassMatesSpacing.xs)
                     .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                Button("Enviar") {
-                    onSubmitComment()
-                }
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                    .clipShape(Capsule())
+                Button("Enviar", action: onSubmitComment)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+                    .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
             }
         }
     }

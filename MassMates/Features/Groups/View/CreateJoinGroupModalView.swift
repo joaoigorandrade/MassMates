@@ -15,60 +15,112 @@ struct CreateJoinGroupModalView: View {
     // MARK: - Body / Public API
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                dragHandle
                 modalHeader
-                tabPicker
+                segmentedTabSelector
+                seasonalCapacityPill
                 if let error = viewModel.errorMessage {
                     errorBanner(message: error)
                 }
-                if viewModel.selectedTab == .joinByCode {
-                    joinByCodeSection
-                } else {
-                    createGroupSection
-                }
+                activeTabBody
+                sacredQuoteFootnote
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.lg)
+            .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    private var modalHeader: some View {
+    private var dragHandle: some View {
         HStack {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text(theme.season.defaultSeasonName)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text("Fraternidades e Desafios")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
             Spacer()
-            Button("Fechar") {
-                navigator?.dismiss()
-            }
-            .font(MassMatesFont.callout)
-            .foregroundStyle(theme.tint)
+            Capsule()
+                .fill(MassMatesPalette.line)
+                .frame(width: 40, height: 4)
+            Spacer()
         }
     }
 
-    private var tabPicker: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            ForEach(CreateJoinGroupTab.allCases) { tab in
-                Button {
-                    viewModel.selectedTab = tab
-                } label: {
-                    Text(tab.title)
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(viewModel.selectedTab == tab ? theme.tint : MassMatesPalette.textSecondary)
-                        .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
-                        .background(viewModel.selectedTab == tab ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+    private var modalHeader: some View {
+        HStack(alignment: .top, spacing: MassMatesSpacing.md) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                HStack(spacing: MassMatesSpacing.xxs) {
+                    Image(systemName: "hands.sparkles.fill")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(theme.tint)
+                    Text("COMUNHÃO ESPIRITUAL")
+                        .font(MassMatesFont.caption)
+                        .tracking(0.6)
+                        .foregroundStyle(theme.tint)
                 }
-                .buttonStyle(.plain)
+                Text("Comunhão Fraterna")
+                    .font(MassMatesFont.display)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Caminhe junto em oração diária, terço em comum ou propósitos sazonais com seus irmãos.")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
+            Spacer(minLength: 0)
+            Button {
+                navigator?.dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 36, height: 36)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private var segmentedTabSelector: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            tabButton(for: .joinByCode, icon: "key.fill")
+            tabButton(for: .createNew, icon: "plus.circle.fill")
+        }
+        .padding(MassMatesSpacing.xxs)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+    }
+
+    private func tabButton(for tab: CreateJoinGroupTab, icon: String) -> some View {
+        let isSelected = viewModel.selectedTab == tab
+        return Button {
+            viewModel.selectedTab = tab
+        } label: {
+            Label(tab.title, systemImage: icon)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+                .background(isSelected ? MassMatesPalette.surface : Color.clear)
+                .clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var seasonalCapacityPill: some View {
+        HStack {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+                Text("Você possui \(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups + 1) fraternidades ativas")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+            }
+            Spacer()
+            Text(theme.season.defaultSeasonName)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint.opacity(0.85))
+        }
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, MassMatesSpacing.xs)
+        .background(theme.tintSoft)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 
     private func errorBanner(message: String) -> some View {
@@ -86,84 +138,32 @@ struct CreateJoinGroupModalView: View {
         }
     }
 
-    private var joinByCodeSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            MassMatesCard {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                    Text("Código de 6 dígitos ou link de convite")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    TextField("Ex: ST1925 ou massmates://join/ST1925", text: $viewModel.inviteInput)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .padding(MassMatesSpacing.sm)
-                        .background(MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                    MassMatesSecondaryButton(title: "Visualizar Grupo", systemImage: "magnifyingglass") {
-                        viewModel.previewInviteCode()
-                    }
-                }
+    @ViewBuilder
+    private var activeTabBody: some View {
+        if viewModel.selectedTab == .joinByCode {
+            JoinGroupByCodeTabView(viewModel: viewModel) {
+                navigator?.dismiss()
             }
-            if let preview = viewModel.previewedGroup {
-                previewCard(group: preview)
+        } else {
+            CreateGroupFormTabView(viewModel: viewModel) {
+                navigator?.dismiss()
             }
         }
     }
 
-    private func previewCard(group: CommunityGroup) -> some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("\(group.type.badgeLabel) • Código \(group.inviteCode)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text(group.name)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("\(group.parishOrCommunity) • \(group.sharingRequirement.title)")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesPrimaryButton(title: "Confirmar Entrada", systemImage: "checkmark") {
-                    if viewModel.confirmJoinGroup() != nil {
-                        navigator?.dismiss()
-                    }
-                }
-            }
+    private var sacredQuoteFootnote: some View {
+        VStack(spacing: MassMatesSpacing.xxs) {
+            Text("“Onde dois ou três estiverem reunidos em meu nome, ali estou eu no meio deles.”")
+                .font(MassMatesFont.customScripture(size: 14, italic: true))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
+            Text("SÃO MATEUS 18, 20")
+                .font(MassMatesFont.caption)
+                .tracking(0.6)
+                .foregroundStyle(MassMatesPalette.textTertiary)
         }
-    }
-
-    private var createGroupSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                TextField("Nome da fraternidade ou desafio", text: $viewModel.draft.name)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                TextField("Paróquia ou comunidade (opcional)", text: $viewModel.draft.parishOrCommunity)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                Picker("Tipo", selection: $viewModel.draft.type) {
-                    ForEach(CommunityGroupType.allCases) { type in
-                        Text(type.title).tag(type)
-                    }
-                }
-                Picker("Pontuação", selection: $viewModel.draft.scoringMode) {
-                    ForEach(GroupScoringMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
-                Picker("Partilha", selection: $viewModel.draft.sharingRequirement) {
-                    ForEach(GroupSharingRequirement.allCases) { req in
-                        Text(req.title).tag(req)
-                    }
-                }
-                MassMatesPrimaryButton(title: "Criar e Gerar Código de 6 Dígitos", systemImage: "sparkles") {
-                    if viewModel.submitCreateGroup() != nil {
-                        navigator?.dismiss()
-                    }
-                }
-            }
-        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, MassMatesSpacing.xs)
     }
 }
 

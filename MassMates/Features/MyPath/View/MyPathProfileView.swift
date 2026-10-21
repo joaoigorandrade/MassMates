@@ -22,7 +22,10 @@ struct MyPathProfileView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                headerSection
+                MyPathIdentityAndMetricsSectionView(
+                    activeStreakDays: viewModel.milestones.activeStreakDays,
+                    onOpenSettings: triggerOpenSettings
+                )
                 statusBanner
                 ConsistencyHeatmapCardView(
                     days: viewModel.heatmapDays,
@@ -30,10 +33,13 @@ struct MyPathProfileView: View {
                     canClaimStreakMercy: viewModel.milestones.canClaimStreakMercyThisMonth,
                     onClaimStreakMercy: { _ = viewModel.claimStreakMercy() }
                 )
+                MyPathDiaryPreviewAndPrivacySectionView(
+                    onOpenDiary: triggerOpenDiary,
+                    onOpenSettings: triggerOpenSettings
+                )
                 milestonesCard
                 saintIconsCard
                 widgetAndQuickShortcutsCard
-                navigationFooterButtons
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.vertical, MassMatesSpacing.lg)
@@ -42,29 +48,6 @@ struct MyPathProfileView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Vida Interior • \(theme.season.defaultSeasonName)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text("Meu Caminho")
-                    .font(MassMatesFont.display)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Spacer()
-            Button(action: triggerOpenSettings) {
-                Image(systemName: "gearshape")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-                    .background(MassMatesPalette.surface)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     @ViewBuilder
     private var statusBanner: some View {
         if let message = viewModel.statusBannerMessage {
@@ -150,13 +133,6 @@ struct MyPathProfileView: View {
                     }
                 }
             }
-        }
-    }
-
-    private var navigationFooterButtons: some View {
-        VStack(spacing: MassMatesSpacing.sm) {
-            MassMatesPrimaryButton(title: "Abrir Diário Espiritual Privado", systemImage: "lock.shield", action: triggerOpenDiary)
-            MassMatesSecondaryButton(title: "Lembretes do Angelus e Configurações", systemImage: "bell.badge", action: triggerOpenSettings)
         }
     }
 

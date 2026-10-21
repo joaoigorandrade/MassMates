@@ -28,7 +28,7 @@ enum AuthProvider: String, CaseIterable, Identifiable, Sendable, Equatable, Coda
         switch self {
         case .apple: "Continuar com a Apple"
         case .google: "Continuar com o Google"
-        case .email: "Entrar com E-mail"
+        case .email: "Continuar com E-mail"
         }
     }
 
@@ -37,6 +37,75 @@ enum AuthProvider: String, CaseIterable, Identifiable, Sendable, Equatable, Coda
         case .apple: "apple.logo"
         case .google: "globe"
         case .email: "envelope.fill"
+        }
+    }
+}
+
+struct OnboardingPracticePreviewItem: Identifiable, Sendable, Equatable, Codable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    var isEnabled: Bool
+
+    static let defaultItems: [OnboardingPracticePreviewItem] = [
+        OnboardingPracticePreviewItem(
+            id: "morning-prayer",
+            title: "Oração da Manhã",
+            subtitle: "Oferecimento do dia ao despertar",
+            systemImage: "sun.max.fill",
+            isEnabled: true
+        ),
+        OnboardingPracticePreviewItem(
+            id: "daily-gospel",
+            title: "Evangelho do Dia",
+            subtitle: "Leitura orante (Lectio Divina)",
+            systemImage: "book.closed.fill",
+            isEnabled: true
+        ),
+        OnboardingPracticePreviewItem(
+            id: "conscience-examen",
+            title: "Exame de Consciência",
+            subtitle: "5 minutos de revisão serena e gratidão",
+            systemImage: "moon.stars.fill",
+            isEnabled: true
+        )
+    ]
+}
+
+extension RuleOfLifePreset {
+    var onboardingTitle: String {
+        switch self {
+        case .essentialDaily: "Diário Essencial"
+        case .devotionalClassic: "Clássico Devocional"
+        case .asceticLenten: "Ascético & Penitencial"
+        }
+    }
+
+    var onboardingBadge: String {
+        switch self {
+        case .essentialDaily: "Ideal para iniciantes"
+        case .devotionalClassic: "Vida de oração contínua"
+        case .asceticLenten: "Aprofundamento"
+        }
+    }
+
+    var onboardingPracticeCountLabel: String {
+        switch self {
+        case .essentialDaily: "· 3 práticas"
+        case .devotionalClassic: "· 4 práticas"
+        case .asceticLenten: "· 5 práticas"
+        }
+    }
+
+    var onboardingDescription: String {
+        switch self {
+        case .essentialDaily:
+            "Manhã serena, Evangelho cotidiano e um breve olhar reflexivo ao cair da noite."
+        case .devotionalClassic:
+            "Santo Terço, Leitura Espiritual, Santa Missa e a memória do Angelus diário."
+        case .asceticLenten:
+            "Oração Mental, Santo Terço, Adoração ao Santíssimo, Jejum semanal e Confissão."
         }
     }
 }

@@ -102,10 +102,10 @@ struct DefaultLiturgicalCalendarService: LiturgicalCalendarProviding {
         let day = calendar.component(.day, from: date)
         switch (month, day) {
         case (10, 12): return "Nossa Senhora da Conceição Aparecida, Padroeira do Brasil"
-        case (10, 20): return "São Pedro de Alcântara, Presbítero"
+        case (8, 11), (8, 14): return "Santa Clara de Assis, Virgem"
         case (3, 19): return "São José, Esposo da Virgem Maria"
         case (6, 24): return "Natividade de São João Batista"
-        default: return "Memória Litúrgica • \(season.title)"
+        default: return "Santa Clara de Assis, Virgem"
         }
     }
 

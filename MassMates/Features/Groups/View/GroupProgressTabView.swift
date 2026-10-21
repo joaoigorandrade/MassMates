@@ -27,68 +27,80 @@ struct GroupProgressTabView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            collectiveGoalCard
             GuardianAngelCardView(
                 state: guardianAngelState,
                 onOptIn: onOptInGuardianAngel,
                 onSendPrayerNudge: onSendGuardianAngelNudge,
                 onRevealCycle: onRevealGuardianAngelCycle
             )
-            scoringModeSection
-        }
-    }
-
-    // MARK: - Subviews / Private Helpers
-    private var collectiveGoalCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                        Text("Meta Comunitária • \(theme.season.defaultSeasonName)")
-                            .font(MassMatesFont.caption)
-                            .foregroundStyle(theme.tint)
-                        Text(summary.collectiveGoalTitle)
-                            .font(MassMatesFont.headline)
-                            .foregroundStyle(MassMatesPalette.textPrimary)
-                    }
-                    Spacer()
-                    Text("\(summary.collectiveGoalCurrent)/\(summary.collectiveGoalTarget)")
-                        .font(MassMatesFont.numeral)
-                        .foregroundStyle(theme.tint)
+            MassMatesCard {
+                VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                    collectiveTreasureHeader
+                    collectiveProgressBlock
+                    Rectangle().fill(MassMatesPalette.line).frame(height: 1)
+                    scoringModeSection
                 }
-                MassMatesProgressBar(progress: summary.collectiveProgressRatio)
             }
         }
     }
 
-    private var scoringModeSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Text(summary.scoringMode.title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text(scoringBadgeText)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                }
-                Text(summary.scoringMode.descriptionText)
-                    .font(MassMatesFont.callout)
+    // MARK: - Subviews / Private Helpers
+    private var collectiveTreasureHeader: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Text("TESOURO COLETIVO").font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                Text(summary.collectiveGoalTitle)
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+            }
+            Spacer()
+            Image(systemName: "rosette")
+                .foregroundStyle(theme.tint)
+                .frame(width: 36, height: 36)
+                .background(theme.tintSoft)
+                .clipShape(Circle())
+        }
+    }
+
+    private var collectiveProgressBlock: some View {
+        let remaining = max(summary.collectiveGoalTarget - summary.collectiveGoalCurrent, 0)
+        return VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(summary.collectiveGoalCurrent)").font(MassMatesFont.numeral).foregroundStyle(theme.tint)
+                Text("/ \(summary.collectiveGoalTarget)").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textSecondary)
+                Spacer()
+                Text("\(Int(summary.collectiveProgressRatio * 100))% atingido")
+                    .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                if summary.scoringMode == .customPoints {
-                    customPointsLegendRow
-                }
-                ForEach(summary.orderedEntries) { entry in
-                    memberScoreRow(entry)
-                }
+            }
+            MassMatesProgressBar(progress: summary.collectiveProgressRatio)
+            Label("Faltam \(remaining) para consagrar nosso compromisso comunitário.", systemImage: "person.2.wave.2")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private var scoringModeSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            HStack {
+                Label("Dias Fiéis na Caminhada", systemImage: "leaf")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Text(scoringBadgeText).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            if summary.scoringMode == .customPoints {
+                customPointsLegendRow
+            }
+            ForEach(summary.orderedEntries) { entry in
+                memberScoreRow(entry)
             }
         }
     }
 
     private var scoringBadgeText: String {
         switch summary.scoringMode {
-        case .faithfulDays: "1 pt / dia ativo"
+        case .faithfulDays: "Constância diária"
         case .collectiveTreasure: "Comunhão sem ranking"
         case .customPoints: "Pontuação por prática"
         }

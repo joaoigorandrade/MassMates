@@ -14,159 +14,146 @@ struct DailyGospelModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
-                headerToolbar
-                fontSizeControlRow
-                readingBlock(
-                    reference: viewModel.reading.firstReadingReference,
-                    title: viewModel.reading.firstReadingTitle,
-                    bodyText: viewModel.reading.firstReadingText
-                )
-                psalmBlock
-                readingBlock(
-                    reference: viewModel.reading.gospelReference,
-                    title: viewModel.reading.gospelTitle,
-                    bodyText: viewModel.reading.gospelText
-                )
-                lectioDivinaSection
-                MassMatesPrimaryButton(title: "Concluir e refletir", systemImage: "checkmark") {
-                    viewModel.completeAndReflect()
-                    navigator?.dismiss()
-                }
+        VStack(spacing: 0) {
+            DailyGospelSubHeaderView(viewModel: viewModel) {
+                navigator?.dismiss()
             }
-            .padding(MassMatesLayout.readingMargin)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+                    liturgicalTitleBlock
+                    sacredArtBanner
+                    scriptureArticleSection
+                    Rectangle().fill(MassMatesPalette.line).frame(height: 1)
+                    LectioDivinaAccordionSectionView(viewModel: viewModel)
+                    completionFooterSection
+                }
+                .padding(MassMatesLayout.readingMargin)
+                .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if viewModel.isCompletionToastVisible { completionToastBanner }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerToolbar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text(viewModel.reading.liturgicalDateLabel)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Text("Liturgia da Palavra")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+    private var liturgicalTitleBlock: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            HStack(spacing: 6) {
+                Circle().fill(theme.tint).frame(width: 6, height: 6)
+                Text(viewModel.reading.liturgicalDateLabel).font(MassMatesFont.caption).foregroundStyle(theme.tint)
             }
-            Spacer()
-            Button("Fechar") {
-                navigator?.dismiss()
-            }
-            .font(MassMatesFont.callout)
-            .foregroundStyle(theme.tint)
-            .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
-        }
-    }
-
-    private var fontSizeControlRow: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "textformat.size")
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Slider(value: $viewModel.scriptureFontSize, in: 16...28, step: 1)
-                .tint(theme.tint)
-                .accessibilityLabel("Tamanho da fonte bíblica")
-            Text("\(Int(viewModel.scriptureFontSize)) pt")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private func readingBlock(reference: String, title: String, bodyText: String) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Rectangle()
-                .fill(theme.tint)
-                .frame(width: MassMatesSpacing.xl, height: 1)
-            Text(reference)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(title)
-                .font(MassMatesFont.headline)
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .padding(.vertical, 4)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            Text(viewModel.reading.dateHeaderLabel).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+            Text(viewModel.reading.gospelTitle)
+                .font(MassMatesFont.display)
+                .multilineTextAlignment(.center)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(bodyText)
+            Text("(\(viewModel.reading.gospelReference))").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var sacredArtBanner: some View {
+        ZStack(alignment: .bottomLeading) {
+            MassMatesPalette.surfaceMuted
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Image(systemName: "book.pages.fill").font(MassMatesFont.title).foregroundStyle(theme.tint)
+                Text("A comunhão dos discípulos na caridade").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            .padding(MassMatesSpacing.md)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 176)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
+    }
+
+    private var scriptureArticleSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            Text(viewModel.reading.gospelText)
                 .font(MassMatesFont.customScripture(size: viewModel.scriptureFontSize))
                 .lineSpacing(8)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
+            scriptureCalloutBox
+            psalmResponseBox
         }
     }
 
-    private var psalmBlock: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Rectangle()
-                .fill(theme.tint)
-                .frame(width: MassMatesSpacing.xl, height: 1)
-            Text(viewModel.reading.psalmReference)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+    private var scriptureCalloutBox: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("“De novo vos digo: se dois de vós estiverem de acordo na terra sobre qualquer coisa que quiserem pedir, isso lhes será concedido por meu Pai que está nos céus. \(Text("Pois onde dois ou três estiverem reunidos em meu nome, eu estou aí, no meio deles.”").foregroundStyle(theme.tint))")
+                .font(MassMatesFont.customScripture(size: viewModel.scriptureFontSize))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+        .lineSpacing(8)
+        .padding(MassMatesSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
+    }
+
+    private var psalmResponseBox: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(viewModel.reading.psalmReference.uppercased()).font(MassMatesFont.caption).foregroundStyle(theme.tint)
             Text(viewModel.reading.psalmRefrain)
                 .font(MassMatesFont.customScripture(size: viewModel.scriptureFontSize, italic: true))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(viewModel.reading.psalmVerses)
-                .font(MassMatesFont.customScripture(size: viewModel.scriptureFontSize))
-                .lineSpacing(8)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(MassMatesSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
     }
 
-    private var lectioDivinaSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Lectio Divina")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                lectioStepsTabs
-                if let activeStep = viewModel.activeLectioStep {
-                    Text(activeStep.title)
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(activeStep.guidance)
-                        .font(MassMatesFont.scriptureEmphasis)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
+    private var completionFooterSection: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            MassMatesPrimaryButton(
+                title: viewModel.hasCompletedFruitRegistration ? "Fruto Registrado!" : "Concluir & Registrar Fruto",
+                systemImage: viewModel.hasCompletedFruitRegistration ? "checkmark" : "checkmark.circle"
+            ) {
+                viewModel.completeAndReflect()
             }
-        }
-    }
-
-    private var lectioStepsTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                ForEach(viewModel.reading.lectioSteps) { step in
-                    lectioStepChip(step)
-                }
-            }
-        }
-    }
-
-    private func lectioStepChip(_ step: LectioDivinaStep) -> some View {
-        let isSelected = step.id == viewModel.activeLectioStepID
-        return Button {
-            viewModel.selectLectioStep(step)
-        } label: {
-            Text(step.stage)
+            Text("Marca a prática na sua Regra de Vida e abre o registro de fruto.")
                 .font(MassMatesFont.caption)
-                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
-                .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .multilineTextAlignment(.center)
         }
-        .buttonStyle(.plain)
+    }
+
+    private var completionToastBanner: some View {
+        HStack(spacing: MassMatesSpacing.sm) {
+            Image(systemName: "checkmark")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(theme.onTint)
+                .frame(width: 36, height: 36)
+                .background(MassMatesPalette.success)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Leitura Sagrada Concluída").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.surface)
+                Text("Hábito registrado • Regra de Vida atualizada").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            Spacer()
+        }
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.textPrimary)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.bottom, MassMatesSpacing.lg)
     }
 }
 
 #Preview("Daily Gospel Modal — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        DailyGospelModalView(
-            viewModel: DailyGospelViewModel(
-                reading: LiturgicalReadingsCatalog.reading(for: .ordinaryTime)
-            )
-        )
+        DailyGospelModalView(viewModel: DailyGospelViewModel(reading: LiturgicalReadingsCatalog.reading(for: .ordinaryTime)))
     }
 }

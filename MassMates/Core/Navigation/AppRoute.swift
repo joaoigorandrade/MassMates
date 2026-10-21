@@ -11,6 +11,9 @@ enum AppRoute: ModalRoute, URLRoutable {
     case spiritualDiary(season: LiturgicalColor)
     case settings(season: LiturgicalColor)
     case onboarding(season: LiturgicalColor)
+    case nightlyExamen(season: LiturgicalColor)
+    case confessionPreparation(season: LiturgicalColor)
+    case holyMassGuide(season: LiturgicalColor)
 
     var presentationStyle: ModalPresentation {
         .sheet
@@ -42,6 +45,12 @@ enum AppRoute: ModalRoute, URLRoutable {
             SettingsRouteHostView(season: season)
         case .onboarding(let season):
             OnboardingRouteHostView(season: season)
+        case .nightlyExamen(let season):
+            SacredRiteRouteHostView(kind: .nightlyExamen, season: season)
+        case .confessionPreparation(let season):
+            SacredRiteRouteHostView(kind: .confessionPreparation, season: season)
+        case .holyMassGuide(let season):
+            SacredRiteRouteHostView(kind: .holyMassGuide, season: season)
         }
     }
 

@@ -8,10 +8,14 @@ struct NewCheckInModalView: View {
     @Bindable private var viewModel: NewCheckInViewModel
     private let activeStreakDays: Int
 
+    private let chipColumns = [
+        GridItem(.adaptive(minimum: 150), spacing: MassMatesSpacing.xs)
+    ]
+
     // MARK: - Init
     init(
         viewModel: NewCheckInViewModel,
-        activeStreakDays: Int = 8
+        activeStreakDays: Int = 14
     ) {
         self.viewModel = viewModel
         self.activeStreakDays = activeStreakDays
@@ -20,8 +24,10 @@ struct NewCheckInModalView: View {
     // MARK: - Body / Public API
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                topDismissRow
                 headerSection
+                atmosphericSeasonPill
                 if let result = viewModel.submissionResult {
                     CheckInCelebrationCardView(
                         result: result,
@@ -31,12 +37,16 @@ struct NewCheckInModalView: View {
                     }
                 } else {
                     practiceSelectorSection
-                    reflectionAndWitnessCard
+                    CheckInSafeguardAndNoteSectionView(
+                        viewModel: viewModel,
+                        activeStreakDays: activeStreakDays
+                    )
                     CheckInDestinationCardView(
                         isLockedToPrivateDiary: viewModel.isDestinationLockedToPrivateDiary,
                         destinationMode: viewModel.destinationMode,
                         availableGroups: viewModel.availableGroups,
                         selectedGroupIds: viewModel.selectedGroupIds,
+                        activeStreakDays: activeStreakDays,
                         onSelectMode: { mode in viewModel.selectDestinationMode(mode) },
                         onToggleGroup: { id in viewModel.toggleGroupSelection(id) }
                     )
@@ -44,71 +54,90 @@ struct NewCheckInModalView: View {
                 }
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.lg)
+            .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerSection: some View {
+    private var topDismissRow: some View {
         HStack {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Registrar Oração • \(theme.season.defaultSeasonName)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text("Novo Check-In Espiritual")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
+            Color.clear.frame(width: 32, height: 32)
             Spacer()
-            MassMatesTextButton(title: "Fechar") {
-                navigator?.dismiss()
+            Capsule()
+                .fill(MassMatesPalette.line)
+                .frame(width: 40, height: 6)
+            Spacer()
+            Button { navigator?.dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.circle)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fechar")
         }
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: MassMatesSpacing.xxs) {
+            Text("Novo Registro de Oração")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .multilineTextAlignment(.center)
+            Text("Partilhe a graça ou guarde em seu diário íntimo.")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var atmosphericSeasonPill: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Circle().fill(theme.tint).frame(width: 8, height: 8)
+            Text("\(theme.season.defaultSeasonName.uppercased()) • DIA DE RECOLHIMENTO")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint)
+                .tracking(0.5)
+        }
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, 6)
+        .background(theme.tintSoft)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        .frame(maxWidth: .infinity)
     }
 
     private var practiceSelectorSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Escolha a prática")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("SELECIONE A PRÁTICA")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .tracking(0.5)
+            LazyVGrid(columns: chipColumns, alignment: .leading, spacing: MassMatesSpacing.xs) {
                 ForEach(SpiritualPractice.allCases) { practice in
-                    practiceChipRow(practice)
+                    practiceChip(practice)
                 }
             }
         }
     }
 
-    private func practiceChipRow(_ practice: SpiritualPractice) -> some View {
+    private func practiceChip(_ practice: SpiritualPractice) -> some View {
         let isSelected = viewModel.selectedPractice == practice
-        return Button {
-            viewModel.selectPractice(practice)
-        } label: {
-            HStack(spacing: MassMatesSpacing.sm) {
-                Image(systemName: practice.systemImage)
+        return Button { viewModel.selectPractice(practice) } label: {
+            HStack(spacing: 6) {
+                Image(systemName: practice.isStrictlyPrivate ? "lock.fill" : practice.systemImage)
+                    .font(MassMatesFont.caption)
                     .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(practice.title)
-                        .font(MassMatesFont.body)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(practice.subtitle)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                Spacer()
-                if practice.isStrictlyPrivate {
-                    Image(systemName: "lock.fill")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                } else {
-                    Text("+\(practice.defaultCustomPoints) pts")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                }
+                Text(chipTitle(for: practice))
+                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
+                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                    .lineLimit(1)
             }
             .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .frame(maxWidth: .infinity, minHeight: 36)
             .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             .overlay(
@@ -120,44 +149,26 @@ struct NewCheckInModalView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var reflectionAndWitnessCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text(viewModel.isDestinationLockedToPrivateDiary ? "Notas Privadas da Confissão" : "Fruto da Oração e Testemunho")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                TextField("Fruto da oração ou meditação (opcional)", text: $viewModel.fruitOfPrayer)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                if viewModel.isDestinationLockedToPrivateDiary {
-                    TextField("Penitência ou orientação do confessor (somente no aparelho)", text: $viewModel.confessorOrPenanceNotes)
-                        .padding(MassMatesSpacing.sm)
-                        .background(MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                } else {
-                    TextField("Legenda de foto / testemunho (opcional)", text: $viewModel.photoCaption)
-                        .padding(MassMatesSpacing.sm)
-                        .background(MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                }
-            }
+    private func chipTitle(for practice: SpiritualPractice) -> String {
+        switch practice {
+        case .dailyGospel: "Evangelho do Dia"
+        case .fasting: "Jejum & Penitência"
+        default: practice.title
         }
     }
 
     private var submitSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+        VStack(spacing: MassMatesSpacing.xs) {
             if let error = viewModel.errorMessage {
-                Text(error)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.danger)
+                Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
             }
             MassMatesPrimaryButton(
-                title: "Confirmar Check-In",
-                systemImage: "checkmark.circle"
-            ) {
-                viewModel.submit()
-            }
+                title: viewModel.isDestinationLockedToPrivateDiary ? "Guardar com Segurança no Diário" : "Publicar e Atualizar Constância",
+                systemImage: viewModel.isDestinationLockedToPrivateDiary ? "shield.fill" : "checkmark.circle.fill"
+            ) { viewModel.submit() }
+            Label("Criptografia em repouso no banco local • Zero sincronização pública", systemImage: "lock.rotation")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
         }
     }
 }

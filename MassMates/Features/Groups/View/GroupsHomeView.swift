@@ -17,6 +17,7 @@ struct GroupsHomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                 headerSection
+                quickActionButtonsRow
                 contentForState
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
@@ -32,36 +33,92 @@ struct GroupsHomeView: View {
 
     // MARK: - Subviews / Private Helpers
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text(theme.season.defaultSeasonName)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-            Text("Meus Grupos e Comunidade")
-                .font(MassMatesFont.title)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            HStack(spacing: MassMatesSpacing.sm) {
-                MassMatesPrimaryButton(title: "Criar Grupo", systemImage: "plus") {
-                    navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
-                }
-                MassMatesSecondaryButton(title: "Código 6 Dígitos", systemImage: "link") {
-                    navigator?.present(.createJoinGroup(initialTab: .joinByCode, prefilledInviteCode: nil, season: theme.season))
-                }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Image(systemName: "person.3.fill")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+                Text("VIDA EM COMUNHÃO")
+                    .font(MassMatesFont.caption)
+                    .tracking(0.6)
+                    .foregroundStyle(theme.tint)
             }
+            Text("Fraternidades & Grupos")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Caminhar em comunhão fraterna e oração mútua no ritmo litúrgico.")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
+    }
+
+    private var quickActionButtonsRow: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            joinQuickActionButton
+            createQuickActionButton
+        }
+    }
+
+    private var joinQuickActionButton: some View {
+        Button {
+            navigator?.present(.createJoinGroup(initialTab: .joinByCode, prefilledInviteCode: nil, season: theme.season))
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "key.fill")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: 32, height: 32)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Entrar com Código").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text("Código de 6 dígitos").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button).stroke(MassMatesPalette.line, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var createQuickActionButton: some View {
+        Button {
+            navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "plus.circle.fill")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(theme.onTint)
+                    .frame(width: 32, height: 32)
+                    .background(theme.onTint.opacity(0.2))
+                    .clipShape(Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Criar Fraternidade").font(MassMatesFont.caption).foregroundStyle(theme.onTint)
+                    Text("Iniciar novo grupo").font(MassMatesFont.caption).foregroundStyle(theme.onTint.opacity(0.85))
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(theme.tint)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private var contentForState: some View {
         switch viewModel.viewState {
         case .idle, .loading:
-            ProgressView()
-                .tint(theme.tint)
+            ProgressView().tint(theme.tint)
         case .loaded(let snapshot):
             loadedBody(snapshot: snapshot)
         case .error(let error):
-            Text(error.userMessage)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.danger)
+            Text(error.userMessage).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
         }
     }
 
@@ -70,8 +127,12 @@ struct GroupsHomeView: View {
             if let feedback = viewModel.feedbackMessage {
                 feedbackBanner(text: feedback)
             }
-            slotCapacityCard(capacity: snapshot.slotCapacity)
-            myGroupsSection(groups: snapshot.joinedGroups)
+            GroupsCapacityCardView(capacity: snapshot.slotCapacity) {
+                viewModel.unlockBonusPersonalSlot()
+            }
+            ContinuousFraternitiesSectionView(groups: snapshot.joinedGroups) { group in
+                navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
+            }
             FeaturedChallengesSectionView(
                 challenges: snapshot.featuredChallenges,
                 onJoinChallenge: { id in viewModel.joinFeaturedChallenge(id) },
@@ -79,83 +140,19 @@ struct GroupsHomeView: View {
                     navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
                 }
             )
-            SponsoredNativeCardView()
+            ApostoladoSponsoredCardView()
         }
     }
 
     private func feedbackBanner(text: String) -> some View {
         MassMatesCard {
             HStack {
-                Text(text)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text(text).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
-                Button("Fechar") {
-                    viewModel.clearFeedback()
-                }
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
+                Button("Fechar") { viewModel.clearFeedback() }
+                    .font(MassMatesFont.caption).foregroundStyle(theme.tint)
             }
         }
-    }
-
-    private func slotCapacityCard(capacity: GroupSlotCapacity) -> some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                Text("Suas Vagas de Comunidade")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text(capacity.statusText)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                if !capacity.hasRewardedSlotUnlocked {
-                    MassMatesSecondaryButton(
-                        title: "Liberar +1 vaga pessoal (30 dias)",
-                        systemImage: "play.rectangle"
-                    ) {
-                        viewModel.unlockBonusPersonalSlot()
-                    }
-                }
-            }
-        }
-    }
-
-    private func myGroupsSection(groups: [CommunityGroup]) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Text("Minhas Fraternidades e Desafios")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            ForEach(groups) { group in
-                groupCardButton(for: group)
-            }
-        }
-    }
-
-    private func groupCardButton(for group: CommunityGroup) -> some View {
-        Button {
-            navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
-        } label: {
-            MassMatesCard {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                    HStack {
-                        Text(group.type.badgeLabel)
-                            .font(MassMatesFont.caption)
-                            .foregroundStyle(theme.tint)
-                        Spacer()
-                        Text("Código: \(group.inviteCode)")
-                            .font(MassMatesFont.caption)
-                            .foregroundStyle(MassMatesPalette.textSecondary)
-                    }
-                    Text(group.name)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("\(group.parishOrCommunity) • \(group.memberCount) irmãos • \(group.sharingRequirement.badgeText)")
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-            }
-        }
-        .buttonStyle(.plain)
     }
 }
 

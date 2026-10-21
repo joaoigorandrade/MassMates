@@ -14,72 +14,43 @@ struct GroupDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                groupHeaderCard
+                GroupIdentityBannerView(
+                    group: viewModel.group,
+                    inviteCode: viewModel.currentInviteCode,
+                    selectedSubTab: viewModel.selectedSubTab,
+                    onSelectSubTab: { tab in viewModel.selectedSubTab = tab },
+                    onToggleModeration: { viewModel.isShowingModerationPanel.toggle() }
+                )
                 if viewModel.isShowingModerationPanel {
                     GroupSafetyModerationView(viewModel: viewModel)
                 }
-                subTabSelector
                 activeSubTabContent
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .navigationTitle(viewModel.group.name)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var groupHeaderCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    Text("\(viewModel.group.type.badgeLabel) • \(theme.season.defaultSeasonName)")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                    Spacer()
-                    Button {
-                        viewModel.isShowingModerationPanel.toggle()
-                    } label: {
-                        Label("Moderação", systemImage: "shield.lefthalf.filled")
-                            .font(MassMatesFont.caption)
-                            .foregroundStyle(theme.tint)
-                            .frame(minHeight: MassMatesLayout.minTapTarget)
-                    }
-                    .buttonStyle(.plain)
-                }
-                Text("\(viewModel.group.parishOrCommunity) • Convite: \(viewModel.currentInviteCode)")
+    private var recentCommunionSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            HStack {
+                Text("Comunhão Recente").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Button("Ver tudo") { viewModel.selectedSubTab = .feed }
                     .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Text(viewModel.group.collectiveGoalLabel)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .foregroundStyle(theme.tint)
+                    .buttonStyle(.plain)
             }
+            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item) }
+            SponsoredNativeCardView(
+                sponsorName: "Livraria Paulus",
+                headline: "Livraria Paulus — Retiro Inaciano Guiado",
+                bodyText: "Caderno de oração para 30 dias de discernimento e exercícios espirituais no lar.",
+                couponCode: "Edição especial com capa em linho • Conhecer"
+            )
         }
-    }
-
-    private var subTabSelector: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            ForEach(GroupDetailSubTab.allCases) { tab in subTabChip(for: tab) }
-        }
-    }
-
-    private func subTabChip(for tab: GroupDetailSubTab) -> some View {
-        let isSelected = viewModel.selectedSubTab == tab
-        return Button { viewModel.selectedSubTab = tab } label: {
-            Label(tab.title, systemImage: tab.systemImage)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                .padding(.horizontal, MassMatesSpacing.xs)
-                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
-                .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MassMatesRadius.chip)
-                        .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -96,6 +67,7 @@ struct GroupDetailView: View {
                 onSendGuardianAngelNudge: { viewModel.sendGuardianAngelPrayerNudge() },
                 onRevealGuardianAngelCycle: { viewModel.revealGuardianAngelCycle() }
             )
+            recentCommunionSection
         case .intentions:
             GroupPrayerWallTabView(
                 newIntentionDraft: $viewModel.newPrayerIntentionDraft,

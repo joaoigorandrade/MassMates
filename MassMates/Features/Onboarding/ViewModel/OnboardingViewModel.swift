@@ -16,8 +16,13 @@ final class OnboardingViewModel {
     var userName: String = ""
     var parishOrCity: String = ""
     var emailDraft: String = ""
-    var selectedPreset: RuleOfLifePreset = .devotionalClassic
+    var selectedPreset: RuleOfLifePreset = .essentialDaily
     var acknowledgedLocalDiaryWarning: Bool = false
+    var isBiometryEnabled: Bool = true
+    var hasSelectedAvatarPhoto: Bool = false
+    var isMagicLinkToastVisible: Bool = false
+    var isConsecrationToastVisible: Bool = false
+    var practicePreviewItems: [OnboardingPracticePreviewItem] = OnboardingPracticePreviewItem.defaultItems
     private(set) var personalizedAdsConsented: Bool = false
     private(set) var errorMessage: String?
 
@@ -67,6 +72,31 @@ final class OnboardingViewModel {
         currentStep = .authSignIn
     }
 
+    func navigateBack() {
+        errorMessage = nil
+        switch currentStep {
+        case .welcomeSlides:
+            break
+        case .authSignIn:
+            currentStep = .welcomeSlides
+        case .profileAndRuleSetup:
+            currentStep = .authSignIn
+        case .privacyAndAdConsent:
+            currentStep = .profileAndRuleSetup
+        }
+    }
+
+    func triggerMagicLinkNotice() {
+        isMagicLinkToastVisible.toggle()
+    }
+
+    func togglePracticePreview(id: String) {
+        guard let index = practicePreviewItems.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+        practicePreviewItems[index].isEnabled.toggle()
+    }
+
     func signIn(with provider: AuthProvider) {
         errorMessage = nil
         let identifier = completingService.signIn(with: provider, emailDraft: emailDraft)
@@ -112,6 +142,7 @@ final class OnboardingViewModel {
         )
         do {
             let saved = try completingService.completeOnboarding(draft)
+            isConsecrationToastVisible = true
             onOnboardingFinished(saved)
             return saved
         } catch {

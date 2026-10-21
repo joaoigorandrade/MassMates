@@ -112,33 +112,38 @@ enum RosaryCatalog {
     static let gloriousDecades: [RosaryDecade] = [
         RosaryDecade(
             number: 1,
-            title: "1º Mistério: A Ressurreição de Nosso Senhor",
+            title: "A Ressurreição de Nosso Senhor Jesus Cristo",
             fruitOfMystery: "Fruto do mistério: A fé viva",
-            meditation: "Por que buscais entre os mortos aquele que está vivo? Não está aqui, mas ressuscitou."
+            meditation: "“Não vos assusteis! Buscais a Jesus de Nazaré, que foi crucificado? Ele ressuscitou, não está aqui!”",
+            scriptureReference: "Marcos 16, 6"
         ),
         RosaryDecade(
             number: 2,
-            title: "2º Mistério: A Ascensão de Jesus ao Céu",
+            title: "A Ascensão de Jesus ao Céu",
             fruitOfMystery: "Fruto do mistério: A esperança cristã",
-            meditation: "Enquanto os abençoava, afastou-se deles e foi elevado ao céu."
+            meditation: "“Enquanto os abençoava, afastou-se deles e foi elevado ao céu.”",
+            scriptureReference: "Lucas 24, 51"
         ),
         RosaryDecade(
             number: 3,
-            title: "3º Mistério: A Descida do Espírito Santo em Pentecostes",
+            title: "A Descida do Espírito Santo em Pentecostes",
             fruitOfMystery: "Fruto do mistério: A sabedoria e o zelo apostólico",
-            meditation: "Todos ficaram cheios do Espírito Santo e começaram a anunciar as maravilhas de Deus."
+            meditation: "“Todos ficaram cheios do Espírito Santo e começaram a anunciar as maravilhas de Deus.”",
+            scriptureReference: "Atos 2, 4"
         ),
         RosaryDecade(
             number: 4,
-            title: "4º Mistério: A Assunção de Nossa Senhora ao Céu",
+            title: "A Assunção de Nossa Senhora ao Céu",
             fruitOfMystery: "Fruto do mistério: A graça de uma santa morte",
-            meditation: "O Todo-Poderoso fez em mim maravilhas, e santo é o seu nome."
+            meditation: "“O Todo-Poderoso fez em mim maravilhas, e santo é o seu nome.”",
+            scriptureReference: "Lucas 1, 49"
         ),
         RosaryDecade(
             number: 5,
-            title: "5º Mistério: A Coroação de Maria como Rainha do Céu e da Terra",
+            title: "A Coroação de Maria como Rainha do Céu e da Terra",
             fruitOfMystery: "Fruto do mistério: A devoção filial à Virgem Maria",
-            meditation: "Apareceu no céu um grande sinal: uma Mulher vestida de sol, com uma coroa de doze estrelas."
+            meditation: "“Apareceu no céu um grande sinal: uma Mulher vestida de sol, com uma coroa de doze estrelas.”",
+            scriptureReference: "Apocalipse 12, 1"
         ),
     ]
 }

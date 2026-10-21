@@ -1,0 +1,124 @@
+import Foundation
+import Testing
+@testable import MassMates
+
+@MainActor
+struct SacredRitesStitchScreensTests {
+    // MARK: - Screen 15: Nightly Examen Tests
+
+    @Test("Nightly Examen initializes steps and toggles gratitude chips")
+    func nightlyExamenInitializationAndGratitude() {
+        let vm = NightlyExamenViewModel()
+
+        #expect(vm.currentStepIndex == 1)
+        #expect(vm.progressFraction == 0.2)
+        #expect(!vm.isExamenConcluded)
+        #expect(vm.selectedGratitudeIDs.isEmpty)
+
+        vm.toggleGratitudeChip("familia")
+        #expect(vm.selectedGratitudeIDs.contains("familia"))
+
+        vm.toggleGratitudeChip("familia")
+        #expect(!vm.selectedGratitudeIDs.contains("familia"))
+    }
+
+    @Test("Nightly Examen steps progression and conclusion")
+    func nightlyExamenStepAdvancementAndConclusion() {
+        let vm = NightlyExamenViewModel()
+
+        vm.selectEvaluation(.fidelidade)
+        #expect(vm.selectedEvaluation == .fidelidade)
+
+        vm.toggleAttentionPrompt("impaciencia")
+        #expect(vm.checkedAttentionIDs.contains("impaciencia"))
+
+        vm.selectVirtue("paciencia")
+        #expect(vm.selectedVirtueID == "paciencia")
+        #expect(vm.currentStepIndex == 5)
+
+        vm.concludeExamen()
+        #expect(vm.isExamenConcluded)
+        #expect(vm.progressFraction == 1.0)
+    }
+
+    // MARK: - Screen 16: Confession Preparation Tests
+
+    @Test("Confession Prep toggles examination items and auto-syncs confidential notes")
+    func confessionPrepAutoSyncNotes() {
+        let vm = ConfessionPrepViewModel()
+
+        let initialCount = vm.privateNotes.count
+        let item = CommandmentExamItem(
+            id: "test-item-1",
+            question: "Question?",
+            sinNote: "Falta deliberada à oração",
+            isInitiallyChecked: false
+        )
+
+        vm.toggleExamItem(item)
+        #expect(vm.checkedExamItemIDs.contains(item.id))
+        #expect(vm.privateNotes.count == initialCount + 1)
+        #expect(vm.privateNotes.contains(where: { $0.text == item.sinNote }))
+
+        vm.toggleExamItem(item)
+        #expect(!vm.checkedExamItemIDs.contains(item.id))
+        #expect(vm.privateNotes.count == initialCount)
+    }
+
+    @Test("Confession Prep adds custom notes, clears notes, and registers sacrament")
+    func confessionPrepCustomNotesAndSacramentRegistration() {
+        let vm = ConfessionPrepViewModel()
+
+        vm.customSinInput = "Minha falta íntima"
+        vm.addCustomSinNote()
+        #expect(vm.privateNotes.contains(where: { $0.text == "Minha falta íntima" }))
+        #expect(vm.customSinInput.isEmpty)
+
+        vm.openConfessionalMode()
+        #expect(vm.isConfessionalModePresented)
+        vm.closeConfessionalMode()
+        #expect(!vm.isConfessionalModePresented)
+
+        vm.completeSacramentAndDestroyNotes()
+        #expect(vm.privateNotes.isEmpty)
+        #expect(vm.checkedExamItemIDs.isEmpty)
+        #expect(vm.lastConfessionBadgeText.contains("hoje"))
+    }
+
+    // MARK: - Screen 17: Holy Mass Guide Tests
+
+    @Test("Holy Mass Guide switches rite sections with correct postures")
+    func holyMassGuideRiteSectionsAndPostures() {
+        let vm = HolyMassGuideViewModel()
+
+        #expect(vm.selectedSection == .initialRites)
+        #expect(vm.currentPosture == .standing)
+
+        vm.selectSection(.liturgyOfTheWord)
+        #expect(vm.currentPosture == .seated)
+
+        vm.selectSection(.eucharisticLiturgy)
+        #expect(vm.currentPosture == .kneeling)
+
+        vm.selectSection(.communionAndFinalRites)
+        #expect(vm.currentPosture == .standing)
+    }
+
+    @Test("Holy Mass Guide check-in and homily diary note saving")
+    func holyMassGuideCheckInAndDiary() {
+        let vm = HolyMassGuideViewModel()
+
+        #expect(!vm.isMassCheckedIn)
+        vm.celebrateMassCheckIn()
+        #expect(vm.isMassCheckedIn)
+        #expect(vm.registerMassButtonTitle == "Missa Registrada!")
+
+        vm.toggleSilentMode()
+        #expect(!vm.isSilentModeActive)
+
+        vm.homilyNoteText = "Propósito de orar pelos aflitos"
+        vm.saveDiaryNote()
+        #expect(vm.homilyNoteText.isEmpty)
+        #expect(vm.diarySavedMessage != nil)
+    }
+}

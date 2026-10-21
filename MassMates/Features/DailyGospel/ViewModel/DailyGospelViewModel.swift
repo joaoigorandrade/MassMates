@@ -11,7 +11,12 @@ final class DailyGospelViewModel {
     let reading: DailyLiturgicalReading
     var scriptureFontSize: CGFloat = 19
     var activeLectioStepID: String
+    var expandedLectioStepIDs: Set<String>
     var personalReflectionNote = ""
+    var isAudioPlayerVisible = false
+    var isAudioPlaying = false
+    var hasCompletedFruitRegistration = false
+    var isCompletionToastVisible = false
 
     // MARK: - Init
     init(
@@ -19,7 +24,9 @@ final class DailyGospelViewModel {
         onCompleteReading: @escaping () -> Void = {}
     ) {
         self.reading = reading
-        self.activeLectioStepID = reading.lectioSteps.first?.id ?? "lectio"
+        let firstStepID = reading.lectioSteps.first?.id ?? "lectio"
+        self.activeLectioStepID = firstStepID
+        self.expandedLectioStepIDs = [firstStepID]
         self.onCompleteReading = onCompleteReading
     }
 
@@ -30,6 +37,15 @@ final class DailyGospelViewModel {
 
     func selectLectioStep(_ step: LectioDivinaStep) {
         activeLectioStepID = step.id
+        if expandedLectioStepIDs.contains(step.id) {
+            expandedLectioStepIDs.remove(step.id)
+        } else {
+            expandedLectioStepIDs.insert(step.id)
+        }
+    }
+
+    func isStepExpanded(_ step: LectioDivinaStep) -> Bool {
+        expandedLectioStepIDs.contains(step.id)
     }
 
     func adjustFontSize(by delta: CGFloat) {
@@ -37,7 +53,28 @@ final class DailyGospelViewModel {
         scriptureFontSize = min(max(updated, 16), 28)
     }
 
+    func cycleFontSizePreset() {
+        switch scriptureFontSize {
+        case 19:
+            scriptureFontSize = 22
+        case 22:
+            scriptureFontSize = 17
+        default:
+            scriptureFontSize = 19
+        }
+    }
+
+    func toggleAudioPlayerBanner() {
+        isAudioPlayerVisible.toggle()
+    }
+
+    func toggleAudioPlayback() {
+        isAudioPlaying.toggle()
+    }
+
     func completeAndReflect() {
+        hasCompletedFruitRegistration = true
+        isCompletionToastVisible = true
         onCompleteReading()
     }
 

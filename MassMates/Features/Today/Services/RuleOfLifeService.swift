@@ -23,7 +23,7 @@ final class LocalRuleOfLifeService: RuleOfLifeReading, RuleOfLifeUpdating {
     init(
         initialPreset: RuleOfLifePreset = .essentialDaily,
         initialCompleted: Set<SpiritualPractice> = [],
-        baseStreakDays: Int = 6
+        baseStreakDays: Int = 13
     ) {
         self.selectedPreset = initialPreset
         self.completedPractices = initialCompleted

@@ -14,143 +14,150 @@ struct OnboardingProfileAndConsentStepView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
             if viewModel.currentStep == .authSignIn {
-                authStepSection
-            } else if viewModel.currentStep == .profileAndRuleSetup {
-                profileAndRuleSection
+                OnboardingAuthStepView(viewModel: viewModel)
             } else {
-                privacyAndConsentSection
+                topNavigationBar
+                editorialWelcomeHeader
+                profileDetailsCard
+                OnboardingRuleAndPrivacyCardsView(viewModel: viewModel)
             }
             errorBanner
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var authStepSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                Text("Conecte sua conta")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Entre com um toque para participar de fraternidades paroquiais. Suas notas privadas nunca saem deste iPhone.")
-                    .font(MassMatesFont.body)
+    private var topNavigationBar: some View {
+        HStack {
+            Button(action: viewModel.navigateBack) {
+                Image(systemName: "arrow.left")
+                    .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                TextField("E-mail (opcional para login por e-mail)", text: $viewModel.emailDraft)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                MassMatesPrimaryButton(title: AuthProvider.apple.title, systemImage: AuthProvider.apple.systemImage) {
-                    viewModel.signIn(with: .apple)
-                }
-                MassMatesSecondaryButton(title: AuthProvider.google.title, systemImage: AuthProvider.google.systemImage) {
-                    viewModel.signIn(with: .google)
-                }
-                MassMatesSecondaryButton(title: AuthProvider.email.title, systemImage: AuthProvider.email.systemImage) {
-                    viewModel.signIn(with: .email)
-                }
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
+            .buttonStyle(.plain)
+            Spacer()
+            Text("Profile Setup")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Image(systemName: "person.fill")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.onTint)
+                .frame(width: 32, height: 32)
+                .background(theme.tint)
+                .clipShape(Circle())
         }
     }
 
-    private var profileAndRuleSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            profileIdentityCard
-            rulePresetCard
-            localDiaryNoticeCard
-            MassMatesPrimaryButton(title: "Continuar para Privacidade", systemImage: "checkmark.shield") {
-                viewModel.proceedToPrivacyConsent()
-            }
-        }
-    }
-
-    private var profileIdentityCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Seu Perfil e Paróquia")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                TextField("Seu nome ou apelido", text: $viewModel.userName)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                TextField("Paróquia ou Cidade (opcional)", text: $viewModel.parishOrCity)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-        }
-    }
-
-    private var rulePresetCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Escolha sua Regra de Vida Inicial")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                ForEach(RuleOfLifePreset.allCases) { preset in
-                    presetOptionRow(preset)
-                }
-            }
-        }
-    }
-
-    private func presetOptionRow(_ preset: RuleOfLifePreset) -> some View {
-        let isSelected = viewModel.selectedPreset == preset
-        let summary = preset.practices.map(\.title).joined(separator: " • ")
-        return Button {
-            viewModel.selectedPreset = preset
-        } label: {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                HStack {
-                    Text(preset.title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textTertiary)
-                }
-                Text(summary)
+    private var editorialWelcomeHeader: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            HStack {
+                stepBadgePill
+                Spacer()
+                Text("Quase pronto")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
-            .padding(MassMatesSpacing.sm)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            Text("Seu Perfil e Regra de Vida")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Estruture seu dia em Deus com serenidade. Criamos um ritmo espiritual sob medida para sua rotina.")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .buttonStyle(.plain)
     }
 
-    private var localDiaryNoticeCard: some View {
+    private var stepBadgePill: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Circle().fill(theme.tint).frame(width: 6, height: 6)
+            Text("PASSO 2 DE 2 · CONCLUSÃO")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint)
+        }
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, MassMatesSpacing.xxs)
+        .background(theme.tintSoft)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+    }
+
+    private var profileDetailsCard: some View {
         MassMatesCard {
-            Toggle(isOn: $viewModel.acknowledgedLocalDiaryWarning) {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                    Text("Diário e Confissão Somente no Aparelho")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("Entendo que minhas reflexões privadas ficam exclusivas neste dispositivo e devo usar o Backup Criptografado ao trocar de celular.")
+            VStack(spacing: MassMatesSpacing.md) {
+                avatarPickerSection
+                labeledInputField(
+                    label: "Nome Completo ou Fraterno",
+                    placeholder: "Maria Clara de Jesus",
+                    text: $viewModel.userName,
+                    trailingIcon: "checkmark.circle.fill",
+                    trailingColor: theme.tint
+                )
+                labeledInputField(
+                    label: "Paróquia / Diocese",
+                    placeholder: "Ex: Paróquia Sant'Ana — São Paulo, SP",
+                    text: $viewModel.parishOrCity,
+                    trailingIcon: "building.columns.fill",
+                    trailingColor: MassMatesPalette.textTertiary
+                )
+            }
+        }
+    }
+
+    private var avatarPickerSection: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            Button {
+                viewModel.hasSelectedAvatarPhoto.toggle()
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    VStack(spacing: MassMatesSpacing.xxs) {
+                        Image(systemName: viewModel.hasSelectedAvatarPhoto ? "person.crop.circle.badge.checkmark" : "camera.fill")
+                            .font(MassMatesFont.numeral)
+                            .foregroundStyle(theme.tint)
+                        Text("Adicionar foto")
+                            .font(MassMatesFont.caption)
+                            .foregroundStyle(MassMatesPalette.textSecondary)
+                    }
+                    .frame(width: 96, height: 96)
+                    .background(theme.tintSoft)
+                    .clipShape(Circle())
+                    Image(systemName: "plus")
                         .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .foregroundStyle(theme.onTint)
+                        .frame(width: 32, height: 32)
+                        .background(theme.tint)
+                        .clipShape(Circle())
                 }
             }
-            .tint(theme.tint)
+            .buttonStyle(.plain)
+            Text("Visível apenas para sua comunidade de oração")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private var privacyAndConsentSection: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                Text("Privacidade Sagrada & Apoio Gratuito")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Anúncios discretos mantêm o MassMates 100% gratuito. Evangelho, Terço, Timer de Oração e Confissão jamais exibem anúncios e suas orações nunca são rastreadas.")
+    private func labeledInputField(
+        label: String,
+        placeholder: String,
+        text: Binding<String>,
+        trailingIcon: String,
+        trailingColor: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(label)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            HStack(spacing: MassMatesSpacing.sm) {
+                TextField(placeholder, text: text)
                     .font(MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesPrimaryButton(title: "Permitir e Entrar no Hoje", systemImage: "heart.fill") {
-                    viewModel.completeOnboardingWithConsent(allowPersonalizedAds: true)
-                }
-                MassMatesSecondaryButton(title: "Apenas Anúncios Contextuais") {
-                    viewModel.completeOnboardingWithConsent(allowPersonalizedAds: false)
-                }
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Image(systemName: trailingIcon)
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(trailingColor)
             }
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
     }
 

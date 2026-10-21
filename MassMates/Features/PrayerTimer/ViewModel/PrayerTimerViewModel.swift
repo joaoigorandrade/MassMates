@@ -18,6 +18,8 @@ final class PrayerTimerViewModel {
     var currentDecadeIndex = 0
     var currentBeadIndex = 0
     var lastHapticEvent: BeadHapticEvent = .none
+    var selectedAmbientSound: AmbientSoundOption = .monasteryChimes
+    var isSoundMenuPresented = false
 
     private var targetEndDate: Date?
 
@@ -64,8 +66,16 @@ final class PrayerTimerViewModel {
     var currentBeadLabel: String {
         switch currentBeadIndex {
         case 0: "Pai-Nosso"
-        case 1...10: "Ave-Maria \(currentBeadIndex) de 10"
+        case 1...10: "\(currentBeadIndex)ª Ave Maria"
         default: "Glória ao Pai e Ó Meu Jesus"
+        }
+    }
+
+    var activeHailMaryNumber: Int {
+        switch currentBeadIndex {
+        case 1...10: currentBeadIndex
+        case 0: 1
+        default: 10
         }
     }
 
@@ -80,11 +90,7 @@ final class PrayerTimerViewModel {
     }
 
     func toggleTimer(now: Date = Date()) {
-        if isRunning {
-            pauseTimer(now: now)
-        } else {
-            startTimer(now: now)
-        }
+        if isRunning { pauseTimer(now: now) } else { startTimer(now: now) }
     }
 
     func tick(now: Date = Date()) {
@@ -121,11 +127,18 @@ final class PrayerTimerViewModel {
         onCompletePractice(mode.associatedPractice)
     }
 
+    func selectAmbientSound(_ option: AmbientSoundOption) {
+        selectedAmbientSound = option
+        isSoundMenuPresented = false
+    }
+
+    func toggleSoundMenu() {
+        isSoundMenuPresented.toggle()
+    }
+
     // MARK: - Subviews / Private Helpers
     private func startTimer(now: Date) {
-        if remainingSeconds == 0 {
-            remainingSeconds = totalSeconds
-        }
+        if remainingSeconds == 0 { remainingSeconds = totalSeconds }
         isSessionFinished = false
         isRunning = true
         targetEndDate = now.addingTimeInterval(TimeInterval(remainingSeconds))

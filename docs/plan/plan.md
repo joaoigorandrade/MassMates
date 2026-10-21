@@ -67,16 +67,6 @@ The original plan is a solid technical blueprint, especially regarding privacy (
 ### 1.1 Atmosphere & Visual Design
 
 * **Calm & Recollected:** The interface uses generous whitespace and neutral, distraction-free backgrounds in both Light and Dark modes.
-* **Living Liturgical Rhythm:** Rather than jarring full-screen color changes, the app reflects the Catholic liturgical calendar through subtle accent tints ( headers, progress rings, and badges) that shift automatically with the Church season:
-* *Green:* Ordinary Time
-* *Violet:* Advent & Lent
-* *White & Gold:* Christmas, Easter, and Solemnities
-* *Red:* Pentecost, Palm Sunday, Good Friday, and Martyrs' Feasts
-* *Rose:* Gaudete and Laetare Sundays
-
-
-* **Typography & Readability:** Clean sans-serif fonts guide navigation and group activity, while warm **serif typography** sets apart Scripture, liturgical readings, and personal reflections. Reading screens feature quick-access text sizing controls and support maximum accessibility font sizes.
-* **Tactile & Accessible:** Gentle haptic vibrations confirm check-ins, prayer completions, and "Amen" reactions. Animations respect users who prefer reduced motion, and every button and card is built for full screen-reader clarity.
 
 ### 1.2 Privacy & Trust Architecture
 

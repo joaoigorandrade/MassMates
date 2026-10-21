@@ -6,6 +6,7 @@ struct SpiritualDiaryModalView: View {
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
     @Bindable private var viewModel: SpiritualDiaryViewModel
+    @State private var selectedEntryForReading: PrivateDiaryCheckInEntry?
 
     // MARK: - Init
     init(viewModel: SpiritualDiaryViewModel = SpiritualDiaryViewModel()) {
@@ -16,8 +17,7 @@ struct SpiritualDiaryModalView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                headerSection
-                localOnlyWarningBanner
+                editorialTopHeader
                 if viewModel.isDiaryUnlocked {
                     unlockedDiaryContent
                 } else {
@@ -25,38 +25,49 @@ struct SpiritualDiaryModalView: View {
                 }
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.lg)
+            .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .sheet(item: $selectedEntryForReading) { entry in
+            DiaryEntryImmersiveReaderView(entry: entry)
+                .environment(\.liturgicalTheme, theme)
+        }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Santuário Privado • \(theme.season.defaultSeasonName)")
+    private var editorialTopHeader: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            HStack {
+                Label("SIGILO PESSOAL", systemImage: "lock.shield.fill")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
-                Text("Diário Espiritual")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .padding(.horizontal, MassMatesSpacing.sm)
+                    .padding(.vertical, 4)
+                    .background(theme.tintSoft)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                Spacer()
+                Button { _ = viewModel.exportEncryptedBackup() } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                MassMatesTextButton(title: "Fechar") { navigator?.dismiss() }
             }
-            Spacer()
-            MassMatesTextButton(title: "Fechar") {
-                navigator?.dismiss()
-            }
-        }
-    }
-
-    private var localOnlyWarningBanner: some View {
-        MassMatesCard {
-            HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundStyle(theme.tint)
-                Text("Armazenamento 100% local: suas notas de Confissão e Lectio jamais vão para a nuvem. Exporte um backup criptografado para não perdê-las ao trocar de aparelho.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
+            Text("Diário de Graças")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("“Memória viva das consolações e frutos colhidos no recolhimento interior.”")
+                .font(MassMatesFont.scriptureEmphasis)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Label("\(viewModel.allEntries.count) registros íntimos protegidos neste aparelho • Criptografia ponta a ponta", systemImage: "lock.fill")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(MassMatesSpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         }
     }
 
@@ -78,84 +89,65 @@ struct SpiritualDiaryModalView: View {
 
     private var unlockedDiaryContent: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            searchAndLockControlsCard
-            ForEach(viewModel.filteredEntries) { entry in
-                diaryEntryCard(entry)
-            }
-            encryptedBackupCard
+            searchAndFilterSection
+            monthGroupSection(title: "OUTUBRO 2024", subtitle: "\(viewModel.filteredEntries.count) registros neste mês")
+            SpiritualDiaryFooterView(viewModel: viewModel)
         }
     }
 
-    private var searchAndLockControlsCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                TextField("Buscar reflexão, Salmo ou penitência...", text: $viewModel.searchQuery)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                HStack {
-                    Text("Bloqueio Biométrico (Face ID)")
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    MassMatesTextButton(title: viewModel.isBiometricLockEnabled ? "Trancar Agora" : "Ativar") {
-                        if viewModel.isBiometricLockEnabled {
-                            viewModel.lockDiaryNow()
-                        } else {
-                            viewModel.toggleBiometricLock(true)
-                        }
-                    }
-                }
+    private var searchAndFilterSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                TextField("Buscar palavra, passagem bíblica ou fruto...", text: $viewModel.searchQuery)
+                    .font(MassMatesFont.callout)
             }
-        }
-    }
+            .padding(MassMatesSpacing.sm)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
 
-    private func diaryEntryCard(_ entry: PrivateDiaryCheckInEntry) -> some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    Label(entry.practice.title, systemImage: entry.practice.systemImage)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                    Spacer()
-                    if entry.practice.isStrictlyPrivate {
-                        Text("Confissão • Só no Aparelho")
-                            .font(MassMatesFont.caption)
-                            .foregroundStyle(MassMatesPalette.textSecondary)
-                    }
-                }
-                if let reflection = entry.reflectionOrNotes {
-                    Text(reflection)
-                        .font(MassMatesFont.scripture)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                }
-                if let penance = entry.confessorOrPenanceNotes {
-                    Text("Penitência / Orientação: \(penance)")
-                        .font(MassMatesFont.scriptureEmphasis)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: MassMatesSpacing.xs) {
+                    filterChip(title: "Todas as Práticas", practice: nil)
+                    filterChip(title: "Lectio Divina", practice: .dailyGospel)
+                    filterChip(title: "Santo Terço", practice: .rosary)
+                    filterChip(title: "Oração Mental", practice: .mentalPrayer)
+                    filterChip(title: "Exame", practice: .confession)
+                    filterChip(title: "Graça Notável", practice: .adoration)
                 }
             }
         }
     }
 
-    private var encryptedBackupCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Backup Local Criptografado (AES-GCM)")
+    private func filterChip(title: String, practice: SpiritualPractice?) -> some View {
+        let isSelected = viewModel.selectedPracticeFilter == practice
+        return Button { viewModel.selectedPracticeFilter = practice } label: {
+            Text(title)
+                .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
+                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .frame(height: 36)
+                .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func monthGroupSection(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            HStack {
+                Label(title, systemImage: "calendar")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                SecureField("Frase-senha (mín. 8 caracteres)", text: $viewModel.backupPassphrase)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                if let error = viewModel.securityErrorMessage {
-                    Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
-                }
-                if let status = viewModel.statusBannerMessage {
-                    Text(status).font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                }
-                MassMatesSecondaryButton(title: "Exportar Backup Criptografado", systemImage: "square.and.arrow.up") {
-                    _ = viewModel.exportEncryptedBackup()
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Spacer()
+                Text(subtitle)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            ForEach(viewModel.filteredEntries) { entry in
+                SpiritualDiaryEntryCardView(entry: entry) { chosen in
+                    selectedEntryForReading = chosen
                 }
             }
         }

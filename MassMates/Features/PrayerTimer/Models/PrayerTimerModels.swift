@@ -13,10 +13,41 @@ enum PrayerTimerMode: String, CaseIterable, Identifiable, Sendable, Equatable, H
         }
     }
 
+    var pillLabel: String {
+        switch self {
+        case .mentalPrayer: "Oração Mental"
+        case .rosary: "Santo Terço Guiado"
+        }
+    }
+
     var associatedPractice: SpiritualPractice {
         switch self {
         case .mentalPrayer: .mentalPrayer
         case .rosary: .rosary
+        }
+    }
+}
+
+enum AmbientSoundOption: String, CaseIterable, Identifiable, Sendable, Equatable, Hashable, Codable {
+    case monasteryChimes
+    case gentleRain
+    case pureSilence
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .monasteryChimes: "Carrilhões de Mosteiro"
+        case .gentleRain: "Chuva Suave & Vento"
+        case .pureSilence: "Silêncio Puro"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .monasteryChimes: "bell.fill"
+        case .gentleRain: "drop.fill"
+        case .pureSilence: "speaker.slash.fill"
         }
     }
 }
@@ -40,10 +71,19 @@ enum RosaryMysterySet: String, CaseIterable, Identifiable, Sendable, Equatable, 
 
     var daysLabel: String {
         switch self {
-        case .joyful: "Segundas-feiras e Sábados"
-        case .luminous: "Quintas-feiras"
-        case .sorrowful: "Terças e Sextas-feiras"
-        case .glorious: "Quartas-feiras e Domingos"
+        case .joyful: "Segunda-feira & Sábado"
+        case .luminous: "Quinta-feira"
+        case .sorrowful: "Terça & Sexta-feira"
+        case .glorious: "Quarta-feira & Domingo"
+        }
+    }
+
+    var descriptionText: String {
+        switch self {
+        case .joyful: "Contemplando a Encarnação do Verbo e a infância oculta de Jesus."
+        case .luminous: "Contemplando a vida pública de Cristo, Luz do mundo."
+        case .sorrowful: "Contemplando a Paixão redentora e o amor até o fim na Cruz."
+        case .glorious: "Contemplando a vitória de Cristo sobre a morte e a glória celeste."
         }
     }
 
@@ -63,8 +103,23 @@ struct RosaryDecade: Identifiable, Sendable, Equatable, Hashable, Codable {
     let title: String
     let fruitOfMystery: String
     let meditation: String
+    let scriptureReference: String
 
     var id: Int { number }
+
+    init(
+        number: Int,
+        title: String,
+        fruitOfMystery: String,
+        meditation: String,
+        scriptureReference: String = "Marcos 16, 6"
+    ) {
+        self.number = number
+        self.title = title
+        self.fruitOfMystery = fruitOfMystery
+        self.meditation = meditation
+        self.scriptureReference = scriptureReference
+    }
 }
 
 enum BeadHapticEvent: Sendable, Equatable {
