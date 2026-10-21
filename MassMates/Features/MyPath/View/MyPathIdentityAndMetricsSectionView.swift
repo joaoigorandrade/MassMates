@@ -25,7 +25,7 @@ struct MyPathIdentityAndMetricsSectionView: View {
     private var topNavigationBar: some View {
         HStack {
             HStack(spacing: MassMatesSpacing.xs) {
-                Text("Perfil & Histórico").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Perfil & Histórico Espiritual").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                 HStack(spacing: 4) {
                     Circle().fill(theme.tint).frame(width: 6, height: 6)
                     Text(theme.season.defaultSeasonName.uppercased()).font(MassMatesFont.caption).foregroundStyle(theme.tint)

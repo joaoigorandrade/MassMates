@@ -55,7 +55,7 @@ struct CreateGroupFormTabView: View {
 
     private var saintShowcaseRow: some View {
         HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "cross.case.fill").font(MassMatesFont.title).foregroundStyle(theme.tint)
+            Image(systemName: "cross.fill").font(MassMatesFont.title).foregroundStyle(theme.tint)
                 .frame(width: 44, height: 44).background(theme.tintSoft).clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Santa Teresinha do Menino Jesus").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
@@ -79,10 +79,25 @@ struct CreateGroupFormTabView: View {
 
     private func saintChipButton(_ saint: String) -> some View {
         let isSelected = viewModel.selectedPatronSaint == saint
-        return Button(saint) { viewModel.selectedPatronSaint = saint; viewModel.draft.parishOrCommunity = saint }
-            .font(MassMatesFont.caption).foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-            .padding(.horizontal, MassMatesSpacing.sm).padding(.vertical, 6)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted).clipShape(Capsule()).buttonStyle(.plain)
+        return Button {
+            viewModel.selectedPatronSaint = saint
+            viewModel.draft.parishOrCommunity = saint
+        } label: {
+            HStack(spacing: 4) {
+                if saint == "Outro" {
+                    Image(systemName: "magnifyingglass")
+                        .font(MassMatesFont.caption)
+                }
+                Text(saint)
+            }
+            .font(MassMatesFont.caption)
+            .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .padding(.vertical, 6)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private var collectiveGoalTypeCard: some View {

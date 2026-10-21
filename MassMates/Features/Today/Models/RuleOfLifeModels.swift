@@ -41,9 +41,9 @@ enum SpiritualPractice: String, CaseIterable, Identifiable, Sendable, Equatable,
     var systemImage: String {
         switch self {
         case .rosary: "circle.grid.cross"
-        case .holyMass: "cup.and.saucer"
+        case .holyMass: "church.fill"
         case .dailyGospel: "book.closed"
-        case .adoration: "sun.max"
+        case .adoration: "sparkles"
         case .mentalPrayer: "sun.horizon.fill"
         case .spiritualReading: "text.book.closed"
         case .fasting: "leaf"

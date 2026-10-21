@@ -80,6 +80,10 @@ struct HolyMassCommunionAndFinalRitesView: View {
                     .font(MassMatesFont.scripture)
                     .foregroundStyle(MassMatesPalette.textPrimary)
             }
+            Text("«Agnus Dei, qui tollis peccata mundi, miserere nobis... dona nobis pacem.»")
+                .font(MassMatesFont.customScripture(size: 13, italic: true))
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .padding(.top, 2)
         }
         .padding(MassMatesSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)

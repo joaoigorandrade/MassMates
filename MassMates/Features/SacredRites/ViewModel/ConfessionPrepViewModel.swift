@@ -49,7 +49,14 @@ final class ConfessionPrepViewModel {
 
     // MARK: - Body / Public API
     var filteredCommandmentGroups: [CommandmentExamGroup] {
-        commandmentGroups.filter { $0.category == selectedCategory }
+        switch selectedCategory {
+        case .commandments:
+            commandmentGroups
+        case .duties:
+            commandmentGroups.filter { $0.category == .duties }
+        case .capital:
+            commandmentGroups.filter { $0.category == .capital }
+        }
     }
 
     var selectionCounterText: String {

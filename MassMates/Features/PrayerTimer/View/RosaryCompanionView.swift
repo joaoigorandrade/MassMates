@@ -138,7 +138,7 @@ struct RosaryCompanionView: View {
         }
         .overlay {
             if isCurrent {
-                Circle().stroke(MassMatesPalette.line, lineWidth: 2).frame(width: 28, height: 28)
+                Circle().stroke(theme.tintSoft, lineWidth: 4).frame(width: 32, height: 32)
             }
         }
     }

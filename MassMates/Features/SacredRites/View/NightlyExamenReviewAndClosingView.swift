@@ -57,31 +57,33 @@ struct NightlyExamenReviewAndClosingView: View {
 
     private func evaluationPillButton(_ evaluation: LectioResolutionEvaluation) -> some View {
         let isSelected = viewModel.selectedEvaluation == evaluation
-        return Button {
-            viewModel.selectEvaluation(evaluation)
-        } label: {
+        let semanticColor: Color = {
+            switch evaluation {
+            case .fidelidade: MassMatesPalette.success
+            case .deslize: MassMatesPalette.warning
+            case .graca: Theme(season: .purple).tint
+            }
+        }()
+        return Button { viewModel.selectEvaluation(evaluation) } label: {
             Label(evaluation.title, systemImage: evaluation.systemImage)
                 .font(MassMatesFont.caption)
-                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                .foregroundStyle(isSelected ? semanticColor : MassMatesPalette.textSecondary)
                 .padding(.horizontal, MassMatesSpacing.sm)
                 .padding(.vertical, MassMatesSpacing.xs)
-                .background(isSelected ? theme.tintSoft : MassMatesPalette.surface)
+                .background(isSelected ? semanticColor.opacity(0.14) : MassMatesPalette.surface)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(isSelected ? semanticColor : MassMatesPalette.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
 
     private func attentionCheckboxRow(_ prompt: ConscienceAttentionPrompt) -> some View {
         let isChecked = viewModel.checkedAttentionIDs.contains(prompt.id)
-        return Button {
-            viewModel.toggleAttentionPrompt(prompt.id)
-        } label: {
+        return Button { viewModel.toggleAttentionPrompt(prompt.id) } label: {
             HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
                 Image(systemName: isChecked ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isChecked ? theme.tint : MassMatesPalette.textTertiary)
-                Text(prompt.text)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Text(prompt.text).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
             }
             .padding(MassMatesSpacing.xxs)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -92,25 +94,17 @@ struct NightlyExamenReviewAndClosingView: View {
     private var step4ContritionCard: some View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                stepHeader(
-                    number: "4",
-                    title: "Contrição & Perdão",
-                    subtitle: "Confiar no Amor misericordioso que acolhe e restaura."
-                )
+                stepHeader(number: "4", title: "Contrição & Perdão", subtitle: "Confiar no Amor misericordioso que acolhe e restaura.")
                 actOfContritionBox
                 confessionNoteTriggerRow
-                if viewModel.isConfessionNoteExpanded {
-                    confessionNoteInputSection
-                }
+                if viewModel.isConfessionNoteExpanded { confessionNoteInputSection }
             }
         }
     }
 
     private var actOfContritionBox: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("ATO DE CONTRIÇÃO")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text("ATO DE CONTRIÇÃO").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             Text("“Meu Deus, eu me arrependo de todo o coração de vos ter ofendido, porque sois infinitamente bom e digno de todo o amor. Proponho firmemente, com a vossa graça, não mais pecar e fugir das ocasiões de queda. Amém.”")
                 .font(MassMatesFont.customScripture(size: 15, italic: true))
                 .foregroundStyle(MassMatesPalette.textPrimary)
@@ -127,16 +121,14 @@ struct NightlyExamenReviewAndClosingView: View {
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Spacer()
-            Button("Adicionar") {
-                viewModel.toggleConfessionNoteInput()
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(theme.tint)
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .padding(.vertical, MassMatesSpacing.xxs)
-            .background(theme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            .buttonStyle(.plain)
+            Button("Adicionar") { viewModel.toggleConfessionNoteInput() }
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .padding(.vertical, MassMatesSpacing.xxs)
+                .background(theme.tintSoft)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .buttonStyle(.plain)
         }
         .padding(MassMatesSpacing.xs)
         .background(MassMatesPalette.surfaceMuted)

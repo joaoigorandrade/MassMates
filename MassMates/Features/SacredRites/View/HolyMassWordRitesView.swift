@@ -158,7 +158,7 @@ struct HolyMassWordRitesView: View {
         HStack {
             Text(lead).font(MassMatesFont.callout).foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textSecondary)
             Spacer()
-            Text(response).font(MassMatesFont.callout).foregroundStyle(theme.tint)
+            Text(response).font(MassMatesFont.callout).foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textPrimary)
         }
         .padding(MassMatesSpacing.xs)
         .background(isAssembly ? theme.tintSoft : MassMatesPalette.surfaceMuted)

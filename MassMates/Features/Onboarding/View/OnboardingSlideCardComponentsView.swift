@@ -66,16 +66,19 @@ struct OnboardingSacredHeroFrameView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let activeSymbol: String
+    private let badgeTitle: String
     private let onSwipeLeft: () -> Void
     private let onSwipeRight: () -> Void
 
     // MARK: - Init
     init(
         activeSymbol: String,
+        badgeTitle: String = "Tempo Comum • Fidelidade Diária",
         onSwipeLeft: @escaping () -> Void,
         onSwipeRight: @escaping () -> Void
     ) {
         self.activeSymbol = activeSymbol
+        self.badgeTitle = badgeTitle
         self.onSwipeLeft = onSwipeLeft
         self.onSwipeRight = onSwipeRight
     }
@@ -135,7 +138,7 @@ struct OnboardingSacredHeroFrameView: View {
             Circle()
                 .fill(theme.tint)
                 .frame(width: 8, height: 8)
-            Text("Tempo Comum • Fidelidade Diária")
+            Text(badgeTitle)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(theme.tint)
         }

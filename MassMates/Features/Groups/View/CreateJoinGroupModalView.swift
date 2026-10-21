@@ -105,10 +105,10 @@ struct CreateJoinGroupModalView: View {
     private var seasonalCapacityPill: some View {
         HStack {
             HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "icloud.and.arrow.up")
+                Image(systemName: "person.2.fill")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
-                Text("Você possui \(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups) fraternidades ativas")
+                Text("Você possui **\(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups)** fraternidades ativas")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
             }

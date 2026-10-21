@@ -23,14 +23,14 @@ struct ConfessionalModeOverlayView: View {
             }
             MassMatesPrimaryButton(
                 title: "Absolvição Recebida (Destruir Notas)",
-                systemImage: "checkmark.circle.fill"
+                systemImage: "checkmark.circle"
             ) {
                 viewModel.completeSacramentAndDestroyNotes()
             }
         }
         .padding(MassMatesLayout.readingMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(MassMatesPalette.bg.ignoresSafeArea())
+        .background(Color(red: 0.07, green: 0.07, blue: 0.07).ignoresSafeArea())
         .environment(\.colorScheme, .dark)
     }
 

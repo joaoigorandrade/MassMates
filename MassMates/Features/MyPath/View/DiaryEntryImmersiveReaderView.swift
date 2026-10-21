@@ -134,10 +134,13 @@ struct DiaryEntryImmersiveReaderView: View {
 
     private var intimateDialogueArticle: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("DIÁLOGO ÍNTIMO & MOVIMENTOS DO CORAÇÃO")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .tracking(0.5)
+            HStack(spacing: 6) {
+                Circle().fill(theme.tint).frame(width: 8, height: 8)
+                Text("DIÁLOGO ÍNTIMO & MOVIMENTOS DO CORAÇÃO")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .tracking(0.5)
+            }
             MassMatesCard {
                 VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
                     Text(entry.reflectionOrNotes ?? "No silêncio da manhã, diante da janela entreaberta, senti profunda consolação ao meditar estas palavras. Muitas vezes confundo o testemunho cristão com grandes gestos ou discursos públicos, mas hoje compreendi que o reconhecimento de Cristo se dá nas pequenas fidelidades cotidianas.")

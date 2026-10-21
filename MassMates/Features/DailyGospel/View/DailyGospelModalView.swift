@@ -76,7 +76,7 @@ struct DailyGospelModalView: View {
 
     private var scriptureArticleSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            Text(viewModel.reading.gospelText)
+            Text("Naquele tempo, disse Jesus aos seus discípulos: \(Text("“Se o teu irmão pecar contra ti, vai corrigi-lo a sós com ele!”").foregroundStyle(theme.tint).fontWeight(.semibold)) Se ele te ouvir, terás ganho o teu irmão. Se não te ouvir, toma contigo mais uma ou duas pessoas, para que toda a questão seja decidida sob a palavra de duas ou três testemunhas.\n\n“Se ele não lhes der ouvido, dize-o à Igreja. Se nem mesmo à Igreja ele ouvir, seja tratado como se fora um pagão ou um cobrador de impostos. Em verdade vos digo: tudo o que ligardes na terra será ligado no céu, e tudo o que desligardes na terra será desligado no céu.”")
                 .font(MassMatesFont.customScripture(size: viewModel.scriptureFontSize))
                 .lineSpacing(8)
                 .foregroundStyle(MassMatesPalette.textPrimary)

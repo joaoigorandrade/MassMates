@@ -33,6 +33,7 @@ struct OnboardingSlidesStepView: View {
             brandHeader
             OnboardingSacredHeroFrameView(
                 activeSymbol: activeSlide.systemImage,
+                badgeTitle: activeSlide.badgeTitle,
                 onSwipeLeft: onAdvance,
                 onSwipeRight: selectPreviousSlide
             )

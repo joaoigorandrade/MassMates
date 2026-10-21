@@ -13,14 +13,10 @@ struct OnboardingProfileAndConsentStepView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            if viewModel.currentStep == .authSignIn {
-                OnboardingAuthStepView(viewModel: viewModel)
-            } else {
-                topNavigationBar
-                editorialWelcomeHeader
-                profileDetailsCard
-                OnboardingRuleAndPrivacyCardsView(viewModel: viewModel)
-            }
+            topNavigationBar
+            editorialWelcomeHeader
+            profileDetailsCard
+            OnboardingRuleAndPrivacyCardsView(viewModel: viewModel)
             errorBanner
         }
     }
@@ -95,7 +91,7 @@ struct OnboardingProfileAndConsentStepView: View {
                     label: "Paróquia / Diocese",
                     placeholder: "Ex: Paróquia Sant'Ana — São Paulo, SP",
                     text: $viewModel.parishOrCity,
-                    trailingIcon: "building.columns.fill",
+                    trailingIcon: "church.fill",
                     trailingColor: MassMatesPalette.textTertiary
                 )
             }

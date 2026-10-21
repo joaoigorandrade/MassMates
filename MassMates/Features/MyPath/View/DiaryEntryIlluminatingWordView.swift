@@ -54,23 +54,52 @@ struct DiaryEntryIlluminatingWordView: View {
     }
 
     private var fullPericopeBox: some View {
-        Text("Evangelho Integral (Lc 12, 8-12): «Naquele tempo, disse Jesus aos seus discípulos: \"Todo aquele que me reconhecer diante dos homens, o Filho do Homem também o reconhecerá diante dos anjos de Deus... porque o Espírito Santo vos ensinará naquela mesma hora o que deveis falar.\"»")
-            .font(MassMatesFont.customScripture(size: 16))
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            .padding(MassMatesSpacing.md)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            HStack {
+                Text("Evangelho Integral (Lc 12, 8-12)")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+                Spacer()
+                Button { isFullPericopeExpanded = false } label: {
+                    Image(systemName: "xmark")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            Text("«Naquele tempo, disse Jesus aos seus discípulos: \"Todo aquele que me reconhecer diante dos homens, o Filho do Homem também o reconhecerá diante dos anjos de Deus... porque o Espírito Santo vos ensinará naquela mesma hora o que deveis falar.\"»")
+                .font(MassMatesFont.customScripture(size: 16))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
     }
 
     private var devotionalPhotoCard: some View {
-        Label("Lugar do recolhimento • Canto de oração matutino", systemImage: "camera.fill")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textPrimary)
-            .padding(MassMatesSpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
+        ZStack(alignment: .bottomLeading) {
+            ZStack {
+                theme.tintSoft
+                Image(systemName: "book.pages.fill")
+                    .font(MassMatesFont.display)
+                    .foregroundStyle(theme.tint.opacity(0.3))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            LinearGradient(
+                colors: [.black.opacity(0.7), .clear],
+                startPoint: .bottom,
+                endPoint: .center
+            )
+
+            Label("Lugar do recolhimento • Canto de oração matutino", systemImage: "camera.fill")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(Color.white)
+                .padding(MassMatesSpacing.md)
+        }
+        .frame(height: 176)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
     }
 }
 

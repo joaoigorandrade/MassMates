@@ -37,11 +37,11 @@ struct OnboardingAuthStepView: View {
             .buttonStyle(.plain)
             Spacer()
             HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "cross.fill")
+                Image(systemName: "church.fill")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(theme.tint)
                 Text("MassMates")
-                    .font(MassMatesFont.title)
+                    .font(MassMatesFont.display)
                     .foregroundStyle(MassMatesPalette.textPrimary)
             }
             Spacer()
@@ -89,7 +89,7 @@ struct OnboardingAuthStepView: View {
                 Circle()
                     .fill(MassMatesPalette.surface)
                     .frame(width: 48, height: 48)
-                Image(systemName: "camera.macro")
+                Image(systemName: "sparkles")
                     .font(MassMatesFont.title)
                     .foregroundStyle(theme.tint)
             }

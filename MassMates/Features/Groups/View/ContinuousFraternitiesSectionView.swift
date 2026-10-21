@@ -28,7 +28,7 @@ struct ContinuousFraternitiesSectionView: View {
     private var sectionHeader: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Fraternidades Contínuas")
-                .font(MassMatesFont.headline)
+                .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             Text("(2 ativas)")
                 .font(MassMatesFont.caption)
@@ -94,9 +94,15 @@ struct ContinuousFraternitiesSectionView: View {
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                 Spacer()
-                Text("68% (34/50)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                HStack(spacing: 2) {
+                    Text("68%")
+                        .font(MassMatesFont.callout)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text("(34/50)")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
             }
             MassMatesProgressBar(progress: 0.68)
         }

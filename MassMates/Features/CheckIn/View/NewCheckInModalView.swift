@@ -146,6 +146,7 @@ struct NewCheckInModalView: View {
 
     private func chipTitle(for practice: SpiritualPractice) -> String {
         switch practice {
+        case .mentalPrayer: "Oração Mental"
         case .dailyGospel: "Evangelho do Dia"
         case .fasting: "Jejum & Penitência"
         case .confession: "Confissão Sacramental"

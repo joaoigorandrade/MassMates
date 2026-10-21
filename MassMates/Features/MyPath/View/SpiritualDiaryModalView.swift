@@ -109,27 +109,41 @@ struct SpiritualDiaryModalView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: MassMatesSpacing.xs) {
-                    filterChip(title: "Todas as Práticas", practice: nil)
-                    filterChip(title: "Lectio Divina", practice: .dailyGospel)
-                    filterChip(title: "Santo Terço", practice: .rosary)
-                    filterChip(title: "Oração Mental", practice: .mentalPrayer)
-                    filterChip(title: "Exame", practice: .confession)
-                    filterChip(title: "Graça Notável", practice: .adoration)
+                    filterChip(title: "Todas as Práticas", practice: nil, count: 42)
+                    filterChip(title: "Lectio Divina", practice: .dailyGospel, icon: "book.closed", count: 18)
+                    filterChip(title: "Santo Terço", practice: .rosary, icon: "circle.grid.cross", count: 14)
+                    filterChip(title: "Oração Mental", practice: .mentalPrayer, icon: "sun.horizon.fill", count: 7)
+                    filterChip(title: "Exame", practice: .confession, icon: "moon.stars", count: 3)
+                    filterChip(title: "Graça Notável", practice: .adoration, icon: "sparkles")
                 }
             }
         }
     }
 
-    private func filterChip(title: String, practice: SpiritualPractice?) -> some View {
+    private func filterChip(title: String, practice: SpiritualPractice?, icon: String? = nil, count: Int? = nil) -> some View {
         let isSelected = viewModel.selectedPracticeFilter == practice
         return Button { viewModel.selectedPracticeFilter = practice } label: {
-            Text(title)
-                .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
-                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(height: 36)
-                .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            HStack(spacing: 4) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(MassMatesFont.caption)
+                }
+                Text(title)
+                if let count {
+                    Text("\(count)")
+                        .font(MassMatesFont.caption)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(isSelected ? theme.tint.opacity(0.18) : MassMatesPalette.surface)
+                        .clipShape(Capsule())
+                }
+            }
+            .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
+            .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(height: 36)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .buttonStyle(.plain)
     }

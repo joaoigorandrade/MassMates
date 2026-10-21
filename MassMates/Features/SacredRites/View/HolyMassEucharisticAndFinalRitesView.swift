@@ -63,6 +63,11 @@ struct HolyMassEucharisticAndFinalRitesView: View {
                     .frame(maxWidth: .infinity)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                Text("«Sanctus, Sanctus, Sanctus Dominus Deus Sabaoth. Pleni sunt caeli et terra gloria tua. Hosanna in excelsis. Benedictus qui venit in nomine Domini. Hosanna in excelsis.»")
+                    .font(MassMatesFont.customScripture(size: 13, italic: true))
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
             }
         }
     }

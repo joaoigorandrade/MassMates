@@ -89,9 +89,9 @@ struct RuleOfLifeSectionView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: MassMatesSpacing.xs)
-                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(item.isCompleted ? MassMatesPalette.textTertiary : MassMatesPalette.textTertiary)
+                    .foregroundStyle(item.isCompleted ? theme.tint : MassMatesPalette.line)
             }
             .padding(MassMatesSpacing.sm)
             .frame(minHeight: MassMatesLayout.minRowHeight)

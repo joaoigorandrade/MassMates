@@ -56,11 +56,27 @@ struct MentalPrayerSectionView: View {
     private var durationChipsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MassMatesSpacing.xs) {
-                ForEach([5, 10, 15, 20, 30], id: \.self) { minutes in
+                ForEach([10, 15, 20, 30], id: \.self) { minutes in
                     durationPresetButton(minutes: minutes)
                 }
+                customDurationButton
             }
         }
+    }
+
+    private var customDurationButton: some View {
+        Button {
+            viewModel.selectDuration(minutes: 25)
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .padding(.vertical, MassMatesSpacing.xs)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        }
+        .buttonStyle(.plain)
     }
 
     private func durationPresetButton(minutes: Int) -> some View {
@@ -90,7 +106,7 @@ struct MentalPrayerSectionView: View {
         HStack(spacing: MassMatesSpacing.sm) {
             ZStack {
                 Circle()
-                    .fill(MassMatesPalette.surfaceMuted)
+                    .fill(theme.tintSoft)
                     .frame(width: 36, height: 36)
                 Image(systemName: "bell.fill")
                     .font(MassMatesFont.callout)

@@ -128,7 +128,7 @@ struct FeaturedChallengesSectionView: View {
                 eyebrow: "INSCRIÇÕES ABERTAS",
                 title: "Novena de Nossa Senhora Aparecida",
                 subtitle: "Início solene em 03 de Outubro. Oração oficial da Padroeira.",
-                icon: "building.columns.fill",
+                icon: "cross.fill",
                 cta: "Participar",
                 accent: theme,
                 challengeId: challenges.first?.id ?? "chal-aparecida"

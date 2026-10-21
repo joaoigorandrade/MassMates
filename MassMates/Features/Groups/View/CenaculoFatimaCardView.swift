@@ -29,7 +29,7 @@ struct CenaculoFatimaCardView: View {
     // MARK: - Subviews / Private Helpers
     private var cenaculoHeader: some View {
         HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-            Image(systemName: "sun.max.fill")
+            Image(systemName: "sparkles")
                 .font(MassMatesFont.title)
                 .foregroundStyle(Theme(season: .white).tint)
                 .frame(width: 48, height: 48)

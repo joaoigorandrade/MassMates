@@ -45,7 +45,7 @@ enum AmbientSoundOption: String, CaseIterable, Identifiable, Sendable, Equatable
 
     var systemImage: String {
         switch self {
-        case .monasteryChimes: "bell.fill"
+        case .monasteryChimes: "church.fill"
         case .gentleRain: "drop.fill"
         case .pureSilence: "speaker.slash.fill"
         }
