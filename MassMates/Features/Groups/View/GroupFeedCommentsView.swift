@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// The comments of a feed post: the list, the composer and its quiet error
-/// state. The composer enforces the server's 500-character limit.
+/// Compact comments drawer displaying fraternal comments and a restrained composer.
 struct GroupFeedCommentsView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
@@ -39,44 +38,58 @@ struct GroupFeedCommentsView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Rectangle().fill(MassMatesPalette.line).frame(height: 1)
             if !comments.isEmpty {
-                Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-                ForEach(comments) { comment in
-                    commentItem(comment)
-                }
+                commentsList
+            } else if showsCommentsHint {
+                Text("Toque no campo para ver os apoios fraternos.")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .padding(.vertical, MassMatesSpacing.xxs)
             }
             commentInputRow
         }
+        .padding(.top, MassMatesSpacing.xxs)
     }
 
     // MARK: - Subviews / Private Helpers
-    private func commentItem(_ comment: GroupFeedComment) -> some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.xxs) {
-            Text("\(comment.authorDisplayName):")
+    private var commentsList: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            ForEach(comments) { comment in
+                HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        commentHeader(for: comment)
+                        Text(comment.body)
+                            .font(MassMatesFont.callout)
+                            .foregroundStyle(comment.isHidden ? MassMatesPalette.textTertiary : MassMatesPalette.textSecondary)
+                    }
+                    Spacer()
+                    if canModerateComments { deleteButton(for: comment) }
+                }
+            }
+        }
+        .padding(.vertical, MassMatesSpacing.xxs)
+    }
+
+    private func commentHeader(for comment: GroupFeedComment) -> some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Text(comment.authorDisplayName)
                 .font(MassMatesFont.caption)
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
                 .foregroundStyle(comment.isHidden ? MassMatesPalette.textTertiary : MassMatesPalette.textPrimary)
-            Text(comment.body)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(comment.isHidden ? MassMatesPalette.textTertiary : MassMatesPalette.textSecondary)
-            Text(comment.relativeTimeLabel)
+            Text("• \(comment.relativeTimeLabel)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
             if comment.isHidden {
-                Text("oculta")
+                Text("(oculta)")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-            if canModerateComments {
-                deleteButton(for: comment)
             }
         }
     }
 
     private func deleteButton(for comment: GroupFeedComment) -> some View {
-        Button {
-            onDeleteComment(comment)
-        } label: {
+        Button { onDeleteComment(comment) } label: {
             Image(systemName: "xmark")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
@@ -93,36 +106,39 @@ struct GroupFeedCommentsView: View {
                     .font(MassMatesFont.callout)
                     .focused($isComposerFocused)
                     .onChange(of: isComposerFocused) { _, isFocused in
-                        guard isFocused else { return }
-                        onComposerFocus()
+                        if isFocused { onComposerFocus() }
                     }
                     .padding(.horizontal, MassMatesSpacing.sm)
                     .padding(.vertical, MassMatesSpacing.xs)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(Capsule())
+                    .overlay(Capsule().stroke(isComposerFocused ? theme.tint : MassMatesPalette.line, lineWidth: 1))
                 Button("Enviar", action: onSubmitComment)
                     .font(MassMatesFont.caption)
+                    .fontWeight(.semibold)
                     .foregroundStyle(canSubmit ? theme.tint : MassMatesPalette.textTertiary)
                     .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
                     .disabled(!canSubmit)
             }
-            if showsCommentsHint {
-                Text("Toque no campo para ver os apoios fraternos.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-            if !commentDraft.isEmpty {
-                HStack {
-                    Spacer()
+            statusFootnoteRow
+        }
+    }
+
+    @ViewBuilder
+    private var statusFootnoteRow: some View {
+        if !commentDraft.isEmpty || commentErrorMessage != nil {
+            HStack {
+                if let commentErrorMessage {
+                    Text(commentErrorMessage)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.danger)
+                }
+                Spacer()
+                if !commentDraft.isEmpty {
                     Text("\(commentDraft.count)/\(GroupFeedComment.maximumBodyLength)")
                         .font(MassMatesFont.caption)
                         .foregroundStyle(isOverLimit ? MassMatesPalette.danger : MassMatesPalette.textTertiary)
                 }
-            }
-            if let commentErrorMessage {
-                Text(commentErrorMessage)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
     }

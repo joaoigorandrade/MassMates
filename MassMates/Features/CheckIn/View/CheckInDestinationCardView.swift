@@ -33,27 +33,27 @@ struct CheckInDestinationCardView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("ENVIAR PARA")
+            Text("COMPARTILHAR COM")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .tracking(0.5)
+                .tracking(0.6)
 
-            checklistContainer
+            cardContainer
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var checklistContainer: some View {
+    private var cardContainer: some View {
         VStack(spacing: 0) {
-            if !isLockedToPrivateDiary {
-                ForEach(availableGroups) { group in
-                    groupRow(group)
-                    Divider().overlay(MassMatesPalette.line)
-                }
+            if isLockedToPrivateDiary {
+                lockedPrivateRow
+            } else {
+                groupRowsSection
+                Divider().overlay(MassMatesPalette.line)
+                diaryToggleRow
             }
-            privateDiaryRow
         }
-        .background(MassMatesPalette.surfaceMuted)
+        .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: MassMatesRadius.card)
@@ -61,63 +61,76 @@ struct CheckInDestinationCardView: View {
         )
     }
 
-    private func groupRow(_ group: CommunityGroup) -> some View {
-        let isSelected = destinationMode == .selectedGroups && selectedGroupIds.contains(group.id)
-        return Button {
-            onToggleGroup(group.id)
-        } label: {
-            HStack {
-                Text(group.name)
-                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                selectionIndicator(isSelected: isSelected)
-            }
-            .padding(.horizontal, MassMatesSpacing.md)
-            .frame(height: 54)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private var privateDiaryRow: some View {
-        let isSelected = isLockedToPrivateDiary || destinationMode == .privateDiaryOnly
-        return Button {
-            onSelectMode(.privateDiaryOnly)
-        } label: {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "lock")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Text("Somente no meu Diário")
-                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                selectionIndicator(isSelected: isSelected)
-            }
-            .padding(.horizontal, MassMatesSpacing.md)
-            .frame(height: 54)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
     @ViewBuilder
-    private func selectionIndicator(isSelected: Bool) -> some View {
-        if isSelected {
-            Circle()
-                .fill(theme.tint)
-                .frame(width: 24, height: 24)
-                .overlay(
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(theme.onTint)
-                )
-        } else {
-            Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 1.5)
-                .frame(width: 20, height: 20)
+    private var groupRowsSection: some View {
+        ForEach(availableGroups) { group in
+            let isSelected = destinationMode == .selectedGroups && selectedGroupIds.contains(group.id)
+            HStack(spacing: MassMatesSpacing.sm) {
+                Image(systemName: "person.3")
+                    .font(.system(size: 16))
+                    .foregroundStyle(theme.tint)
+                Text(group.name)
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { isSelected },
+                    set: { _ in onToggleGroup(group.id) }
+                ))
+                .labelsHidden()
+                .tint(theme.tint)
+            }
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(height: 52)
+
+            if group.id != availableGroups.last?.id {
+                Divider().overlay(MassMatesPalette.line)
+            }
         }
+    }
+
+    private var diaryToggleRow: some View {
+        let isDiaryOnly = destinationMode == .privateDiaryOnly
+        return HStack(spacing: MassMatesSpacing.sm) {
+            Image(systemName: "lock")
+                .font(.system(size: 16))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text("Só no meu diário")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Spacer()
+            Toggle("", isOn: Binding(
+                get: { isDiaryOnly },
+                set: { isOn in onSelectMode(isOn ? .privateDiaryOnly : .selectedGroups) }
+            ))
+            .labelsHidden()
+            .tint(theme.tint)
+        }
+        .padding(.horizontal, MassMatesSpacing.md)
+        .frame(height: 52)
+    }
+
+    private var lockedPrivateRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: MassMatesSpacing.sm) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(theme.tint)
+                Text("Só no meu diário")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Toggle("", isOn: .constant(true))
+                    .labelsHidden()
+                    .tint(theme.tint)
+                    .disabled(true)
+            }
+            Text("Por sigilo sacramental, confissões são mantidas privadas.")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+        }
+        .padding(.horizontal, MassMatesSpacing.md)
+        .padding(.vertical, MassMatesSpacing.sm)
     }
 }
 

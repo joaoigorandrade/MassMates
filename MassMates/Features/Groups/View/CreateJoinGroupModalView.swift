@@ -1,11 +1,17 @@
 import Navigation
 import SwiftUI
 
+enum CreateGroupStep: Sendable, Equatable {
+    case identity
+    case rules
+}
+
 struct CreateJoinGroupModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: CreateJoinGroupViewModel
+    @State private var creationStep: CreateGroupStep = .identity
 
     // MARK: - Init
     init(viewModel: CreateJoinGroupViewModel) {
@@ -14,56 +20,66 @@ struct CreateJoinGroupModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                grabberBar
-                headerCloseRow
-                segmentedControl
-                headerTitleSection
-                if let error = viewModel.errorMessage {
-                    errorBanner(message: error)
-                }
-                activeContent
-            }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.bottom, MassMatesSpacing.xl)
+        VStack(alignment: .leading, spacing: 0) {
+            grabberBar
+            headerNavigationRow
+            if showSegmentedControl { segmentedControl }
+            if viewModel.selectedTab == .createNew { headerTitleSection }
+            if let error = viewModel.errorMessage { errorBanner(message: error) }
+            activeContent
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.bottom, MassMatesSpacing.md)
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .task {
-            await viewModel.load()
-        }
+        .task { await viewModel.load() }
+        .onChange(of: viewModel.selectedTab) { _, _ in creationStep = .identity }
     }
 
     // MARK: - Subviews / Private Helpers
+    private var showSegmentedControl: Bool {
+        viewModel.selectedTab == .joinByCode || creationStep == .identity
+    }
+
     private var grabberBar: some View {
         HStack {
             Spacer()
-            Capsule()
-                .fill(MassMatesPalette.line)
-                .frame(width: 36, height: 4)
+            Capsule().fill(MassMatesPalette.line).frame(width: 36, height: 4)
             Spacer()
         }
         .padding(.top, MassMatesSpacing.sm)
         .padding(.bottom, MassMatesSpacing.xs)
     }
 
-    private var headerCloseRow: some View {
+    private var headerNavigationRow: some View {
         HStack {
-            Spacer()
-            Button {
-                navigator?.dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(Circle())
+            if viewModel.selectedTab == .createNew && creationStep == .rules {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { creationStep = .identity }
+                } label: {
+                    Label("Identidade", systemImage: "chevron.left")
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(theme.tint)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+            Spacer()
+            closeButton
         }
-        .padding(.bottom, MassMatesSpacing.xs)
+    }
+
+    private var closeButton: some View {
+        Button {
+            navigator?.dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 32, height: 32)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var segmentedControl: some View {
@@ -79,81 +95,79 @@ struct CreateJoinGroupModalView: View {
             .clipShape(Capsule())
             Spacer()
         }
-        .padding(.bottom, MassMatesSpacing.lg)
+        .padding(.bottom, MassMatesSpacing.sm)
     }
 
     private func segmentButton(title: String, tab: CreateJoinGroupTab) -> some View {
         let isSelected = viewModel.selectedTab == tab
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                viewModel.selectedTab = tab
-            }
+            withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectedTab = tab }
         } label: {
             Text(title)
                 .font(MassMatesFont.callout.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 36)
+                .frame(maxWidth: .infinity, minHeight: 36)
                 .background(isSelected ? MassMatesPalette.surface : Color.clear)
                 .clipShape(Capsule())
-                .shadow(color: isSelected ? Color.black.opacity(0.04) : Color.clear, radius: 2, y: 1)
         }
         .buttonStyle(.plain)
     }
 
     private var headerTitleSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(viewModel.selectedTab == .createNew ? "Criar Fraternidade" : "Entrar na Fraternidade")
-                .font(MassMatesFont.customScripture(size: 26, italic: false).weight(.semibold))
+        let isIdentity = creationStep == .identity
+        let title = isIdentity ? "Criar Fraternidade" : "Regras & Pontos"
+        let sub = isIdentity ? "Passo 1 de 2 • Identidade" : "Passo 2 de 2 • Regras da fraternidade"
+        return VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(title)
+                .font(MassMatesFont.customScripture(size: 24, italic: false).weight(.semibold))
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(viewModel.selectedTab == .createNew ? "Um espaço de oração e perseverança mútua" : "Insira a chave recebida de um irmão")
+            Text(sub)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(.bottom, MassMatesSpacing.lg)
+        .padding(.bottom, MassMatesSpacing.sm)
     }
 
     private func errorBanner(message: String) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(message)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.danger)
+        HStack {
+            Text(message).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
+            Spacer()
             if !viewModel.slotCapacity.hasRewardedSlotUnlocked {
                 Button {
                     Task { await viewModel.unlockRewardedSlot() }
                 } label: {
-                    Text("Liberar +1 vaga por 30 dias")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
+                    Text("+1 vaga").font(MassMatesFont.caption).foregroundStyle(theme.tint)
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .background(MassMatesPalette.surfaceMuted)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-        .padding(.bottom, MassMatesSpacing.md)
+        .padding(.bottom, MassMatesSpacing.xs)
     }
 
     @ViewBuilder
     private var activeContent: some View {
-        if viewModel.selectedTab == .joinByCode {
-            JoinGroupByCodeTabView(viewModel: viewModel) {
-                navigator?.dismiss()
-            }
-        } else {
-            CreateGroupFormTabView(viewModel: viewModel) {
-                navigator?.dismiss()
-            }
+        switch (viewModel.selectedTab, creationStep) {
+        case (.joinByCode, _):
+            JoinGroupByCodeTabView(viewModel: viewModel) { navigator?.dismiss() }
+        case (.createNew, .identity):
+            CreateGroupFormTabView(viewModel: viewModel, onAdvance: {
+                withAnimation(.easeInOut(duration: 0.2)) { creationStep = .rules }
+            })
+        case (.createNew, .rules):
+            CreateGroupRulesAndLimitsView(
+                viewModel: viewModel,
+                onBack: { withAnimation(.easeInOut(duration: 0.2)) { creationStep = .identity } },
+                onCreated: { navigator?.dismiss() }
+            )
         }
     }
 }
 
 #Preview("Create / Join Group — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        CreateJoinGroupModalView(
-            viewModel: CreateJoinGroupViewModel(prefilledInviteCode: "ST1925")
-        )
+        CreateJoinGroupModalView(viewModel: CreateJoinGroupViewModel(prefilledInviteCode: "ST1925"))
     }
 }

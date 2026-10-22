@@ -14,20 +14,25 @@ struct PrayerTimerModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: MassMatesSpacing.lg) {
-                topBar
-                if viewModel.isSoundMenuPresented {
-                    ambientSoundDropdownCard
-                }
-                activeModeContent
-                bottomActionsSection
-            }
-            .padding(MassMatesLayout.readingMargin)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth)
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            topBar
+                .padding(.horizontal, MassMatesLayout.screenMargin)
+                .padding(.top, MassMatesSpacing.md)
+            Spacer(minLength: MassMatesSpacing.sm)
+            activeModeContent
+            Spacer(minLength: MassMatesSpacing.sm)
+            bottomBar
+                .padding(.horizontal, MassMatesLayout.screenMargin)
+                .padding(.bottom, MassMatesSpacing.lg)
         }
+        .frame(maxWidth: MassMatesLayout.readingMaxWidth)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .sheet(isPresented: $viewModel.isSoundMenuPresented) {
+            ambientSoundSheet
+                .presentationDetents([.height(260)])
+                .presentationCornerRadius(MassMatesRadius.sheet)
+        }
         .task(id: viewModel.isRunning) {
             await runCountdownLoop()
         }
@@ -36,83 +41,59 @@ struct PrayerTimerModalView: View {
     // MARK: - Subviews / Private Helpers
     private var topBar: some View {
         HStack {
-            Button { navigator?.dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 40, height: 40)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Fechar")
+            closeButton
             Spacer()
-            modeSelector
+            modeSegmentedSelector
             Spacer()
-            Button { viewModel.toggleSoundMenu() } label: {
-                Image(systemName: "bell.and.waves.left.and.right")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(viewModel.isSoundMenuPresented ? theme.tint : MassMatesPalette.textSecondary)
-                    .frame(width: 40, height: 40)
-                    .background(viewModel.isSoundMenuPresented ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Som ambiente e carrilhão")
+            soundTriggerButton
         }
     }
 
-    private var modeSelector: some View {
-        HStack(spacing: 2) {
-            ForEach(PrayerTimerMode.allCases) { item in
-                let isSelected = viewModel.mode == item
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { viewModel.mode = item }
-                } label: {
-                    Text(item.pillLabel)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(isSelected ? MassMatesPalette.surface : Color.clear)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                        .shadow(color: isSelected ? Color.black.opacity(0.04) : Color.clear, radius: 2, y: 1)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(item.title)
-            }
+    private var closeButton: some View {
+        Button { navigator?.dismiss() } label: {
+            Image(systemName: "xmark")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 44, height: 44)
         }
-        .padding(4)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        .buttonStyle(.plain)
+        .accessibilityLabel("Fechar")
     }
 
-    private var ambientSoundDropdownCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    Text("Som de Fundo & Alerta").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
-                    Spacer()
-                    Image(systemName: "waveform").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                }
-                ForEach(AmbientSoundOption.allCases) { option in
-                    let isSelected = viewModel.selectedAmbientSound == option
-                    Button { viewModel.selectAmbientSound(option) } label: {
-                        HStack(spacing: MassMatesSpacing.xs) {
-                            Image(systemName: option.systemImage).font(MassMatesFont.callout)
-                            Text(option.title).font(MassMatesFont.callout)
-                            Spacer()
-                            if isSelected { Image(systemName: "checkmark").font(MassMatesFont.caption) }
-                        }
-                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                        .padding(MassMatesSpacing.xs)
-                        .background(isSelected ? MassMatesPalette.surfaceMuted : Color.clear)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+    private var modeSegmentedSelector: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            modeSelectorItem(title: "Silêncio Mental", target: .mentalPrayer)
+            Text("·").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.line)
+            modeSelectorItem(title: "Terço", target: .rosary)
         }
+    }
+
+    private func modeSelectorItem(title: String, target: PrayerTimerMode) -> some View {
+        let isSelected = viewModel.mode == target
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { viewModel.mode = target }
+        } label: {
+            HStack(spacing: 4) {
+                Text(title)
+                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.caption)
+                    .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textTertiary)
+                if isSelected { Circle().fill(theme.tint).frame(width: 5, height: 5) }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var soundTriggerButton: some View {
+        Button { viewModel.toggleSoundMenu() } label: {
+            Image(systemName: "waveform")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(viewModel.isSoundMenuPresented ? theme.tint : MassMatesPalette.textSecondary)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Opções de som e retorno háptico")
     }
 
     @ViewBuilder
@@ -123,42 +104,61 @@ struct PrayerTimerModalView: View {
         }
     }
 
-    private var bottomActionsSection: some View {
-        VStack(spacing: MassMatesSpacing.md) {
-            primaryPlayButton
-            Button {
-                viewModel.completeSessionCheckIn()
-                navigator?.dismiss()
-            } label: {
-                Text("Concluir & Fazer Check-in")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(minHeight: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
+    private var bottomBar: some View {
+        HStack {
+            closedEyesOrChimeLabel
+            Spacer()
+            endPrayerButton
         }
-        .padding(.top, MassMatesSpacing.xs)
     }
 
-    private var primaryPlayButton: some View {
-        let isMental = viewModel.mode == .mentalPrayer
-        let icon = isMental ? (viewModel.isRunning ? "pause.fill" : "play.fill") : (viewModel.isSessionFinished ? "checkmark" : "hand.tap.fill")
-        return Button {
-            if isMental { viewModel.toggleTimer() } else { viewModel.advanceBead() }
+    private var closedEyesOrChimeLabel: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Image(systemName: viewModel.mode == .rosary ? "iphone.radiowaves.left.and.right" : "bell")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint)
+            Text(viewModel.mode == .rosary ? "Modo olhos fechados" : "Carrilhão ativo")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private var endPrayerButton: some View {
+        Button {
+            viewModel.completeSessionCheckIn()
+            navigator?.dismiss()
         } label: {
-            ZStack {
-                Circle()
-                    .fill(theme.tint)
-                    .frame(width: 70, height: 70)
-                    .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
-                Image(systemName: icon)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(theme.onTint)
-                    .offset(x: isMental && !viewModel.isRunning ? 2 : 0)
-            }
+            Text("Encerrar")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isMental ? (viewModel.isRunning ? "Pausar Silêncio" : "Iniciar Silêncio") : "Avançar conta")
+    }
+
+    private var ambientSoundSheet: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            Text("Som de Fundo").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+            ForEach(AmbientSoundOption.allCases) { option in
+                let isSelected = viewModel.selectedAmbientSound == option
+                Button { viewModel.selectAmbientSound(option) } label: {
+                    HStack(spacing: MassMatesSpacing.sm) {
+                        Image(systemName: option.systemImage).font(MassMatesFont.callout)
+                        Text(option.title).font(MassMatesFont.callout)
+                        Spacer()
+                        if isSelected { Image(systemName: "checkmark").font(MassMatesFont.caption) }
+                    }
+                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
+                    .padding(MassMatesSpacing.sm)
+                    .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(MassMatesLayout.screenMargin)
+        .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     private func runCountdownLoop() async {

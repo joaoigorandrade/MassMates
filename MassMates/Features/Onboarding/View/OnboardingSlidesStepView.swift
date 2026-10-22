@@ -30,108 +30,105 @@ struct OnboardingSlidesStepView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: 0) {
-            topSection
-            Spacer(minLength: MassMatesSpacing.xl)
+            pagedSlidesView
             bottomSection
         }
-        .frame(maxWidth: .infinity, minHeight: 520)
-        .contentShape(Rectangle())
-        .gesture(swipeGesture)
-        .animation(.easeInOut(duration: 0.25), value: currentIndex)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(MassMatesPalette.bg)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var activeSlide: OnboardingSlide {
-        guard slides.indices.contains(currentIndex) else {
-            return slides.first ?? OnboardingSlide(
-                id: "default",
-                badgeTitle: "",
-                title: "Constância espiritual em comunidade",
-                bodyText: "Uma comunidade serena para cultivar a vida de oração diária e caminhar em comunhão.",
-                systemImage: "flame"
-            )
+    private var pagedSlidesView: some View {
+        TabView(selection: selectionBinding) {
+            ForEach(Array(resolvedSlides.enumerated()), id: \.element.id) { index, slide in
+                OnboardingSlidePageView(slide: slide)
+                    .tag(index)
+            }
         }
-        return slides[currentIndex]
-    }
-
-    private var topSection: some View {
-        VStack(spacing: MassMatesSpacing.xl) {
-            OnboardingSacredHeroFrameView(
-                activeSymbol: activeSlide.systemImage,
-                onSwipeLeft: onAdvance,
-                onSwipeRight: selectPreviousSlide
-            )
-            typographyContent
-        }
-        .padding(.top, MassMatesSpacing.xl)
-    }
-
-    private var typographyContent: some View {
-        VStack(spacing: MassMatesSpacing.sm) {
-            Text(activeSlide.title)
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .multilineTextAlignment(.center)
-                .tracking(-0.3)
-            Text(activeSlide.bodyText)
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
-        }
-        .padding(.horizontal, MassMatesSpacing.xxs)
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(minHeight: 380, maxHeight: 460)
+        .animation(.easeInOut(duration: 0.25), value: currentIndex)
     }
 
     private var bottomSection: some View {
         VStack(spacing: MassMatesSpacing.xl) {
             OnboardingPaginationDotsView(
-                count: slides.count,
+                count: resolvedSlides.count,
                 currentIndex: currentIndex,
                 onSelectIndex: onSelectIndex
             )
             actionsSection
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
         .padding(.bottom, MassMatesSpacing.md)
     }
 
     private var actionsSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(
-                title: "Continuar",
+                title: isOnFinalSlide ? "Começar" : "Continuar",
                 action: onAdvance
             )
-            Button(action: onSkip) {
-                Text("Pular")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
+            skipButton
         }
     }
 
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 24)
-            .onEnded { value in
-                if value.translation.width < -24 {
-                    onAdvance()
-                } else if value.translation.width > 24 {
-                    selectPreviousSlide()
-                }
-            }
+    private var skipButton: some View {
+        Button(action: onSkip) {
+            Text("Pular")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+        }
+        .buttonStyle(.plain)
+        .opacity(isOnFinalSlide ? 0 : 1)
+        .disabled(isOnFinalSlide)
     }
 
-    private func selectPreviousSlide() {
-        guard currentIndex > 0 else { return }
-        onSelectIndex(currentIndex - 1)
+    private var selectionBinding: Binding<Int> {
+        Binding(
+            get: { currentIndex },
+            set: { newIndex in
+                if newIndex != currentIndex {
+                    onSelectIndex(newIndex)
+                }
+            }
+        )
     }
+
+    private var resolvedSlides: [OnboardingSlide] {
+        slides.isEmpty ? Self.defaultSlides : slides
+    }
+
+    private static let defaultSlides: [OnboardingSlide] = [
+        OnboardingSlide(
+            id: "slide-consistency",
+            badgeTitle: "Tempo Comum • Fidelidade Diária",
+            title: "Constância Espiritual",
+            bodyText: "Ritmo diário de oração conectado à liturgia viva da Igreja.",
+            systemImage: "flame"
+        ),
+        OnboardingSlide(
+            id: "slide-fraternities",
+            badgeTitle: "Comunhão • Intercessão Mútua",
+            title: "Fraternidade & Oração",
+            bodyText: "Rezar junto com sua paróquia ou pequeno grupo em comunhão.",
+            systemImage: "person.3.fill"
+        ),
+        OnboardingSlide(
+            id: "slide-privacy",
+            badgeTitle: "Criptografia Local • Paz Interior",
+            title: "Silêncio & Intimidade",
+            bodyText: "Privacidade sagrada e sigilo criptografado para confissão e diário pessoal.",
+            systemImage: "lock.shield.fill"
+        )
+    ]
 }
 
 #Preview("Onboarding Slides — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        let service = LocalOnboardingService()
         OnboardingSlidesStepView(
-            slides: service.welcomeSlides(),
+            slides: [],
             currentIndex: 0,
             isOnFinalSlide: false,
             onSelectIndex: { _ in },

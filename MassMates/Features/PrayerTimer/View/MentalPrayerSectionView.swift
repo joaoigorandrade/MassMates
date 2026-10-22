@@ -14,46 +14,45 @@ struct MentalPrayerSectionView: View {
     var body: some View {
         VStack(spacing: MassMatesSpacing.xl) {
             circularTimerDial
-            durationPillsRow
-            tactileOptionSection
+            durationChipsRow
+            startPauseButton
         }
-        .padding(.vertical, MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Subviews / Private Helpers
     private var circularTimerDial: some View {
         ZStack {
             Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 2)
+                .stroke(MassMatesPalette.line, lineWidth: 1.5)
             Circle()
                 .trim(from: 0, to: viewModel.progress)
-                .stroke(
-                    theme.tint,
-                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
-                )
+                .stroke(theme.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
             VStack(spacing: MassMatesSpacing.xxs) {
                 Text(viewModel.formattedRemainingTime)
                     .font(MassMatesFont.timerNumeral)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Oração mental")
-                    .font(MassMatesFont.callout)
+                Text("Silêncio interior")
+                    .font(MassMatesFont.caption)
+                    .tracking(1.4)
+                    .textCase(.uppercase)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
-        .frame(width: 256, height: 256)
+        .frame(width: 240, height: 240)
     }
 
-    private var durationPillsRow: some View {
+    private var durationChipsRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
-            ForEach([5, 10, 15, 20], id: \.self) { minutes in
-                durationPill(minutes: minutes)
+            ForEach([10, 15, 30], id: \.self) { minutes in
+                durationChip(minutes: minutes)
             }
         }
     }
 
-    private func durationPill(minutes: Int) -> some View {
+    private func durationChip(minutes: Int) -> some View {
         let isSelected = viewModel.totalSeconds == minutes * 60
         return Button {
             viewModel.selectDuration(minutes: minutes)
@@ -61,31 +60,36 @@ struct MentalPrayerSectionView: View {
             Text("\(minutes) min")
                 .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
                 .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, MassMatesSpacing.md)
+                .padding(.vertical, MassMatesSpacing.xs)
                 .background(isSelected ? MassMatesPalette.surfaceMuted : Color.clear)
+                .overlay {
+                    RoundedRectangle(cornerRadius: MassMatesRadius.chip)
+                        .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+                }
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .buttonStyle(.plain)
     }
 
-    private var tactileOptionSection: some View {
-        VStack(spacing: MassMatesSpacing.md) {
-            Divider()
-                .background(MassMatesPalette.line.opacity(0.6))
-            Toggle(isOn: $viewModel.isChimeEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Contador tátil & carrilhão suave")
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("Sinos discretos ao iniciar, meio e término")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
+    private var startPauseButton: some View {
+        Button {
+            viewModel.toggleTimer()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(theme.tint)
+                    .frame(width: 64, height: 64)
+                    .shadow(color: Color.black.opacity(0.08), radius: 6, y: 3)
+                Image(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(theme.onTint)
+                    .offset(x: viewModel.isRunning ? 0 : 2)
             }
-            .tint(theme.tint)
         }
-        .padding(.horizontal, MassMatesSpacing.xs)
+        .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.isRunning)
+        .accessibilityLabel(viewModel.isRunning ? "Pausar Silêncio" : "Iniciar Silêncio")
     }
 }
 

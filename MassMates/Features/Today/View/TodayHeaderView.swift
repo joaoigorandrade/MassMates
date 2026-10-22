@@ -5,65 +5,56 @@ struct TodayHeaderView: View {
     @Environment(\.liturgicalTheme) private var theme
     private let seasonTitle: String
     private let saintOrFeast: String
-    private let feastRankLabel: String
-    private let weekdayAndWeekLabel: String
-    private let saintQuote: String
-    private let progress: TodayProgressSummary
+    private let streakDays: Int
     private let onSelectSeason: (LiturgicalColor) -> Void
-    private let onOpenOnboarding: (() -> Void)?
-    private let onOpenHistory: (() -> Void)?
+    private let onOpenStreak: (() -> Void)?
 
     // MARK: - Init
     init(
         seasonTitle: String,
         saintOrFeast: String,
-        feastRankLabel: String = "MEMÓRIA FACULTATIVA",
-        weekdayAndWeekLabel: String = "Quarta-feira • Semana III",
-        saintQuote: String = "“Olha cada dia para o teu Esposo, Cristo, e repara nas suas virtudes.”",
+        streakDays: Int,
+        onSelectSeason: @escaping (LiturgicalColor) -> Void = { _ in },
+        onOpenStreak: (() -> Void)? = nil
+    ) {
+        self.seasonTitle = seasonTitle
+        self.saintOrFeast = saintOrFeast
+        self.streakDays = streakDays
+        self.onSelectSeason = onSelectSeason
+        self.onOpenStreak = onOpenStreak
+    }
+
+    init(
+        seasonTitle: String,
+        saintOrFeast: String,
+        feastRankLabel: String = "",
+        weekdayAndWeekLabel: String = "",
+        saintQuote: String = "",
         progress: TodayProgressSummary,
         onSelectSeason: @escaping (LiturgicalColor) -> Void = { _ in },
         onOpenOnboarding: (() -> Void)? = nil,
         onOpenHistory: (() -> Void)? = nil
     ) {
-        self.seasonTitle = seasonTitle
-        self.saintOrFeast = saintOrFeast
-        self.feastRankLabel = feastRankLabel
-        self.weekdayAndWeekLabel = weekdayAndWeekLabel
-        self.saintQuote = saintQuote
-        self.progress = progress
-        self.onSelectSeason = onSelectSeason
-        self.onOpenOnboarding = onOpenOnboarding
-        self.onOpenHistory = onOpenHistory
+        self.init(
+            seasonTitle: seasonTitle,
+            saintOrFeast: saintOrFeast,
+            streakDays: progress.activeStreakDays,
+            onSelectSeason: onSelectSeason,
+            onOpenStreak: onOpenHistory ?? onOpenOnboarding
+        )
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            headerMainRow
-            if !saintOrFeast.isEmpty {
-                saintSection
-            }
-            hairlineDivider
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            seasonPillRow
+            titleAndStreakRow
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.top, MassMatesSpacing.sm)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerMainRow: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Hoje")
-                    .font(MassMatesFont.display)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                seasonSubtitleRow
-            }
-            Spacer(minLength: MassMatesSpacing.md)
-            streakRingButton
-        }
-    }
-
-    private var seasonSubtitleRow: some View {
+    private var seasonPillRow: some View {
         Menu {
             ForEach(LiturgicalColor.allCases) { color in
                 Button(color.defaultSeasonName) {
@@ -75,69 +66,56 @@ struct TodayHeaderView: View {
                 Circle()
                     .fill(theme.tint)
                     .frame(width: 6, height: 6)
-                Text(seasonSubtitle)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var streakRingButton: some View {
-        Button {
-            (onOpenHistory ?? onOpenOnboarding)?()
-        } label: {
-            StreakRingView(
-                streakDays: progress.activeStreakDays,
-                progress: progress.ruleCompletionRatio,
-                size: 58
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Ver histórico de oração: \(progress.activeStreakDays) dias em oração")
-    }
-
-    private var saintSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            if !feastRankLabel.isEmpty {
-                Text(feastRankLabel.uppercased())
-                    .font(MassMatesFont.caption)
+                Text(seasonPillText)
+                    .font(.system(size: 11, weight: .medium))
                     .tracking(0.6)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
-            Text(saintOrFeast)
-                .font(MassMatesFont.headline)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tempo litúrgico: \(seasonPillText)")
+    }
+
+    private var titleAndStreakRow: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(saintOrFeast.isEmpty ? "Santos de Hoje" : saintOrFeast)
+                .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-            if !saintQuote.isEmpty {
-                Text(saintQuote)
-                    .font(MassMatesFont.callout)
+            Spacer(minLength: MassMatesSpacing.sm)
+            streakCounterButton
+        }
+    }
+
+    private var streakCounterButton: some View {
+        Button {
+            onOpenStreak?()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(theme.tint)
+                Text("\(streakDays)")
+                    .font(MassMatesFont.numeral)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(streakDays) dias em oração")
     }
 
-    private var hairlineDivider: some View {
-        Rectangle()
-            .fill(MassMatesPalette.line)
-            .frame(height: 1)
-            .padding(.top, MassMatesSpacing.xs)
-    }
-
-    private var seasonSubtitle: String {
-        let separatorCandidates = ["•", "·", "-"]
-        for sep in separatorCandidates where weekdayAndWeekLabel.contains(sep) {
-            let parts = weekdayAndWeekLabel.components(separatedBy: sep)
-            if parts.count > 1 {
-                let suffix = parts[1].trimmingCharacters(in: .whitespaces)
-                return "\(seasonTitle) · \(suffix)"
-            }
+    private var seasonPillText: String {
+        let colorName: String = switch theme.season {
+        case .green: "VERDE"
+        case .purple: "ROXO"
+        case .white: "BRANCO"
+        case .red: "VERMELHO"
+        case .rose: "ROSA"
         }
-        if weekdayAndWeekLabel.isEmpty {
-            return "\(seasonTitle) · Semana 29"
-        }
-        return "\(seasonTitle) · \(weekdayAndWeekLabel)"
+        let cleanTitle = seasonTitle.isEmpty ? theme.season.defaultSeasonName : seasonTitle
+        return "\(cleanTitle.uppercased()) · \(colorName)"
     }
 }
 
@@ -145,12 +123,8 @@ struct TodayHeaderView: View {
     LiturgicalSeasonPreviewMatrix { season in
         TodayHeaderView(
             seasonTitle: season.defaultSeasonName,
-            saintOrFeast: "Santa Clara de Assis, Virgem",
-            progress: TodayProgressSummary(
-                baseStreakDays: 14,
-                items: [RuleOfLifeItem(practice: .rosary, isCompleted: true)],
-                selectedPreset: .essentialDaily
-            )
+            saintOrFeast: "Santa Teresa de Ávila",
+            streakDays: 12
         )
     }
 }

@@ -5,15 +5,18 @@ struct DiaryEntryImmersiveReaderView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
-    private let entry: PrivateDiaryCheckInEntry
+    @State private var currentEntry: PrivateDiaryCheckInEntry
+    private let allEntries: [PrivateDiaryCheckInEntry]
     private let hasAttachedPhoto: Bool
 
     // MARK: - Init
     init(
         entry: PrivateDiaryCheckInEntry = SpiritualDiaryViewModel.defaultSampleEntries()[0],
+        allEntries: [PrivateDiaryCheckInEntry] = SpiritualDiaryViewModel.defaultSampleEntries(),
         hasAttachedPhoto: Bool = true
     ) {
-        self.entry = entry
+        self._currentEntry = State(initialValue: entry)
+        self.allEntries = allEntries
         self.hasAttachedPhoto = hasAttachedPhoto
     }
 
@@ -24,12 +27,10 @@ struct DiaryEntryImmersiveReaderView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
                     metadataAndTitleSection
-                    if hasAttachedPhoto {
-                        attachedPhotoProof
-                    }
+                    if hasAttachedPhoto { attachedPhotoProof }
                     DiaryEntryIlluminatingWordView()
                     reflectionArticle
-                    DiaryEntryImmersiveFooterView()
+                    footerWithChevrons
                 }
                 .padding(.horizontal, MassMatesLayout.readingMargin)
                 .padding(.top, MassMatesSpacing.md)
@@ -51,37 +52,23 @@ struct DiaryEntryImmersiveReaderView: View {
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Voltar ao diário")
-
             Spacer()
-
-            ShareLink(
-                item: exportEncryptedText,
-                subject: Text("Registro Seguro do Diário Espiritual"),
-                message: Text("Registro confidencial do Diário Espiritual.")
-            ) {
+            ShareLink(item: exportText) {
                 Image(systemName: "square.and.arrow.up")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Exportar registro criptografado")
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .frame(height: MassMatesLayout.minRowHeight)
-        .background(MassMatesPalette.bg)
     }
 
     private var metadataAndTitleSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Text(formattedMetadata)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-
-            Text(entryTitle)
-                .font(MassMatesFont.title)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text(formattedMetadata).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            Text(entryTitle).font(MassMatesFont.title).foregroundStyle(MassMatesPalette.textPrimary)
         }
     }
 
@@ -89,12 +76,8 @@ struct DiaryEntryImmersiveReaderView: View {
         ZStack {
             MassMatesPalette.surfaceMuted
             VStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "camera")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                Text("Registro do recolhimento • Canto de oração")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Image(systemName: "camera").font(MassMatesFont.title).foregroundStyle(MassMatesPalette.textTertiary)
+                Text("Canto de oração • Recolhimento").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -116,45 +99,67 @@ struct DiaryEntryImmersiveReaderView: View {
         .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
     }
 
+    private var footerWithChevrons: some View {
+        DiaryEntryImmersiveFooterView(
+            previousLabel: previousEntry.map(shortDateLabel),
+            nextLabel: nextEntry.map(shortDateLabel),
+            onPrevious: { flip(to: previousEntry) },
+            onNext: { flip(to: nextEntry) }
+        )
+    }
+
     private var formattedMetadata: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_BR")
         formatter.dateFormat = "d 'de' MMMM"
-        let date = formatter.string(from: entry.createdAt)
-        return "\(date) · \(entry.practice.title) · Mistérios Dolorosos"
+        return "\(formatter.string(from: currentEntry.createdAt)) · \(currentEntry.practice.title)"
     }
 
     private var entryTitle: String {
-        switch entry.practice {
+        switch currentEntry.practice {
         case .rosary: "Consolação ao pé da Cruz"
         case .dailyGospel: "Luz no Evangelho do Dia"
         case .mentalPrayer: "Recolhimento e Paz Interior"
-        case .confession: "Paz após o Sacramento da Reconciliação"
-        default: "Consolação ao pé da Cruz"
+        case .confession: "Reconciliação e Misericórdia"
+        default: "Consolação e Recolhimento"
         }
     }
 
     private var reflectionParagraphs: [String] {
-        if let notes = entry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let notes = currentEntry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let split = notes.components(separatedBy: "\n\n").filter { !$0.isEmpty }
             return split.isEmpty ? [notes] : split
         }
         return [
-            "Ofereci cada mistério pelas intenções e aflições da família do Mateus. Durante a terceira dezena, veio-me ao coração uma viva consciência de que a cruz que carregamos hoje já foi redimida pelo amor de Nosso Senhor.",
-            "Senti uma profunda paz ao rezar a Salve Rainha. Compreendi que o recolhimento interior não é ausência de ruídos exteriores, mas a decisão firme de fixar o olhar em Cristo mesmo em meio à tempestade da rotina.",
-            "Renovei o propósito de guardar a mansidão nas conversas de trabalho e não alimentar queixas nem desânimos diante das dificuldades que surgirem."
+            "Ofereci cada mistério pelas intenções e aflições da minha família. Durante a oração, veio-me ao coração uma viva consciência de que a cruz já foi redimida pelo amor de Nosso Senhor.",
+            "Senti uma profunda paz no recolhimento interior, renovando o propósito de guardar a mansidão e fixar o olhar em Cristo."
         ]
     }
 
-    private var exportEncryptedText: String {
-        """
-        [MassMates — Registro Criptografado do Diário]
-        Data: \(formattedMetadata)
-        Título: \(entryTitle)
-        Sigilo: Armazenado exclusivamente neste dispositivo.
+    private var previousEntry: PrivateDiaryCheckInEntry? {
+        guard let idx = allEntries.firstIndex(where: { $0.id == currentEntry.id }), idx + 1 < allEntries.count else { return nil }
+        return allEntries[idx + 1]
+    }
 
-        \(reflectionParagraphs.joined(separator: "\n\n"))
-        """
+    private var nextEntry: PrivateDiaryCheckInEntry? {
+        guard let idx = allEntries.firstIndex(where: { $0.id == currentEntry.id }), idx > 0 else { return nil }
+        return allEntries[idx - 1]
+    }
+
+    private func shortDateLabel(for entry: PrivateDiaryCheckInEntry) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "d MMM"
+        return formatter.string(from: entry.createdAt).capitalized
+    }
+
+    private func flip(to entry: PrivateDiaryCheckInEntry?) {
+        guard let entry else { return }
+        withAnimation(.easeInOut(duration: 0.25)) { currentEntry = entry }
+    }
+
+    private var exportText: String {
+        "[\(formattedMetadata)] \(entryTitle)\n\n\(reflectionParagraphs.joined(separator: "\n\n"))"
     }
 }
 

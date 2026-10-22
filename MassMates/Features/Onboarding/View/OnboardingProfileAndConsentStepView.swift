@@ -4,65 +4,90 @@ struct OnboardingProfileAndConsentStepView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: OnboardingViewModel
+    @State private var wizardStep: Int
+    @State private var validationError: String?
 
     // MARK: - Init
     init(viewModel: OnboardingViewModel) {
         self.viewModel = viewModel
+        self._wizardStep = State(
+            initialValue: viewModel.currentStep == .privacyAndAdConsent ? 3 : 1
+        )
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            topNavigationBar
-            editorialWelcomeHeader
-            profileInputsSection
-            OnboardingRuleAndPrivacyCardsView(viewModel: viewModel)
-            errorBanner
+        Group {
+            switch wizardStep {
+            case 1:
+                nameStepView
+            case 2:
+                OnboardingRuleAndPrivacyCardsView(
+                    viewModel: viewModel,
+                    onBack: { withAnimation { wizardStep = 1 } },
+                    onNext: {
+                        viewModel.acknowledgedLocalDiaryWarning = true
+                        withAnimation { wizardStep = 3 }
+                    }
+                )
+            default:
+                OnboardingSacredTransparencyCardView(
+                    viewModel: viewModel,
+                    onBack: { withAnimation { wizardStep = 2 } }
+                )
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: wizardStep)
     }
 
     // MARK: - Subviews / Private Helpers
+    private var nameStepView: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            topNavigationBar
+            Text("Como podemos te chamar?")
+                .font(MassMatesFont.displayMobile)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .padding(.top, MassMatesSpacing.md)
+                .padding(.bottom, MassMatesSpacing.xl)
+            HStack {
+                Spacer()
+                avatarPickerButton
+                Spacer()
+            }
+            .padding(.bottom, MassMatesSpacing.xl)
+            VStack(spacing: MassMatesSpacing.lg) {
+                inputUnderlineField("Nome", text: $viewModel.userName)
+                inputUnderlineField("Paróquia ou cidade (opcional)", text: $viewModel.parishOrCity)
+            }
+            errorBanner
+            Spacer()
+            continueButton
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var topNavigationBar: some View {
         HStack {
             Button(action: viewModel.navigateBack) {
-                Image(systemName: "arrow.left")
+                Image(systemName: "chevron.left")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
             }
             .buttonStyle(.plain)
             Spacer()
-            Text("Configuração")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Spacer()
-            Color.clear
-                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+            stepIndicator(active: 1)
         }
         .frame(height: MassMatesLayout.minTapTarget)
     }
 
-    private var editorialWelcomeHeader: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("Passo 2 de 3")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Text("Sua Regra de Vida")
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("Um ritmo espiritual calmo e sob medida para sua oração cotidiana.")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var profileInputsSection: some View {
-        VStack(spacing: MassMatesSpacing.md) {
-            HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
-                avatarPickerButton
-                nameInputField
+    private func stepIndicator(active: Int) -> some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(1...3, id: \.self) { step in
+                Circle()
+                    .fill(step == active ? theme.tint : MassMatesPalette.line)
+                    .frame(width: 8, height: 8)
             }
-            parishInputField
         }
     }
 
@@ -73,18 +98,19 @@ struct OnboardingProfileAndConsentStepView: View {
             ZStack(alignment: .bottomTrailing) {
                 Circle()
                     .fill(MassMatesPalette.surfaceMuted)
-                    .frame(width: 56, height: 56)
+                    .frame(width: 64, height: 64)
                     .overlay(
                         Image(systemName: viewModel.hasSelectedAvatarPhoto ? "person.fill" : "camera.fill")
-                            .font(MassMatesFont.title)
+                            .font(.system(size: 24))
                             .foregroundStyle(MassMatesPalette.textSecondary)
                     )
+                    .overlay(Circle().stroke(MassMatesPalette.line, lineWidth: 1))
                 Circle()
                     .fill(theme.tint)
                     .frame(width: 20, height: 20)
                     .overlay(
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(theme.onTint)
                     )
             }
@@ -92,44 +118,41 @@ struct OnboardingProfileAndConsentStepView: View {
         .buttonStyle(.plain)
     }
 
-    private var nameInputField: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("Nome")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            TextField("Seu nome", text: $viewModel.userName)
-                .font(MassMatesFont.headline)
+    private func inputUnderlineField(_ placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            TextField(placeholder, text: text)
+                .font(MassMatesFont.body)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(height: MassMatesLayout.primaryButtonHeight)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-        }
-    }
-
-    private var parishInputField: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("Paróquia / Cidade")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            TextField("Ex: Paróquia Sant'Ana — São Paulo, SP", text: $viewModel.parishOrCity)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(height: MassMatesLayout.primaryButtonHeight)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .padding(.vertical, MassMatesSpacing.sm)
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
         }
     }
 
     @ViewBuilder
     private var errorBanner: some View {
-        if let error = viewModel.errorMessage {
+        if let error = validationError ?? viewModel.errorMessage {
             Text(error)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.danger)
-                .padding(.horizontal, MassMatesSpacing.xs)
+                .padding(.top, MassMatesSpacing.xs)
         }
+    }
+
+    private var continueButton: some View {
+        MassMatesPrimaryButton(title: "Continuar") {
+            let trimmed = viewModel.userName.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                validationError = OnboardingValidationError.emptyUserName.userMessage
+                return
+            }
+            validationError = nil
+            withAnimation(.easeInOut(duration: 0.25)) {
+                wizardStep = 2
+            }
+        }
+        .padding(.bottom, MassMatesSpacing.sm)
     }
 }
 

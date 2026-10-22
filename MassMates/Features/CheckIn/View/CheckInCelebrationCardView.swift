@@ -3,16 +3,16 @@ import SwiftUI
 struct CheckInCelebrationCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let result: CheckInSubmissionResult
     private let activeStreakDays: Int
     private let onDone: () -> Void
 
+    @State private var ringProgress: Double = 0.0
+    @State private var showCheckBadge: Bool = false
+
     // MARK: - Init
-    init(
-        result: CheckInSubmissionResult,
-        activeStreakDays: Int,
-        onDone: @escaping () -> Void
-    ) {
+    init(result: CheckInSubmissionResult, activeStreakDays: Int, onDone: @escaping () -> Void) {
         self.result = result
         self.activeStreakDays = activeStreakDays
         self.onDone = onDone
@@ -20,43 +20,86 @@ struct CheckInCelebrationCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            celebrationCard
+        VStack(spacing: MassMatesSpacing.lg) {
+            topBarRow
+            Spacer()
+            celebrationRing
+            celebrationTitles
             if result.shouldShowPostCheckInSponsoredCard && !result.practice.isStrictlyPrivate {
-                SponsoredNativeCardView(
-                    sponsorName: "Editora Minha Biblioteca Católica",
-                    headline: "Leitura espiritual para aprofundar sua oração diária",
-                    bodyText: "Clássicos dos santos selecionados para sustentar sua caminhada espiritual.",
-                    couponCode: "ORACAO10"
-                )
+                sponsoredCard
             }
+            Spacer()
+            doneButton
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { await animateCelebration() }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var celebrationCard: some View {
-        VStack(spacing: MassMatesSpacing.md) {
-            StreakRingView(streakDays: activeStreakDays, progress: 1.0)
-            celebrationTitles
-            doneButton
+    private var topBarRow: some View {
+        HStack {
+            Spacer()
+            Button(action: onDone) {
+                Image(systemName: "xmark")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fechar")
         }
-        .padding(MassMatesSpacing.lg)
-        .frame(maxWidth: .infinity)
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+    }
+
+    private var celebrationRing: some View {
+        ZStack {
+            Circle().stroke(MassMatesPalette.line, lineWidth: MassMatesLayout.streakRingStroke)
+            Circle()
+                .trim(from: 0, to: ringProgress)
+                .stroke(MassMatesPalette.success, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            ringCenterContent
+            checkBadgeOverlay
+        }
+        .frame(width: 168, height: 168)
+    }
+
+    private var ringCenterContent: some View {
+        VStack(spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill").font(.system(size: 20)).foregroundStyle(theme.tint)
+                Text("\(activeStreakDays)")
+                    .font(.system(size: 46, weight: .medium, design: .rounded))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+            }
+            Text("dias seguidos")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private var checkBadgeOverlay: some View {
+        VStack {
+            HStack {
+                Spacer()
+                Circle().fill(MassMatesPalette.success).frame(width: 28, height: 28)
+                    .overlay(Image(systemName: "checkmark").font(.system(size: 13, weight: .bold)).foregroundStyle(.white))
+                    .scaleEffect(showCheckBadge ? 1.0 : 0.001)
+                    .opacity(showCheckBadge ? 1.0 : 0.0)
+            }
+            Spacer()
+        }
+        .offset(x: 4, y: -4)
     }
 
     private var celebrationTitles: some View {
-        VStack(spacing: MassMatesSpacing.xxs) {
-            Text(result.practice.title)
-                .font(.system(size: 24, weight: .semibold, design: .serif))
+        VStack(spacing: MassMatesSpacing.xs) {
+            Text(result.practice.isStrictlyPrivate ? "Amém. Seu registro foi guardado." : "Amém. Seu registro foi compartilhado.")
+                .font(.system(size: 21, weight: .regular, design: .serif))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .multilineTextAlignment(.center)
-
             Text(result.celebrationMessage)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
@@ -64,9 +107,17 @@ struct CheckInCelebrationCardView: View {
         }
     }
 
+    private var sponsoredCard: some View {
+        SponsoredNativeCardView(
+            sponsorName: "Editora Minha Biblioteca Católica",
+            headline: "Leitura espiritual para aprofundar sua oração diária",
+            couponCode: "ORACAO10"
+        )
+    }
+
     private var doneButton: some View {
         Button(action: onDone) {
-            Text("Concluir em paz")
+            Text("Concluir")
                 .font(MassMatesFont.headline)
                 .foregroundStyle(theme.onTint)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
@@ -74,6 +125,17 @@ struct CheckInCelebrationCardView: View {
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)
+    }
+
+    private func animateCelebration() async {
+        guard !reduceMotion else {
+            ringProgress = 1.0
+            showCheckBadge = true
+            return
+        }
+        withAnimation(.easeOut(duration: 0.8)) { ringProgress = 1.0 }
+        try? await Task.sleep(for: .milliseconds(650))
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { showCheckBadge = true }
     }
 }
 
@@ -85,9 +147,9 @@ struct CheckInCelebrationCardView: View {
                 sharedGroupIds: ["frat-sao-jose"],
                 savedToPrivateDiary: true,
                 celebrationMessage: "Mais um dia em oração • Partilhado em 1 grupo.",
-                shouldShowPostCheckInSponsoredCard: true
+                shouldShowPostCheckInSponsoredCard: false
             ),
-            activeStreakDays: 15,
+            activeStreakDays: 13,
             onDone: {}
         )
     }

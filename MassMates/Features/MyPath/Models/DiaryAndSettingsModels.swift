@@ -64,6 +64,22 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable, Equatable, Codab
     }
 }
 
+enum AppThemeMode: String, CaseIterable, Identifiable, Sendable, Equatable, Codable {
+    case system = "Sistema"
+    case light = "Claro"
+    case dark = "Escuro"
+
+    var id: String { rawValue }
+    var displayName: String { rawValue }
+}
+
+enum SettingsScreen: String, CaseIterable, Sendable, Equatable {
+    case index
+    case reminders
+    case appearance
+    case privacy
+}
+
 enum AccountDeletionState: Sendable, Equatable {
     case idle
     case awaitingSecondTapConfirmation
@@ -123,10 +139,10 @@ extension SpiritualMilestonesSummary {
 
 extension LiturgicalReminderItem {
     static let defaults: [LiturgicalReminderItem] = [
-        LiturgicalReminderItem(id: "rem-morning", kind: .morningOffering, title: "Oferta da Manhã", subtitle: "Consagração do dia ao acordar", timeLabel: "07:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-angelus-12", kind: .angelusNoon, title: "Angelus / Regina Caeli (Meio-dia)", subtitle: "Pausa mariana às 12h", timeLabel: "12:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-angelus-18", kind: .angelusEvening, title: "Angelus / Regina Caeli (Entardecer)", subtitle: "Sino da tarde às 18h", timeLabel: "18:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-rosary", kind: .dailyRosary, title: "Santo Terço Diário", subtitle: "Meditação dos mistérios do dia", timeLabel: "20:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-examen", kind: .eveningExamen, title: "Exame de Consciência Noturno", subtitle: "Gratidão e recolhimento antes de dormir", timeLabel: "21:30", isEnabled: false)
+        LiturgicalReminderItem(id: "rem-morning", kind: .morningOffering, title: "Oferecimento da manhã", subtitle: "Consagração do dia ao acordar", timeLabel: "06:30", isEnabled: true),
+        LiturgicalReminderItem(id: "rem-angelus-12", kind: .angelusNoon, title: "Angelus", subtitle: "Pausa mariana às 12h", timeLabel: "12:00", isEnabled: true),
+        LiturgicalReminderItem(id: "rem-angelus-18", kind: .angelusEvening, title: "Angelus", subtitle: "Sino da tarde às 18h", timeLabel: "18:00", isEnabled: true),
+        LiturgicalReminderItem(id: "rem-rosary", kind: .dailyRosary, title: "Terço", subtitle: "Meditação dos mistérios do dia", timeLabel: "20:00", isEnabled: true),
+        LiturgicalReminderItem(id: "rem-examen", kind: .eveningExamen, title: "Exame da noite", subtitle: "Gratidão e recolhimento antes de dormir", timeLabel: "22:00", isEnabled: false)
     ]
 }

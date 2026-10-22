@@ -13,11 +13,11 @@ struct RosaryCompanionView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: MassMatesSpacing.lg) {
-            circularContemplationSurface
-            meditationCard
+            mysteryHeader
+            decacordRingSurface
             quietTouchPrompt
         }
-        .padding(.vertical, MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture(perform: viewModel.advanceBead)
         .sensoryFeedback(trigger: viewModel.lastHapticEvent) { _, new in
@@ -26,76 +26,100 @@ struct RosaryCompanionView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var circularContemplationSurface: some View {
+    private var mysteryHeader: some View {
+        VStack(spacing: MassMatesSpacing.xxs) {
+            Text("\(viewModel.mysterySet.title.uppercased()) · \(viewModel.currentDecade.number)º")
+                .font(MassMatesFont.caption)
+                .tracking(1.6)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text(formattedMysteryTitle)
+                .font(MassMatesFont.displayMobile)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .padding(.horizontal, MassMatesSpacing.sm)
+            Text(viewModel.currentDecade.fruitOfMystery)
+                .font(MassMatesFont.scriptureEmphasis)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private var formattedMysteryTitle: String {
+        let raw = viewModel.currentDecade.title
+        if raw.contains("Mistério:") {
+            let single = viewModel.mysterySet.title.replacingOccurrences(of: "Mistérios ", with: "Mistério ")
+            return raw.replacingOccurrences(of: "Mistério:", with: "\(single):")
+        }
+        return raw
+    }
+
+    private var decacordRingSurface: some View {
         ZStack {
             Circle()
-                .stroke(MassMatesPalette.line.opacity(0.5), lineWidth: 1.5)
+                .stroke(MassMatesPalette.line, style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
             ForEach(1...10, id: \.self) { index in
-                beadIndicator(index: index, active: viewModel.activeHailMaryNumber)
+                beadView(index: index, active: viewModel.activeHailMaryNumber)
                     .offset(beadOffset(for: index))
             }
-            VStack(spacing: MassMatesSpacing.xxs) {
-                Text("\(viewModel.currentDecade.number)º MISTÉRIO")
+            VStack(spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(viewModel.activeHailMaryNumber)")
+                        .font(MassMatesFont.numeral)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text("/ 10")
+                        .font(MassMatesFont.body)
+                        .foregroundStyle(MassMatesPalette.textTertiary)
+                }
+                Text(beadSubLabel)
                     .font(MassMatesFont.caption)
-                    .tracking(0.6)
-                    .foregroundStyle(theme.tint)
-                Text(viewModel.currentDecade.title)
-                    .font(Font.system(size: 17, weight: .semibold, design: .serif))
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .padding(.horizontal, MassMatesSpacing.md)
-                Text(viewModel.currentBeadLabel)
-                    .font(MassMatesFont.callout)
+                    .tracking(1.4)
+                    .textCase(.uppercase)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
-        .frame(width: 256, height: 256)
+        .frame(width: 240, height: 240)
     }
 
-    private func beadOffset(for index: Int, radius: CGFloat = 108) -> CGSize {
+    private func beadOffset(for index: Int, radius: CGFloat = 96) -> CGSize {
         let angle = (Double(index - 1) / 10.0) * 2 * .pi - (.pi / 2)
         return CGSize(width: radius * cos(angle), height: radius * sin(angle))
     }
 
-    private func beadIndicator(index: Int, active: Int) -> some View {
+    private func beadView(index: Int, active: Int) -> some View {
         let isCompleted = index < active
         let isCurrent = index == active
         return ZStack {
             if isCurrent {
+                Circle().fill(theme.tint.opacity(0.16)).frame(width: 20, height: 20)
+                Circle().fill(theme.tint).frame(width: 13, height: 13)
+            } else if isCompleted {
+                Circle().fill(theme.tint).frame(width: 12, height: 12)
+            } else {
                 Circle()
-                    .stroke(theme.tintSoft, lineWidth: 3)
-                    .frame(width: 22, height: 22)
+                    .fill(MassMatesPalette.bg)
+                    .frame(width: 11, height: 11)
+                    .overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
             }
-            Circle()
-                .fill(isCompleted || isCurrent ? theme.tint : MassMatesPalette.line)
-                .frame(width: isCurrent ? 14 : 9, height: isCurrent ? 14 : 9)
         }
     }
 
-    private var meditationCard: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(viewModel.currentDecade.meditation)
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack {
-                Spacer()
-                Text("— \(viewModel.currentDecade.scriptureReference)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
+    private var beadSubLabel: String {
+        switch viewModel.currentBeadIndex {
+        case 0: "Pai-Nosso"
+        case 1...10: "Ave-Maria"
+        default: "Glória ao Pai"
         }
-        .padding(MassMatesSpacing.md)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 
     private var quietTouchPrompt: some View {
-        Text("Toque em qualquer lugar da tela com os olhos fechados.")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textTertiary)
-            .multilineTextAlignment(.center)
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Image(systemName: "hand.tap")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text("Toque na tela para avançar")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
     }
 
     private func sensoryFeedback(for event: BeadHapticEvent) -> SensoryFeedback? {

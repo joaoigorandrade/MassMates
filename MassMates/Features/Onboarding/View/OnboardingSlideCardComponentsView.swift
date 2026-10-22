@@ -38,111 +38,120 @@ struct OnboardingPaginationDotsView: View {
 
 struct OnboardingSacredHeroFrameView: View {
     // MARK: - Dependencies & State
-    private let activeSymbol: String
-    private let badgeTitle: String
-    private let onSwipeLeft: () -> Void
-    private let onSwipeRight: () -> Void
+    private let symbol: String
 
     // MARK: - Init
+    init(symbol: String = "flame") {
+        self.symbol = symbol
+    }
+
     init(
         activeSymbol: String,
-        badgeTitle: String = "Tempo Comum • Fidelidade Diária",
-        onSwipeLeft: @escaping () -> Void,
-        onSwipeRight: @escaping () -> Void
+        badgeTitle: String = "",
+        onSwipeLeft: (() -> Void)? = nil,
+        onSwipeRight: (() -> Void)? = nil
     ) {
-        self.activeSymbol = activeSymbol
-        self.badgeTitle = badgeTitle
-        self.onSwipeLeft = onSwipeLeft
-        self.onSwipeRight = onSwipeRight
+        self.symbol = activeSymbol
     }
 
     // MARK: - Body / Public API
     var body: some View {
         ZStack {
-            Image(systemName: resolvedSymbol)
-                .font(.system(size: 38, weight: .light))
+            Circle()
+                .fill(MassMatesPalette.surfaceMuted.opacity(0.6))
+                .frame(width: 64, height: 64)
+            Image(systemName: symbol)
+                .font(.system(size: 32, weight: .light))
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
         .frame(width: 64, height: 64)
-        .contentShape(Rectangle())
-        .gesture(swipeGesture)
-        .accessibilityLabel(badgeTitle)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var resolvedSymbol: String {
-        if activeSymbol == "calendar" { return "flame" }
-        return activeSymbol.isEmpty ? "flame" : activeSymbol
-    }
-
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 24)
-            .onEnded { value in
-                if value.translation.width < -24 {
-                    onSwipeLeft()
-                } else if value.translation.width > 24 {
-                    onSwipeRight()
-                }
-            }
-    }
 }
 
-struct OnboardingValuePropositionCardView: View {
+struct OnboardingSlidePageView: View {
     // MARK: - Dependencies & State
-    @Environment(\.liturgicalTheme) private var theme
     private let slide: OnboardingSlide
-    private let isSelected: Bool
-    private let action: () -> Void
 
     // MARK: - Init
-    init(slide: OnboardingSlide, isSelected: Bool, action: @escaping () -> Void) {
+    init(slide: OnboardingSlide) {
         self.slide = slide
-        self.isSelected = isSelected
-        self.action = action
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-                Image(systemName: slide.systemImage)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                    .frame(width: 40, height: 40)
-                    .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                    Text(slide.title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(slide.bodyText)
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(MassMatesSpacing.sm)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                    .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
-            )
+        VStack(spacing: 0) {
+            Spacer()
+            OnboardingSacredHeroFrameView(symbol: resolvedIcon)
+            Spacer().frame(height: MassMatesSpacing.xl)
+            textContent
+            Spacer()
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Subviews / Private Helpers
+    private var textContent: some View {
+        VStack(spacing: MassMatesSpacing.md) {
+            Text(resolvedTitle)
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .multilineTextAlignment(.center)
+                .tracking(-0.3)
+                .lineLimit(2)
+            Text(resolvedBody)
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+                .lineSpacing(4)
+        }
+    }
+
+    private var resolvedTitle: String {
+        switch slide.id {
+        case "slide-consistency": "Constância Espiritual"
+        case "slide-fraternities": "Fraternidade & Oração"
+        case "slide-privacy": "Silêncio & Intimidade"
+        default: slide.title
+        }
+    }
+
+    private var resolvedBody: String {
+        switch slide.id {
+        case "slide-consistency": "Ritmo diário de oração conectado à liturgia viva da Igreja."
+        case "slide-fraternities": "Rezar junto com sua paróquia ou pequeno grupo em comunhão."
+        case "slide-privacy": "Privacidade sagrada e sigilo criptografado para confissão e diário pessoal."
+        default: slide.bodyText
+        }
+    }
+
+    private var resolvedIcon: String {
+        switch slide.id {
+        case "slide-consistency": "flame"
+        case "slide-fraternities": "person.3.fill"
+        case "slide-privacy": "lock.shield.fill"
+        default: slide.systemImage.isEmpty ? "flame" : slide.systemImage
+        }
+    }
 }
 
 #Preview("Onboarding Slide Components — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        let slide = LocalOnboardingService().welcomeSlides()[0]
+        let slide = OnboardingSlide(
+            id: "slide-consistency",
+            badgeTitle: "",
+            title: "Constância Espiritual",
+            bodyText: "Ritmo diário de oração conectado à liturgia viva da Igreja.",
+            systemImage: "flame"
+        )
         VStack(spacing: MassMatesSpacing.md) {
-            OnboardingSacredHeroFrameView(activeSymbol: slide.systemImage, onSwipeLeft: {}, onSwipeRight: {})
+            OnboardingSacredHeroFrameView(symbol: slide.systemImage)
             OnboardingPaginationDotsView(count: 3, currentIndex: 0, onSelectIndex: { _ in })
-            OnboardingValuePropositionCardView(slide: slide, isSelected: true, action: {})
+            OnboardingSlidePageView(slide: slide)
         }
     }
 }

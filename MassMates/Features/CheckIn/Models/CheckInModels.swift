@@ -113,11 +113,11 @@ extension SpiritualPractice {
     var checkInChipTitle: String {
         switch self {
         case .rosary: "Terço"
-        case .holyMass: "Missa"
+        case .holyMass: "Santa Missa"
         case .dailyGospel: "Evangelho"
         case .adoration: "Adoração"
-        case .mentalPrayer: "Oração Mental"
-        case .spiritualReading: "Leitura"
+        case .mentalPrayer: "Oração mental"
+        case .spiritualReading: "Leitura espiritual"
         case .fasting: "Jejum"
         case .confession: "Confissão"
         }
@@ -128,10 +128,10 @@ extension SpiritualPractice {
         case .rosary: "circle.inset.filled"
         case .holyMass: "church"
         case .dailyGospel: "book.closed"
-        case .adoration: "sparkles"
+        case .adoration: "sun.max"
         case .mentalPrayer: "figure.mind.and.body"
         case .spiritualReading: "text.book.closed"
-        case .fasting: "flame"
+        case .fasting: "leaf"
         case .confession: "lock"
         }
     }

@@ -16,9 +16,7 @@ struct OnboardingEmailAuthFormView: View {
     var body: some View {
         VStack(spacing: MassMatesSpacing.sm) {
             emailInputField
-            MassMatesPrimaryButton(title: "Continuar com E-mail", systemImage: "arrow.right") {
-                viewModel.signIn(with: .email)
-            }
+            sendEmailButton
             magicLinkButton
             if viewModel.isMagicLinkToastVisible {
                 magicLinkToastBanner
@@ -31,26 +29,60 @@ struct OnboardingEmailAuthFormView: View {
 
     // MARK: - Subviews / Private Helpers
     private var emailInputField: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "envelope")
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-            TextField("seu.email@exemplo.com", text: $viewModel.emailDraft)
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.emailAddress)
-                .autocorrectionDisabled()
+        VStack(spacing: MassMatesSpacing.xxs) {
+            HStack(spacing: MassMatesSpacing.sm) {
+                Image(systemName: "envelope")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                TextField("seu.email@exemplo.com", text: $viewModel.emailDraft)
+                    .font(MassMatesFont.body)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+                if !viewModel.emailDraft.isEmpty {
+                    clearEmailButton
+                }
+            }
+            .padding(.vertical, MassMatesSpacing.xs)
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(MassMatesPalette.line)
         }
-        .padding(.horizontal, MassMatesSpacing.md)
-        .frame(height: MassMatesLayout.primaryButtonHeight)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    }
+
+    private var clearEmailButton: some View {
+        Button {
+            viewModel.emailDraft = ""
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var sendEmailButton: some View {
+        Button {
+            viewModel.signIn(with: .email)
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "arrow.right")
+                    .font(MassMatesFont.headline)
+                Text("Enviar link mágico")
+                    .font(MassMatesFont.headline)
+            }
+            .foregroundStyle(theme.onTint)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(theme.tint)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
     }
 
     private var magicLinkButton: some View {
         Button(action: viewModel.triggerMagicLinkNotice) {
-            Text("Entrar com link mágico sem senha")
+            Text("Entrar com código sem senha")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(theme.tint)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
@@ -60,7 +92,7 @@ struct OnboardingEmailAuthFormView: View {
 
     private var magicLinkToastBanner: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("Link mágico enviado")
+            Text("Link de acesso enviado")
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             Text("Verifique sua caixa de entrada para autenticar sua conta com serenidade.")
@@ -69,8 +101,12 @@ struct OnboardingEmailAuthFormView: View {
         }
         .padding(MassMatesSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
+        .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .overlay(
+            RoundedRectangle(cornerRadius: MassMatesRadius.photo)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        )
     }
 
     private func collapseButton(_ action: @escaping () -> Void) -> some View {
@@ -95,18 +131,26 @@ struct OnboardingAuthTrustCardsView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            legalTermsSection
+        VStack(spacing: MassMatesSpacing.xxs) {
+            privacyNoticeText
+            termsNoticeText
         }
+        .frame(maxWidth: 320)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var legalTermsSection: some View {
+    private var privacyNoticeText: some View {
+        Text("Seus momentos de oração e confissão são estritamente privados.")
+            .font(MassMatesFont.caption)
+            .foregroundStyle(MassMatesPalette.textTertiary)
+            .multilineTextAlignment(.center)
+    }
+
+    private var termsNoticeText: some View {
         Text("Ao continuar, você concorda com nossos \(Text("Termos de Fraternidade").underline().foregroundStyle(MassMatesPalette.textSecondary)) e \(Text("Política de Privacidade").underline().foregroundStyle(MassMatesPalette.textSecondary)).")
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.textTertiary)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: 300)
     }
 }
 

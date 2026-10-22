@@ -1,156 +1,179 @@
+import Navigation
 import SwiftUI
 
 struct RuleOfLifeSectionView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
-    private let progress: TodayProgressSummary
-    private let onSelectPreset: (RuleOfLifePreset) -> Void
-    private let onTogglePractice: (SpiritualPractice) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @OptionalNavigator<AppRoute> private var navigator
+    @State private var items: [DailyRuleChecklistItem]
+    private let onEditRule: (() -> Void)?
+    private let onTogglePractice: ((SpiritualPractice) -> Void)?
 
     // MARK: - Init
     init(
-        progress: TodayProgressSummary,
-        onSelectPreset: @escaping (RuleOfLifePreset) -> Void,
-        onTogglePractice: @escaping (SpiritualPractice) -> Void
+        items: [DailyRuleChecklistItem] = DailyRuleChecklistItem.stitchDefaultItems,
+        onEditRule: (() -> Void)? = nil,
+        onTogglePractice: ((SpiritualPractice) -> Void)? = nil
     ) {
-        self.progress = progress
-        self.onSelectPreset = onSelectPreset
+        _items = State(initialValue: items)
+        self.onEditRule = onEditRule
         self.onTogglePractice = onTogglePractice
+    }
+
+    init(
+        progress: TodayProgressSummary,
+        onSelectPreset: @escaping (RuleOfLifePreset) -> Void = { _ in },
+        onTogglePractice: @escaping (SpiritualPractice) -> Void = { _ in },
+        onEditRule: (() -> Void)? = nil
+    ) {
+        self.init(
+            items: DailyRuleChecklistItem.from(summary: progress),
+            onEditRule: onEditRule ?? { onSelectPreset(progress.selectedPreset) },
+            onTogglePractice: onTogglePractice
+        )
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            sectionHeader
-            checklistStack
+        VStack(spacing: 0) {
+            navigationBar
+            mainContentArea
+            Spacer(minLength: MassMatesSpacing.sm)
+            bottomActionArea
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: progress.completedCount)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(MassMatesPalette.bg.ignoresSafeArea())
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .sensoryFeedback(.impact(weight: .light), trigger: completedCount)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var sectionHeader: some View {
-        HStack(alignment: .center) {
-            Text("Regra de Vida")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(MassMatesPalette.textPrimary)
+    private var navigationBar: some View {
+        HStack {
+            Button {
+                if let navigator, navigator.canPop() { navigator.pop() } else { dismiss() }
+            } label: {
+                Image(systemName: "chevron.left").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+            }
+            .buttonStyle(.plain).accessibilityLabel("Voltar")
             Spacer()
-            presetMenuBadge
+            Text("Regra de Vida").font(.system(size: 20, weight: .semibold, design: .serif)).foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Color.clear.frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
         }
-        .padding(.bottom, MassMatesSpacing.xxs)
+        .padding(.horizontal, MassMatesSpacing.md).frame(height: 56)
     }
 
-    private var presetMenuBadge: some View {
-        Menu {
-            ForEach(RuleOfLifePreset.allCases) { preset in
-                Button {
-                    onSelectPreset(preset)
-                } label: {
-                    if progress.selectedPreset == preset {
-                        Label(preset.title, systemImage: "checkmark")
-                    } else {
-                        Text(preset.title)
-                    }
+    private var mainContentArea: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("FIDELIDADE DIÁRIA").font(.system(size: 12, weight: .medium)).tracking(0.8)
+                .foregroundStyle(MassMatesPalette.textSecondary).padding(.bottom, MassMatesSpacing.md)
+            progressSection
+            checklistRows
+            spiritualQuote
+        }
+        .padding(.horizontal, MassMatesLayout.readingMargin).padding(.top, MassMatesSpacing.sm)
+    }
+
+    private var progressSection: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            HStack {
+                Text("Progresso de hoje").font(.system(size: 14)).foregroundStyle(MassMatesPalette.textSecondary)
+                Spacer()
+                Text("\(completedCount) de \(items.count)").font(.system(size: 14, weight: .medium)).foregroundStyle(theme.tint)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(MassMatesPalette.line)
+                    Capsule().fill(theme.tint).frame(width: max(0, geo.size.width * progressRatio))
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: completedCount)
                 }
-            }
-        } label: {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Text("\(progress.completedCount) de \(progress.totalCount)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                progressRing
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Regra de vida: \(progress.completedCount) de \(progress.totalCount) concluídas")
+            }.frame(height: MassMatesSpacing.xxs)
+        }.padding(.bottom, MassMatesSpacing.lg)
     }
 
-    private var progressRing: some View {
-        ZStack {
-            Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 2.5)
-            Circle()
-                .trim(from: 0, to: progress.ruleCompletionRatio)
-                .stroke(
-                    theme.tint,
-                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: 20, height: 20)
-    }
-
-    private var checklistStack: some View {
+    private var checklistRows: some View {
         VStack(spacing: 0) {
             hairlineDivider
-            ForEach(progress.items) { item in
+            ForEach(items) { item in
                 practiceRow(item)
                 hairlineDivider
             }
         }
     }
 
-    private func practiceRow(_ item: RuleOfLifeItem) -> some View {
-        Button {
-            onTogglePractice(item.practice)
-        } label: {
-            HStack {
-                Text(practiceTitle(for: item.practice))
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                if item.practice.isStrictlyPrivate {
-                    Image(systemName: "lock.fill")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
+    private func practiceRow(_ item: DailyRuleChecklistItem) -> some View {
+        Button { toggleItem(item) } label: {
+            HStack(spacing: MassMatesSpacing.sm) {
+                circularToggle(isCompleted: item.isCompleted)
+                Text(item.title).font(.system(size: 16)).foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
-                checkmarkCircle(isCompleted: item.isCompleted)
+                trailingLabel(for: item)
             }
-            .frame(minHeight: MassMatesLayout.minRowHeight)
-            .contentShape(Rectangle())
+            .frame(height: MassMatesLayout.minRowHeight).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(practiceTitle(for: item.practice)), \(item.isCompleted ? "concluído" : "não concluído")")
-        .accessibilityAddTraits(item.isCompleted ? [.isSelected] : [])
+        .buttonStyle(.plain).accessibilityLabel("\(item.title), \(item.isCompleted ? "concluído" : "pendente")")
     }
 
     @ViewBuilder
-    private func checkmarkCircle(isCompleted: Bool) -> some View {
+    private func circularToggle(isCompleted: Bool) -> some View {
         if isCompleted {
             ZStack {
-                Circle()
-                    .fill(theme.tint)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(theme.onTint)
-            }
-            .frame(width: 20, height: 20)
+                Circle().fill(theme.tint)
+                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(theme.onTint)
+            }.frame(width: 24, height: 24)
         } else {
-            Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-                .frame(width: 20, height: 20)
+            Circle().stroke(MassMatesPalette.textTertiary, lineWidth: 1).frame(width: 24, height: 24)
         }
     }
 
-    private var hairlineDivider: some View {
-        Rectangle()
-            .fill(MassMatesPalette.line)
-            .frame(height: 1)
+    @ViewBuilder
+    private func trailingLabel(for item: DailyRuleChecklistItem) -> some View {
+        if item.isCompleted {
+            Text("Feito").font(.system(size: 12)).foregroundStyle(MassMatesPalette.textSecondary)
+        } else if let schedule = item.schedule, !schedule.isEmpty {
+            Text(schedule).font(.system(size: 13)).foregroundStyle(MassMatesPalette.textTertiary)
+        }
     }
 
-    private func practiceTitle(for practice: SpiritualPractice) -> String {
-        switch practice {
-        case .dailyGospel: "Evangelho do Dia"
-        default: practice.title
+    private var spiritualQuote: some View {
+        Text("“A perseverança nas pequenas coisas é fruto do amor silencioso.”")
+            .font(.system(size: 14, weight: .regular, design: .serif).italic())
+            .foregroundStyle(MassMatesPalette.textSecondary).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            .padding(.top, MassMatesSpacing.xl).padding(.horizontal, MassMatesSpacing.xs)
+    }
+
+    private var bottomActionArea: some View {
+        Button {
+            onEditRule?()
+        } label: {
+            Text("Editar regra de vida").font(.system(size: 14, weight: .medium)).foregroundStyle(theme.tint)
+                .padding(.vertical, MassMatesSpacing.xs).padding(.horizontal, MassMatesSpacing.md)
         }
+        .buttonStyle(.plain).padding(.bottom, MassMatesSpacing.lg)
+    }
+
+    private var hairlineDivider: some View { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
+    private var completedCount: Int { items.filter(\.isCompleted).count }
+    private var progressRatio: CGFloat { items.isEmpty ? 0 : CGFloat(completedCount) / CGFloat(items.count) }
+
+    private func toggleItem(_ target: DailyRuleChecklistItem) {
+        guard let index = items.firstIndex(where: { $0.id == target.id }) else { return }
+        if reduceMotion {
+            items[index] = items[index].toggled()
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) { items[index] = items[index].toggled() }
+        }
+        if let practice = target.practice { onTogglePractice?(practice) }
     }
 }
 
-#Preview("Rule of Life Section — 5 Seasons (Light / Dark / AX3)") {
-    LiturgicalSeasonPreviewMatrix { _ in
-        RuleOfLifeSectionView(
-            progress: LocalRuleOfLifeService(initialCompleted: [.dailyGospel]).loadTodayProgress(),
-            onSelectPreset: { _ in },
-            onTogglePractice: { _ in }
-        )
-    }
+typealias RuleOfLifeChecklistView = RuleOfLifeSectionView
+
+#Preview("Rule of Life Checklist — 5 Seasons (Light / Dark / AX3)") {
+    LiturgicalSeasonPreviewMatrix { _ in RuleOfLifeSectionView() }
 }

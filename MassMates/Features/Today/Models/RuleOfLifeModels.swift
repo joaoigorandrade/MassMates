@@ -132,3 +132,40 @@ struct TodayProgressSummary: Sendable, Equatable {
         hasCompletedAnyToday ? "Mais um dia em oração" : "Recomece hoje, com leveza."
     }
 }
+
+struct DailyRuleChecklistItem: Identifiable, Sendable, Equatable, Hashable {
+    let id: String
+    let title: String
+    let schedule: String?
+    let isCompleted: Bool
+    let practice: SpiritualPractice?
+
+    init(id: String, title: String, schedule: String? = nil, isCompleted: Bool = false, practice: SpiritualPractice? = nil) {
+        self.id = id; self.title = title; self.schedule = schedule; self.isCompleted = isCompleted; self.practice = practice
+    }
+
+    func toggled() -> DailyRuleChecklistItem {
+        DailyRuleChecklistItem(id: id, title: title, schedule: schedule, isCompleted: !isCompleted, practice: practice)
+    }
+
+    static func from(summary: TodayProgressSummary) -> [DailyRuleChecklistItem] {
+        guard !summary.items.isEmpty else { return stitchDefaultItems }
+        return summary.items.map {
+            DailyRuleChecklistItem(
+                id: $0.practice.rawValue,
+                title: $0.practice.title,
+                schedule: $0.isCompleted ? "Feito" : $0.practice.subtitle,
+                isCompleted: $0.isCompleted,
+                practice: $0.practice
+            )
+        }
+    }
+
+    static let stitchDefaultItems: [DailyRuleChecklistItem] = [
+        DailyRuleChecklistItem(id: "morning-offering", title: "Oferecimento da manhã", schedule: "Feito", isCompleted: true, practice: .mentalPrayer),
+        DailyRuleChecklistItem(id: "daily-gospel", title: "Evangelho do dia", schedule: "Feito", isCompleted: true, practice: .dailyGospel),
+        DailyRuleChecklistItem(id: "rosary", title: "Terço Mariano", schedule: "Feito", isCompleted: true, practice: .rosary),
+        DailyRuleChecklistItem(id: "angelus", title: "Angelus (12h ou 18h)", schedule: "12:00", isCompleted: false, practice: nil),
+        DailyRuleChecklistItem(id: "nightly-examen", title: "Exame da noite", schedule: "Noite", isCompleted: false, practice: .confession)
+    ]
+}

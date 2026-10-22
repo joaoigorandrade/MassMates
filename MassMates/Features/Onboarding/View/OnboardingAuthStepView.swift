@@ -13,18 +13,22 @@ struct OnboardingAuthStepView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.lg) {
+        VStack(spacing: 0) {
             topNavigationBar
+            Spacer(minLength: MassMatesSpacing.md)
             headerSection
+            Spacer(minLength: MassMatesSpacing.lg)
             if let error = viewModel.errorMessage {
                 errorMessageView(error)
+                    .padding(.bottom, MassMatesSpacing.sm)
             }
             actionsSection
-            OnboardingAuthTrustCardsView {
-                viewModel.signIn(with: .apple)
-            }
+            Spacer(minLength: MassMatesSpacing.lg)
+            OnboardingAuthTrustCardsView()
+                .padding(.bottom, MassMatesSpacing.sm)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, MassMatesLayout.screenMargin)
         .background(MassMatesPalette.bg)
     }
 
@@ -48,16 +52,16 @@ struct OnboardingAuthStepView: View {
 
     private var headerSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
-            Text("MassMates")
+            Text("Entre na sua caminhada")
                 .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("Entre para começar")
+                .multilineTextAlignment(.center)
+            Text("Acompanhe suas orações e leituras diárias em serenidade.")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, MassMatesSpacing.xl)
-        .padding(.bottom, MassMatesSpacing.sm)
     }
 
     private func errorMessageView(_ error: String) -> some View {
@@ -128,18 +132,32 @@ struct OnboardingAuthStepView: View {
                 }
             )
         } else {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isEmailExpanded = true
-                }
-            } label: {
+            emailExpandButton
+        }
+    }
+
+    private var emailExpandButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isEmailExpanded = true
+            }
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "envelope")
+                    .font(MassMatesFont.headline)
                 Text("Continuar com e-mail")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                    .stroke(MassMatesPalette.line, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
 }
 

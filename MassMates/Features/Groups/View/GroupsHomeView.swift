@@ -6,6 +6,7 @@ struct GroupsHomeView: View {
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: GroupsHomeViewModel
+    @State private var isShowingDiscovery = false
 
     // MARK: - Init
     init(viewModel: GroupsHomeViewModel) {
@@ -14,20 +15,15 @@ struct GroupsHomeView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
-                headerSection
-                contentForState
-            }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.md)
+        VStack(alignment: .leading, spacing: 0) {
+            contentForState
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.top, MassMatesSpacing.md)
+        .padding(.bottom, MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                toolbarAddButton
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             if case .idle = viewModel.viewState {
                 await viewModel.loadGroups()
@@ -36,104 +32,111 @@ struct GroupsHomeView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Fraternidades")
-                    .font(MassMatesFont.display)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Comunhão e perseverança no ritmo litúrgico.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
-            createOrJoinPillButton
-        }
-    }
-
-    private var createOrJoinPillButton: some View {
-        Button {
-            navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "plus").font(.system(size: 12, weight: .bold))
-                Text("Criar ou Entrar").font(MassMatesFont.caption).fontWeight(.semibold)
-            }
-            .foregroundStyle(theme.onTint)
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(height: 36)
-            .background(theme.tint)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var toolbarAddButton: some View {
-        Button {
-            navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
-        } label: {
-            Image(systemName: "plus")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-        }
-    }
-
     @ViewBuilder
     private var contentForState: some View {
         switch viewModel.viewState {
         case .idle, .loading:
-            ProgressView().tint(theme.tint)
+            loadingPlaceholder
         case .loaded(let snapshot):
-            loadedBody(snapshot: snapshot)
+            if isShowingDiscovery {
+                discoveryScreen(snapshot: snapshot)
+            } else {
+                mainHub(snapshot: snapshot)
+            }
         case .error(let error):
-            Text(error.userMessage)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.danger)
+            errorView(message: error.userMessage)
         }
     }
 
-    private func loadedBody(snapshot: GroupsHomeSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+    private var loadingPlaceholder: some View {
+        VStack {
+            Spacer()
+            ProgressView().tint(theme.tint)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func errorView(message: String) -> some View {
+        VStack(spacing: MassMatesSpacing.sm) {
+            Spacer()
+            Text(message).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
+            Button("Tentar novamente") { Task { await viewModel.loadGroups() } }
+                .font(MassMatesFont.caption).foregroundStyle(theme.tint)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func mainHub(snapshot: GroupsHomeSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerSection(capacity: snapshot.slotCapacity)
             if let feedback = viewModel.feedbackMessage {
-                feedbackBanner(text: feedback)
+                feedbackBanner(text: feedback).padding(.bottom, MassMatesSpacing.xs)
             }
-            ContinuousFraternitiesSectionView(groups: snapshot.personalGroups, capacity: snapshot.slotCapacity) { group in
-                navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
-            }
-            FeaturedChallengesSectionView(
-                challenges: snapshot.featuredChallengesList,
-                onJoinChallenge: { id in Task { await viewModel.joinFeaturedChallenge(id) } },
-                onOpenGroup: { group in navigator?.navigate(to: .groupDetail(group: group, season: theme.season)) }
+            ContinuousFraternitiesSectionView(
+                groups: snapshot.joinedGroups,
+                onSelectGroup: { group in
+                    navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
+                },
+                onDiscoverChallenges: {
+                    withAnimation(.easeInOut(duration: 0.2)) { isShowingDiscovery = true }
+                }
             )
-            highlightedSection
-            if !snapshot.slotCapacity.hasRewardedSlotUnlocked {
-                GroupsCapacityCardView(capacity: snapshot.slotCapacity) { Task { await viewModel.unlockBonusPersonalSlot() } }
+            Spacer()
+            bottomActions
+        }
+    }
+
+    private func headerSection(capacity: GroupSlotCapacity) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            HStack(alignment: .center) {
+                Text("Grupos").font(MassMatesFont.display).foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                addButton
             }
-            enterCodeButton
+            Text("SUAS VAGAS · \(capacity.personalGroupCount) DE \(capacity.maxAllowedPersonalGroups)")
+                .font(MassMatesFont.caption).fontWeight(.semibold)
+                .foregroundStyle(MassMatesPalette.textSecondary).tracking(0.8)
         }
+        .padding(.bottom, MassMatesSpacing.sm)
     }
 
-    private var highlightedSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("Em destaque")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.bottom, MassMatesSpacing.xxs)
-            ApostoladoSponsoredCardView()
-        }
-    }
-
-    private var enterCodeButton: some View {
+    private var addButton: some View {
         Button {
-            navigator?.present(.createJoinGroup(initialTab: .joinByCode, prefilledInviteCode: nil, season: theme.season))
+            navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
         } label: {
-            Text("Entrar com código")
-                .font(MassMatesFont.callout)
-                .fontWeight(.medium)
-                .foregroundStyle(theme.tint)
-                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+            Image(systemName: "plus").font(.system(size: 20, weight: .medium))
+                .foregroundStyle(MassMatesPalette.textPrimary).frame(width: 40, height: 40).contentShape(Circle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func discoveryScreen(snapshot: GroupsHomeSnapshot) -> some View {
+        DiscoverChallengesView(
+            challenges: snapshot.featuredChallengesList,
+            onBack: {
+                withAnimation(.easeInOut(duration: 0.2)) { isShowingDiscovery = false }
+            },
+            onJoinChallenge: { id in
+                Task { await viewModel.joinFeaturedChallenge(id) }
+            },
+            onOpenGroup: { group in
+                navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
+            }
+        )
+    }
+
+    private var bottomActions: some View {
+        GroupsBottomActionsView(
+            onEnterCode: {
+                navigator?.present(.createJoinGroup(initialTab: .joinByCode, prefilledInviteCode: nil, season: theme.season))
+            },
+            onCreateGroup: {
+                navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
+            }
+        )
+        .padding(.bottom, MassMatesSpacing.xs)
     }
 
     private func feedbackBanner(text: String) -> some View {
@@ -143,8 +146,7 @@ struct GroupsHomeView: View {
             Button("Fechar") { viewModel.clearFeedback() }
                 .font(MassMatesFont.caption).foregroundStyle(theme.tint)
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surface)
+        .padding(MassMatesSpacing.sm).background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
         .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.photo).stroke(MassMatesPalette.line, lineWidth: 1))
     }
@@ -152,7 +154,6 @@ struct GroupsHomeView: View {
 
 #Preview("Groups Home — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        let vm = GroupsHomeViewModel()
-        GroupsHomeView(viewModel: vm)
+        GroupsHomeView(viewModel: GroupsHomeViewModel())
     }
 }

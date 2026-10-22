@@ -23,23 +23,10 @@ struct ApostoladoSponsoredCardView: View {
         Button(action: { action?() }) {
             HStack(spacing: MassMatesSpacing.sm) {
                 iconView
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("PATROCINADO")
-                        .font(MassMatesFont.caption)
-                        .tracking(0.6)
-                        .foregroundStyle(MassMatesPalette.sponsored)
-                    Text(title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                        .lineLimit(1)
-                    Text(sponsorName)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .lineLimit(1)
-                }
+                textContent
                 Spacer()
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 14))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
             .padding(MassMatesSpacing.sm)
@@ -60,6 +47,24 @@ struct ApostoladoSponsoredCardView: View {
             Image(systemName: "church.fill")
                 .font(.system(size: 18))
                 .foregroundStyle(theme.tint)
+        }
+    }
+
+    private var textContent: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(1)
+            HStack(spacing: 4) {
+                Text("Patrocinado por")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.sponsored)
+                Text(sponsorName)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .lineLimit(1)
+            }
         }
     }
 

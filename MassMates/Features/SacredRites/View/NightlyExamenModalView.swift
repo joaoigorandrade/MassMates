@@ -16,18 +16,8 @@ struct NightlyExamenModalView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerBar
-            ScrollView {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                    stepHeaderSection
-                    activeStepContent
-                }
-                .padding(.horizontal, MassMatesLayout.readingMargin)
-                .padding(.top, MassMatesSpacing.sm)
-                .padding(.bottom, MassMatesSpacing.xl)
-                .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-                .frame(maxWidth: .infinity)
-            }
-            bottomStickyFooter
+            viewportContent
+            bottomActionBar
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
@@ -35,27 +25,22 @@ struct NightlyExamenModalView: View {
     // MARK: - Subviews / Private Helpers
     private var headerBar: some View {
         HStack {
-            leadingNavigationButton
+            closeButton
             Spacer()
-            stepProgressDots
-            if viewModel.currentStepIndex > 1 {
-                dismissButton
-            }
+            progressSegments
+            Spacer()
+            Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .padding(.top, MassMatesSpacing.sm)
         .padding(.bottom, MassMatesSpacing.xs)
     }
 
-    private var leadingNavigationButton: some View {
+    private var closeButton: some View {
         Button {
-            if viewModel.currentStepIndex > 1 {
-                viewModel.goToPreviousStep()
-            } else {
-                navigator?.dismiss()
-            }
+            navigator?.dismiss()
         } label: {
-            Image(systemName: viewModel.currentStepIndex > 1 ? "chevron.left" : "xmark")
+            Image(systemName: "xmark")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: 36, height: 36)
@@ -63,43 +48,38 @@ struct NightlyExamenModalView: View {
                 .clipShape(.circle)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Fechar exame")
     }
 
-    private var dismissButton: some View {
-        Button {
-            navigator?.dismiss()
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 32, height: 32)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.circle)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var stepProgressDots: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
+    private var progressSegments: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
             ForEach(1...5, id: \.self) { step in
-                Button {
-                    viewModel.goToStep(step)
-                } label: {
-                    Circle()
-                        .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
-                        .frame(width: 8, height: 8)
-                        .padding(MassMatesSpacing.xxs)
-                }
-                .buttonStyle(.plain)
+                Capsule()
+                    .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
+                    .frame(height: 2.5)
             }
         }
+        .frame(width: 140)
+        .accessibilityLabel(viewModel.stepsIndicatorText)
     }
 
-    private var stepHeaderSection: some View {
+    private var viewportContent: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            stepHeader
+            activeStepView
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .padding(.top, MassMatesSpacing.sm)
+        .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var stepHeader: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(viewModel.stepCaption)
+            Text("PASSO \(viewModel.currentStepIndex) DE 5 · \(viewModel.stepTitle.uppercased())")
                 .font(MassMatesFont.caption)
-                .tracking(1.2)
+                .tracking(0.8)
                 .foregroundStyle(MassMatesPalette.textSecondary)
 
             Text(viewModel.stepTitle)
@@ -109,7 +89,7 @@ struct NightlyExamenModalView: View {
     }
 
     @ViewBuilder
-    private var activeStepContent: some View {
+    private var activeStepView: some View {
         switch viewModel.currentStepIndex {
         case 1, 2:
             NightlyExamenStepCardsView(viewModel: viewModel)
@@ -120,36 +100,64 @@ struct NightlyExamenModalView: View {
         }
     }
 
-    private var bottomStickyFooter: some View {
-        VStack(spacing: MassMatesSpacing.sm) {
-            Button {
-                viewModel.goToNextStep()
-            } label: {
-                HStack(spacing: MassMatesSpacing.xs) {
-                    Text(viewModel.currentStepButtonTitle)
-                    Image(systemName: viewModel.currentStepButtonSystemImage)
-                }
-                .font(MassMatesFont.headline)
-                .foregroundStyle(theme.onTint)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(theme.tint)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    private var bottomActionBar: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            HStack {
+                secondaryNavButton
+                Spacer()
+                primaryNextButton
             }
-            .buttonStyle(.plain)
-
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: "lock.fill")
-                    .font(MassMatesFont.caption)
-                Text("Somente neste dispositivo · 100% confidencial")
-                    .font(MassMatesFont.caption)
-            }
-            .foregroundStyle(MassMatesPalette.textSecondary)
+            privacyAssurance
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .padding(.top, MassMatesSpacing.xs)
         .padding(.bottom, MassMatesSpacing.md)
         .background(MassMatesPalette.bg)
+    }
+
+    private var secondaryNavButton: some View {
+        Button {
+            if viewModel.currentStepIndex > 1 {
+                viewModel.goToPreviousStep()
+            } else {
+                viewModel.goToNextStep()
+            }
+        } label: {
+            Text(viewModel.currentStepIndex > 1 ? "Anterior" : "Pular")
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var primaryNextButton: some View {
+        Button {
+            viewModel.goToNextStep()
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Text(viewModel.currentStepIndex == 5 ? "Concluir" : "Próximo")
+                Image(systemName: viewModel.currentStepIndex == 5 ? "checkmark" : "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .font(MassMatesFont.headline)
+            .foregroundStyle(theme.onTint)
+            .padding(.horizontal, MassMatesSpacing.xl)
+            .frame(height: 50)
+            .background(theme.tint)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var privacyAssurance: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 11))
+            Text("Somente neste dispositivo · 100% confidencial")
+                .font(MassMatesFont.caption)
+        }
+        .foregroundStyle(MassMatesPalette.textTertiary)
     }
 }
 

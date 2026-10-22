@@ -4,70 +4,43 @@ struct ContinuousFraternitiesSectionView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let groups: [CommunityGroup]
-    private let capacity: GroupSlotCapacity?
     private let onSelectGroup: (CommunityGroup) -> Void
+    private let onDiscoverChallenges: () -> Void
 
     // MARK: - Init
     init(
         groups: [CommunityGroup],
-        capacity: GroupSlotCapacity? = nil,
-        onSelectGroup: @escaping (CommunityGroup) -> Void
+        onSelectGroup: @escaping (CommunityGroup) -> Void,
+        onDiscoverChallenges: @escaping () -> Void
     ) {
         self.groups = groups
-        self.capacity = capacity
         self.onSelectGroup = onSelectGroup
+        self.onDiscoverChallenges = onDiscoverChallenges
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            sectionHeader
-            fraternitiesList
+        VStack(spacing: 0) {
+            hairlineDivider
+            activeGroupsList
+            discoveryRow
+            hairlineDivider
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var sectionHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Fraternidades")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Spacer()
-            headerCapacityLabel
-        }
-        .padding(.bottom, MassMatesSpacing.xxs)
-    }
-
     @ViewBuilder
-    private var headerCapacityLabel: some View {
-        if let capacity {
-            Text("\(capacity.personalGroupCount) de \(capacity.maxAllowedPersonalGroups) vagas")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+    private var activeGroupsList: some View {
+        let display = Array(groups.prefix(3))
+        if display.isEmpty {
+            emptyGroupRow
+            hairlineDivider
         } else {
-            Text("\(groups.count) ativas")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var fraternitiesList: some View {
-        VStack(spacing: 0) {
-            hairlineDivider
-            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+            ForEach(display) { group in
                 groupRow(group: group)
-                if index < groups.count - 1 {
-                    hairlineDivider
-                }
+                hairlineDivider
             }
-            hairlineDivider
         }
-    }
-
-    private var hairlineDivider: some View {
-        Rectangle()
-            .fill(MassMatesPalette.line)
-            .frame(height: 1)
     }
 
     private func groupRow(group: CommunityGroup) -> some View {
@@ -76,14 +49,13 @@ struct ContinuousFraternitiesSectionView: View {
         } label: {
             HStack(spacing: MassMatesSpacing.sm) {
                 groupAvatar(for: group)
-                groupInfo(group: group)
+                groupContent(for: group)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
-            .frame(minHeight: MassMatesLayout.minRowHeight)
-            .padding(.vertical, MassMatesSpacing.xs)
+            .frame(height: 64)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -100,46 +72,86 @@ struct ContinuousFraternitiesSectionView: View {
         }
     }
 
-    private func groupInfo(group: CommunityGroup) -> some View {
+    private func groupContent(for group: CommunityGroup) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(group.name)
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .lineLimit(1)
-            Text("\(group.memberCount) irmãos · \(statusText(for: group))")
-                .font(MassMatesFont.callout)
+            HStack(spacing: MassMatesSpacing.xs) {
+                Text(group.name)
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineLimit(1)
+                if group.type == .challenge {
+                    badgeView(title: "Destaque")
+                }
+            }
+            Text("\(group.memberCount) membros · \(statusText(for: group))")
+                .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .lineLimit(1)
-            if let window = group.challengeWindowLabel {
-                Text(window)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .lineLimit(1)
-            }
         }
     }
 
+    private func badgeView(title: String) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(theme.tint)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(theme.tintSoft)
+            .clipShape(.rect(cornerRadius: 3))
+    }
+
+    private var emptyGroupRow: some View {
+        HStack(spacing: MassMatesSpacing.sm) {
+            Image(systemName: "person.2")
+                .font(.system(size: 16))
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .frame(width: 36, height: 36)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Nenhuma fraternidade ativa")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Crie ou entre em um grupo abaixo")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            Spacer()
+        }
+        .frame(height: 64)
+    }
+
+    private var discoveryRow: some View {
+        Button(action: onDiscoverChallenges) {
+            HStack {
+                Text("Descobrir desafios sazonais →")
+                    .font(MassMatesFont.callout)
+                    .fontWeight(.medium)
+                    .foregroundStyle(theme.tint)
+                Spacer()
+            }
+            .frame(height: 54)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var hairlineDivider: some View {
+        Rectangle().fill(MassMatesPalette.line).frame(height: 1)
+    }
+
     private func symbolForGroup(_ group: CommunityGroup) -> String {
-        if group.id.contains("fatima") || group.name.contains("Fátima") {
-            return "sparkles"
-        }
-        if group.id.contains("miguel") || group.name.contains("Miguel") {
-            return "shield.fill"
-        }
+        if group.id.contains("fatima") || group.name.contains("Fátima") { return "sparkles" }
+        if group.id.contains("miguel") || group.name.contains("Miguel") { return "shield.fill" }
         return "person.2.fill"
     }
 
     private func statusText(for group: CommunityGroup) -> String {
-        if group.id == "frat-sao-jose" {
-            return "Rezei hoje"
-        }
+        if group.id == "frat-sao-jose" { return "Rezei hoje" }
         switch group.scoringMode {
-        case .faithfulDays:
-            return "Dias Fiéis"
-        case .collectiveTreasure:
-            return "3 em oração"
-        case .customPoints:
-            return "Pontos por Prática"
+        case .faithfulDays: return "Contínuo"
+        case .collectiveTreasure: return "3 em oração"
+        case .customPoints: return "Pontos"
         }
     }
 }
@@ -151,8 +163,8 @@ struct ContinuousFraternitiesSectionView: View {
                 CommunitySampleData.parishFraternity,
                 CommunitySampleData.directoryGroups[0]
             ],
-            capacity: LocalCommunityGroupsService.sampleSlotCapacity(),
-            onSelectGroup: { _ in }
+            onSelectGroup: { _ in },
+            onDiscoverChallenges: {}
         )
     }
 }

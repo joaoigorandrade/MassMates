@@ -6,22 +6,24 @@ struct TodayDashboardView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: TodayDashboardViewModel
+    private let onOpenRuleOfLife: (() -> Void)?
 
     // MARK: - Init
-    init(viewModel: TodayDashboardViewModel = TodayDashboardViewModel()) {
+    init(
+        viewModel: TodayDashboardViewModel = TodayDashboardViewModel(),
+        onOpenRuleOfLife: (() -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.onOpenRuleOfLife = onOpenRuleOfLife
     }
 
     // MARK: - Body / Public API
     var body: some View {
         Group {
             switch viewModel.viewState {
-            case .idle, .loading:
-                loadingContent
-            case .loaded(let data):
-                loadedContent(data)
-            case .error:
-                errorContent
+            case .idle, .loading: loadingContent
+            case .loaded(let data): loadedContent(data)
+            case .error: errorContent
             }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
@@ -50,111 +52,95 @@ struct TodayDashboardView: View {
 
     private func loadedContent(_ data: TodayDashboardData) -> some View {
         VStack(spacing: 0) {
-            topAppBar(data: data)
-            ScrollView {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
-                    TodayHeaderView(
-                        seasonTitle: data.activeSeasonTitle,
-                        saintOrFeast: data.liturgicalDay.saintOrFeast,
-                        feastRankLabel: data.liturgicalDay.feastRankLabel,
-                        weekdayAndWeekLabel: data.liturgicalDay.weekdayAndWeekLabel,
-                        saintQuote: data.liturgicalDay.saintQuote,
-                        progress: data.progress,
-                        onSelectSeason: { season in viewModel.selectSeasonColor(season) },
-                        onOpenOnboarding: { navigator?.present(.onboarding(season: data.activeSeasonColor)) },
-                        onOpenHistory: { navigator?.present(.spiritualDiary(season: data.activeSeasonColor)) }
-                    )
-                    mainSectionsStack(data)
-                }
-                .padding(.top, MassMatesSpacing.md)
-                .padding(.bottom, MassMatesSpacing.xxl)
-            }
-        }
-    }
-
-    private func mainSectionsStack(_ data: TodayDashboardData) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
-            RuleOfLifeSectionView(
-                progress: data.progress,
-                onSelectPreset: { preset in viewModel.selectPreset(preset) },
-                onTogglePractice: { practice in viewModel.togglePractice(practice) }
+            TodayHeaderView(
+                seasonTitle: data.activeSeasonTitle,
+                saintOrFeast: data.liturgicalDay.saintOrFeast,
+                streakDays: data.progress.activeStreakDays,
+                onSelectSeason: { season in viewModel.selectSeasonColor(season) },
+                onOpenStreak: { navigator?.present(.spiritualDiary(season: data.activeSeasonColor)) }
             )
+            .padding(.top, MassMatesSpacing.sm)
+
+            Spacer(minLength: MassMatesSpacing.sm)
+            centralRuleOfLifeSection(data: data)
+            Spacer(minLength: MassMatesSpacing.sm)
+
             DevotionalQuickCardsView(
                 reading: data.liturgicalDay.reading,
                 onOpenGospel: { navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor)) },
                 onOpenTimer: { mode in navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor)) }
             )
-            editorialReflectionCard
-            SponsoredNativeCardView(
-                sponsorName: "Edições CNBB",
-                headline: "Edições CNBB — Bíblia Sagrada Edição Pastoral"
-            )
+
+            quietSponsoredBanner
         }
-        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func topAppBar(data: TodayDashboardData) -> some View {
-        HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
-            seasonAndDateColumn(data: data)
-            Spacer()
-            streakAndProfileRow(data: data)
-        }
-        .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.vertical, MassMatesSpacing.sm)
-        .background(MassMatesPalette.bg)
-        .overlay(alignment: .bottom) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
-    }
-
-    private func seasonAndDateColumn(data: TodayDashboardData) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            seasonSelectorMenu(activeTitle: data.activeSeasonTitle)
-            Text(data.liturgicalDay.weekdayAndWeekLabel)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .lineLimit(1)
-        }
-    }
-
-    private func streakAndProfileRow(data: TodayDashboardData) -> some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            HStack(spacing: 4) {
-                Image(systemName: "flame.fill").font(.system(size: 15)).foregroundStyle(viewModel.currentTheme.tint)
-                Text("\(data.progress.activeStreakDays)").font(.system(size: 14, weight: .semibold)).foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(data.progress.activeStreakDays) dias em oração")
+    private func centralRuleOfLifeSection(data: TodayDashboardData) -> some View {
+        VStack(spacing: MassMatesSpacing.md) {
             Button {
-                navigator?.present(.onboarding(season: data.activeSeasonColor))
+                triggerRuleOfLife(season: data.activeSeasonColor)
             } label: {
-                Image(systemName: "person.crop.circle.fill").font(.system(size: 26)).foregroundStyle(MassMatesPalette.textSecondary)
+                ruleOfLifeRing(data: data)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Perfil e configurações")
+            .accessibilityLabel("Regra de Vida: \(data.progress.completedCount) de \(data.progress.totalCount) concluídas")
+
+            Button {
+                triggerRuleOfLife(season: data.activeSeasonColor)
+            } label: {
+                HStack(spacing: 4) {
+                    Text("Ver regra").font(MassMatesFont.callout).fontWeight(.medium)
+                    Image(systemName: "arrow.right").font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundStyle(viewModel.currentTheme.tint)
+                .padding(.vertical, 4)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 
-    private func seasonSelectorMenu(activeTitle: String) -> some View {
-        Menu {
-            ForEach(LiturgicalColor.allCases) { season in
-                Button(season.defaultSeasonName) { viewModel.selectSeasonColor(season) }
+    private func ruleOfLifeRing(data: TodayDashboardData) -> some View {
+        ZStack {
+            Circle().stroke(MassMatesPalette.line, lineWidth: 2.5)
+            Circle()
+                .trim(from: 0, to: max(0.01, data.progress.ruleCompletionRatio))
+                .stroke(viewModel.currentTheme.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: data.progress.ruleCompletionRatio)
+            VStack(spacing: 2) {
+                Text("\(data.progress.completedCount)/\(data.progress.totalCount)")
+                    .font(.system(size: 36, weight: .medium, design: .rounded))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Regra de Vida").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
             }
-        } label: {
-            HStack(spacing: 5) {
-                Circle().fill(viewModel.currentTheme.tint).frame(width: 6, height: 6)
-                Text(activeTitle.uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.6).foregroundStyle(MassMatesPalette.textSecondary)
-            }
+        }
+        .frame(width: 172, height: 172)
+    }
+
+    private func triggerRuleOfLife(season: LiturgicalColor) {
+        if let onOpenRuleOfLife {
+            onOpenRuleOfLife()
+        } else {
+            navigator?.present(.spiritualDiary(season: season))
         }
     }
 
-    private var editorialReflectionCard: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("REFLEXÃO DO DIA").font(.system(size: 11, weight: .semibold)).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
-            Text("“Não percas de vista teu ponto de partida; conserva o que tens, faze o que fazes.”")
-                .font(MassMatesFont.scripture).foregroundStyle(MassMatesPalette.textPrimary).fixedSize(horizontal: false, vertical: true)
-            Text("— Carta de Santa Clara a Santa Inês").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+    private var quietSponsoredBanner: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Text("PATROCINADO").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
+            Text("·").font(.system(size: 12)).foregroundStyle(MassMatesPalette.line)
+            Text("Edições CNBB · Bíblia Sagrada Edição Pastoral")
+                .font(.system(size: 11, weight: .regular)).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
+            Spacer()
+            Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
         }
-        .padding(.top, MassMatesSpacing.sm).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .top) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
+        .padding(.vertical, 10)
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Patrocinado: Edições CNBB, Bíblia Sagrada Edição Pastoral")
     }
 }
 

@@ -19,7 +19,7 @@ struct CheckInSafeguardAndNoteSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             sectionHeader
-            textContainer
+            cardContainer
         }
     }
 
@@ -29,7 +29,7 @@ struct CheckInSafeguardAndNoteSectionView: View {
             Text("FRUTO DA ORAÇÃO")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .tracking(0.5)
+                .tracking(0.6)
             Spacer()
             if viewModel.isDestinationLockedToPrivateDiary {
                 Label("Sigilo", systemImage: "lock.fill")
@@ -39,46 +39,55 @@ struct CheckInSafeguardAndNoteSectionView: View {
         }
     }
 
-    private var textContainer: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+    private var cardContainer: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             TextField(
-                "O que você ouviu ou sentiu na oração hoje? (opcional)",
+                "O que Deus falou ao seu coração?",
                 text: $viewModel.fruitOfPrayer,
                 axis: .vertical
             )
-            .font(MassMatesFont.callout)
+            .font(MassMatesFont.scripture)
             .foregroundStyle(MassMatesPalette.textPrimary)
-            .lineLimit(3...6)
-            .frame(minHeight: 80, alignment: .topLeading)
+            .lineLimit(3...4)
+            .frame(minHeight: 88, alignment: .topLeading)
 
-            if viewModel.selectedPhotoData != nil {
-                photoCaptionField
-            }
+            Divider()
+                .overlay(MassMatesPalette.line)
 
-            bottomToolsRow
+            bottomActionRow
         }
         .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.button)
+            RoundedRectangle(cornerRadius: MassMatesRadius.card)
                 .stroke(MassMatesPalette.line, lineWidth: 1)
         )
     }
 
-    private var photoCaptionField: some View {
-        TextField("Legenda da foto (opcional)", text: $viewModel.photoCaption)
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-    }
-
-    private var bottomToolsRow: some View {
+    private var bottomActionRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             if let photoData = viewModel.selectedPhotoData, let uiImage = UIImage(data: photoData) {
                 photoThumbnail(uiImage: uiImage)
+            } else {
+                photoPickerButton
             }
             Spacer()
-            photoPickerButton
+            statusBadge
+        }
+    }
+
+    private var statusBadge: some View {
+        Group {
+            if viewModel.isDestinationLockedToPrivateDiary {
+                Text("Privado")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            } else {
+                Text("Opcional")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
         }
     }
 
@@ -87,8 +96,8 @@ struct CheckInSafeguardAndNoteSectionView: View {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 32, height: 32)
-                .clipShape(.rect(cornerRadius: 8))
+                .frame(width: 28, height: 28)
+                .clipShape(.rect(cornerRadius: 6))
 
             Button {
                 viewModel.selectedPhotoData = nil
@@ -105,13 +114,16 @@ struct CheckInSafeguardAndNoteSectionView: View {
 
     private var photoPickerButton: some View {
         PhotosPicker(selection: $selectedPickerItem, matching: .images) {
-            Image(systemName: "camera")
-                .font(.system(size: 18))
-                .foregroundStyle(MassMatesPalette.textTertiary)
-                .frame(width: 32, height: 32)
+            HStack(spacing: 6) {
+                Image(systemName: "camera")
+                    .font(.system(size: 14))
+                Text("Adicionar foto")
+                    .font(MassMatesFont.caption)
+            }
+            .foregroundStyle(MassMatesPalette.textSecondary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Anexar foto")
+        .accessibilityLabel("Adicionar foto")
         .onChange(of: selectedPickerItem) { _, newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self) {

@@ -4,121 +4,151 @@ struct CreateGroupRulesAndLimitsView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable var viewModel: CreateJoinGroupViewModel
+    private let onBack: (() -> Void)?
+    private let onCreated: () -> Void
 
     // MARK: - Init
-    init(viewModel: CreateJoinGroupViewModel) {
+    init(
+        viewModel: CreateJoinGroupViewModel,
+        onBack: (() -> Void)? = nil,
+        onCreated: @escaping () -> Void = {}
+    ) {
         self.viewModel = viewModel
+        self.onBack = onBack
+        self.onCreated = onCreated
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: 0) {
-            Divider().overlay(MassMatesPalette.line)
-            typeRow
-            Divider().overlay(MassMatesPalette.line)
-            if viewModel.draft.type == .challenge {
-                CreateGroupChallengeWindowView(viewModel: viewModel)
-                    .padding(.vertical, MassMatesSpacing.xs)
-                Divider().overlay(MassMatesPalette.line)
-            }
-            scoringModeRow
-            Divider().overlay(MassMatesPalette.line)
-            sharingRequirementRow
-            Divider().overlay(MassMatesPalette.line)
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            scoringModeSection
+            sharingRequirementSection
+            Spacer(minLength: 0)
+            createActionButton
         }
+        .padding(.top, MassMatesSpacing.xs)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var typeRow: some View {
-        Menu {
-            ForEach(CommunityGroupType.allCases) { type in
-                Button {
-                    viewModel.selectType(type)
-                } label: {
-                    if viewModel.draft.type == type {
-                        Label(type.title, systemImage: "checkmark")
-                    } else {
-                        Text(type.title)
-                    }
+    private var scoringModeSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("Modo de pontuação")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            VStack(spacing: MassMatesSpacing.xxs) {
+                ForEach(GroupScoringMode.allCases) { mode in
+                    scoringModeRow(mode)
                 }
             }
+        }
+    }
+
+    private func scoringModeRow(_ mode: GroupScoringMode) -> some View {
+        let isSelected = viewModel.draft.scoringMode == mode
+        return Button {
+            viewModel.draft.scoringMode = mode
         } label: {
-            configurationRow(
-                title: "Tipo",
-                value: viewModel.draft.type == .fraternity ? "Fraternidade contínua" : viewModel.draft.type.title
+            HStack(spacing: MassMatesSpacing.sm) {
+                radioIndicator(isSelected: isSelected)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(mode.title)
+                        .font(MassMatesFont.callout.weight(.medium))
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(mode.descriptionText)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(height: 44)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.photo)
+                    .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    private var scoringModeRow: some View {
-        Menu {
-            ForEach(GroupScoringMode.allCases) { mode in
-                Button {
-                    viewModel.draft.scoringMode = mode
-                } label: {
-                    if viewModel.draft.scoringMode == mode {
-                        Label(mode.title, systemImage: "checkmark")
-                    } else {
-                        Text(mode.title)
-                    }
+    private var sharingRequirementSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("Exigência de partilha")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            VStack(spacing: MassMatesSpacing.xxs) {
+                ForEach(GroupSharingRequirement.allCases) { req in
+                    sharingRequirementRow(req)
                 }
             }
+        }
+    }
+
+    private func sharingRequirementRow(_ req: GroupSharingRequirement) -> some View {
+        let isSelected = viewModel.draft.sharingRequirement == req
+        return Button {
+            viewModel.draft.sharingRequirement = req
         } label: {
-            configurationRow(
-                title: "Pontuação",
-                value: viewModel.draft.scoringMode.title
+            HStack(spacing: MassMatesSpacing.sm) {
+                radioIndicator(isSelected: isSelected)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(sharingTitle(req))
+                        .font(MassMatesFont.callout.weight(.medium))
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(req.badgeText)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(height: 44)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.photo)
+                    .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    private var sharingRequirementRow: some View {
-        Menu {
-            ForEach(GroupSharingRequirement.allCases) { req in
-                Button {
-                    viewModel.draft.sharingRequirement = req
-                } label: {
-                    if viewModel.draft.sharingRequirement == req {
-                        Label(req.title, systemImage: "checkmark")
-                    } else {
-                        Text(req.title)
+    private func sharingTitle(_ req: GroupSharingRequirement) -> String {
+        switch req {
+        case .openHonor: "Aberto"
+        case .writtenFruit: "Fruto escrito"
+        case .photoWitness: "Foto testemunho"
+        }
+    }
+
+    private func radioIndicator(isSelected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1.5)
+                .frame(width: 16, height: 16)
+            if isSelected {
+                Circle()
+                    .fill(theme.tint)
+                    .frame(width: 8, height: 8)
+            }
+        }
+    }
+
+    private var createActionButton: some View {
+        VStack(spacing: MassMatesSpacing.xxs) {
+            MassMatesPrimaryButton(title: "Criar Grupo", systemImage: "checkmark") {
+                Task {
+                    if await viewModel.submitCreateGroup() != nil {
+                        onCreated()
                     }
                 }
             }
-        } label: {
-            configurationRow(
-                title: "Partilha",
-                value: sharingRequirementValueText(viewModel.draft.sharingRequirement)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func configurationRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Spacer()
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Text(value)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Image(systemName: "chevron.right")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-        }
-        .frame(minHeight: MassMatesLayout.minRowHeight)
-        .contentShape(Rectangle())
-    }
-
-    private func sharingRequirementValueText(_ requirement: GroupSharingRequirement) -> String {
-        switch requirement {
-        case .openHonor: "Aberta (Amém)"
-        case .writtenFruit: "Fruto Escrito"
-        case .photoWitness: "Comprovação com Foto"
+            Text("Você poderá convidar irmãos logo após a criação.")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .frame(maxWidth: .infinity)
         }
     }
 }

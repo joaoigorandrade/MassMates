@@ -26,6 +26,7 @@ final class DailyGospelViewModel {
     var isAudioPlaying = false
     var hasCompletedFruitRegistration = false
     var isCompletionToastVisible = false
+    var isShowingLectioDivina = false
 
     // MARK: - Init
     init(
@@ -85,6 +86,14 @@ final class DailyGospelViewModel {
         hasCompletedFruitRegistration = true
         isCompletionToastVisible = true
         onCompleteReading()
+    }
+
+    func showLectioDivina() {
+        isShowingLectioDivina = true
+    }
+
+    func hideLectioDivina() {
+        isShowingLectioDivina = false
     }
 
     // MARK: - Subviews / Private Helpers

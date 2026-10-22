@@ -4,80 +4,155 @@ struct CreateGroupFormTabView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: CreateJoinGroupViewModel
-    private let onCreated: () -> Void
+    private let onAdvance: () -> Void
 
     // MARK: - Init
+    init(viewModel: CreateJoinGroupViewModel, onAdvance: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.onAdvance = onAdvance
+    }
+
     init(viewModel: CreateJoinGroupViewModel, onCreated: @escaping () -> Void) {
         self.viewModel = viewModel
-        self.onCreated = onCreated
+        self.onAdvance = onCreated
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            headerInputsRow
-            CreateGroupRulesAndLimitsView(viewModel: viewModel)
-            createActionButton
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            avatarPickerSection
+            nameUnderlineSection
+            groupTypeSelectorSection
+            if viewModel.draft.type == .challenge {
+                CreateGroupChallengeWindowView(viewModel: viewModel)
+            }
+            Spacer(minLength: 0)
+            advanceButton
         }
+        .padding(.top, MassMatesSpacing.xs)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerInputsRow: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            coverImagePickerButton
-            nameInputField
+    private var avatarPickerSection: some View {
+        HStack {
+            Spacer()
+            Button {
+                // Photo picker intent
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(MassMatesPalette.surfaceMuted)
+                        .frame(width: 64, height: 64)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(MassMatesPalette.line, lineWidth: 1)
+                        )
+                    Image(systemName: "camera")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+            }
+            .buttonStyle(.plain)
+            .frame(width: 64, height: 64)
+            Spacer()
         }
     }
 
-    private var coverImagePickerButton: some View {
-        Button {
-            // Photo picker intent placeholder
-        } label: {
-            Image(systemName: "camera")
-                .font(.system(size: 20))
+    private var nameUnderlineSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("Nome da fraternidade")
+                .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 56, height: 56)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MassMatesRadius.button)
-                        .strokeBorder(MassMatesPalette.line, style: StrokeStyle(lineWidth: 1, dash: [4]))
+            TextField("ex: Terço dos Homens, São Bento", text: $viewModel.draft.name)
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .autocorrectionDisabled()
+                .padding(.vertical, MassMatesSpacing.xxs)
+            Rectangle()
+                .fill(viewModel.draft.name.isEmpty ? MassMatesPalette.line : theme.tint)
+                .frame(height: 1)
+        }
+    }
+
+    private var groupTypeSelectorSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("Tipo de grupo")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            VStack(spacing: MassMatesSpacing.xs) {
+                typeRadioRow(
+                    type: .fraternity,
+                    title: "Fraternidade contínua",
+                    subtitle: "Caminhada perene de oração"
                 )
+                typeRadioRow(
+                    type: .challenge,
+                    title: "Desafio sazonal",
+                    subtitle: "Período com início e término"
+                )
+            }
+        }
+    }
+
+    private func typeRadioRow(
+        type: CommunityGroupType,
+        title: String,
+        subtitle: String
+    ) -> some View {
+        let isSelected = viewModel.draft.type == type
+        return Button {
+            viewModel.selectType(type)
+        } label: {
+            HStack(spacing: MassMatesSpacing.sm) {
+                radioIndicator(isSelected: isSelected)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(subtitle)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(height: 48)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                    .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
 
-    private var nameInputField: some View {
-        TextField("Nome da fraternidade ou grupo", text: $viewModel.draft.name)
-            .font(MassMatesFont.body)
-            .foregroundStyle(MassMatesPalette.textPrimary)
-            .padding(.horizontal, MassMatesSpacing.md)
-            .frame(height: 56)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    private func radioIndicator(isSelected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1.5)
+                .frame(width: 18, height: 18)
+            if isSelected {
+                Circle()
+                    .fill(theme.tint)
+                    .frame(width: 10, height: 10)
+            }
+        }
     }
 
-    private var createActionButton: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            MassMatesPrimaryButton(title: "Criar grupo") {
-                Task {
-                    if await viewModel.submitCreateGroup() != nil {
-                        onCreated()
-                    }
-                }
-            }
-            Text("Você poderá convidar irmãos logo após a criação.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+    private var advanceButton: some View {
+        let isNameEmpty = viewModel.draft.name.trimmingCharacters(in: .whitespaces).isEmpty
+        return MassMatesPrimaryButton(title: "Avançar", systemImage: "arrow.right") {
+            guard !isNameEmpty else { return }
+            onAdvance()
         }
-        .padding(.top, MassMatesSpacing.xs)
+        .opacity(isNameEmpty ? 0.5 : 1.0)
     }
 }
 
-#Preview("Create Group Tab — 5 Seasons (Light / Dark / AX3)") {
+#Preview("Create Group Form Tab — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         CreateGroupFormTabView(viewModel: CreateJoinGroupViewModel(initialTab: .createNew), onCreated: {})
+            .padding()
     }
 }

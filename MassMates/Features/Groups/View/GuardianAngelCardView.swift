@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct GuardianAngelCardView: View {
     // MARK: - Dependencies & State
@@ -23,86 +24,136 @@ struct GuardianAngelCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+        VStack(spacing: MassMatesSpacing.lg) {
             if state.isOptedIn {
                 optedInContent
             } else {
                 optInContent
             }
         }
-        .padding(MassMatesSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(MassMatesSpacing.lg)
+        .frame(maxWidth: .infinity)
         .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
     }
 
     // MARK: - Subviews / Private Helpers
     private var optedInContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Você protege")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Text(state.protectedSoulName)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Em intenção secreta nesta semana")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                if let nudge = state.anonymousNudgeStatusText {
-                    Text(nudge)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                        .padding(.top, 2)
-                }
-            }
-            Rectangle()
-                .fill(MassMatesPalette.line)
-                .frame(height: 1)
-            HStack {
-                Spacer()
-                Button(action: onSendPrayerNudge) {
-                    Text(state.hasPrayedForProtectedSoulToday ? "Oração entregue ✓" : "Rezei por esta alma")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(state.hasPrayedForProtectedSoulToday ? MassMatesPalette.textSecondary : theme.tint)
-                        .frame(minHeight: MassMatesLayout.minTapTarget)
-                }
-                .buttonStyle(.plain)
+        VStack(spacing: MassMatesSpacing.md) {
+            headerRow(title: "Seu Protegido Espiritual")
+            soulNameView(name: state.protectedSoulName)
+            intentionsSection(intention: state.protectedSoulIntention)
+            disclosureFootnote
+            actionButton(
+                title: state.hasPrayedForProtectedSoulToday ? "Oração entregue ✓" : "Rezei pelo meu protegido",
+                isCompleted: state.hasPrayedForProtectedSoulToday,
+                action: handleSendPrayerNudge
+            )
+            reassuranceText
+            if let nudge = state.anonymousNudgeStatusText {
+                nudgeStatusView(nudge)
             }
         }
     }
 
     private var optInContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Anjo da Guarda Secreto")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Text("Corrente de Oração Secreta")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Receba secretamente um irmão do grupo para sustentar em oração diária.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Rectangle()
-                .fill(MassMatesPalette.line)
-                .frame(height: 1)
-            HStack {
-                Spacer()
-                Button(action: onOptIn) {
-                    Text("Participar do Sorteio")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(theme.tint)
-                        .frame(minHeight: MassMatesLayout.minTapTarget)
-                }
-                .buttonStyle(.plain)
-            }
+        VStack(spacing: MassMatesSpacing.md) {
+            headerRow(title: "Anjo da Guarda Secreto")
+            soulNameView(name: "Corrente de Oração")
+            Text("Receba secretamente um irmão do grupo para sustentar em oração diária.")
+                .font(MassMatesFont.scriptureEmphasis)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+            disclosureFootnote
+            actionButton(title: "Participar do Sorteio", isCompleted: false, action: handleOptIn)
         }
+    }
+
+    private func headerRow(title: String) -> some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Image(systemName: "wing")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(theme.tint)
+            Text(title)
+                .font(MassMatesFont.caption)
+                .fontWeight(.semibold)
+                .textCase(.uppercase)
+                .tracking(0.6)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private func soulNameView(name: String) -> some View {
+        Text(name)
+            .font(.system(size: 24, weight: .semibold, design: .serif))
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .multilineTextAlignment(.center)
+    }
+
+    private func intentionsSection(intention: String) -> some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            Text("INTENÇÕES")
+                .font(MassMatesFont.caption)
+                .fontWeight(.medium)
+                .tracking(0.8)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text("“\(intention)”")
+                .font(MassMatesFont.scriptureEmphasis)
+                .lineSpacing(6)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+        }
+    }
+
+    private var disclosureFootnote: some View {
+        Button(action: onRevealCycle) {
+            Text(state.isCycleRevealed ? "Ciclo revelado: \(state.revealedGuardianAngelName)" : "Identidades reveladas ao término do ciclo no domingo")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func actionButton(title: String, isCompleted: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(isCompleted ? MassMatesPalette.textSecondary : theme.onTint)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+                .background(isCompleted ? MassMatesPalette.surfaceMuted : theme.tint)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
+        .disabled(isCompleted)
+    }
+
+    private var reassuranceText: some View {
+        Text(state.hasPrayedForProtectedSoulToday ? "Aviso anônimo entregue com serenidade." : "Ela receberá um aviso anônimo.")
+            .font(MassMatesFont.caption)
+            .foregroundStyle(MassMatesPalette.textSecondary)
+            .multilineTextAlignment(.center)
+    }
+
+    private func nudgeStatusView(_ text: String) -> some View {
+        Text(text)
+            .font(MassMatesFont.caption)
+            .foregroundStyle(theme.tint)
+            .multilineTextAlignment(.center)
+            .padding(.top, MassMatesSpacing.xxs)
+    }
+
+    private func handleSendPrayerNudge() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        onSendPrayerNudge()
+    }
+
+    private func handleOptIn() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        onOptIn()
     }
 }
 

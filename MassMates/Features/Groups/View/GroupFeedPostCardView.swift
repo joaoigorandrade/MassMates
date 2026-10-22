@@ -15,6 +15,7 @@ struct GroupFeedPostCardView: View {
     private let onSubmitComment: () -> Void
     private let onDeleteComment: (GroupFeedComment) -> Void
     private let onComposerFocus: () -> Void
+    @State private var isDrawerExpanded: Bool = false
 
     // MARK: - Init
     init(
@@ -51,24 +52,24 @@ struct GroupFeedPostCardView: View {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 authorHeader
                 GroupFeedPostMediaView(
-                    caption: post.photoCaption,
-                    fruitOfPrayer: post.fruitOfPrayer,
+                    caption: post.photoCaption, fruitOfPrayer: post.fruitOfPrayer,
                     witnessPhotoURL: witnessPhotoURL
                 )
                 reactionRow
-                if showsComments {
+                if shouldShowComments {
                     GroupFeedCommentsView(
-                        comments: comments,
-                        commentDraft: $commentDraft,
+                        comments: comments, commentDraft: $commentDraft,
                         commentErrorMessage: commentErrorMessage,
                         canModerateComments: canModerateComments,
                         showsCommentsHint: showsCommentsHint,
-                        onSubmitComment: onSubmitComment,
-                        onDeleteComment: onDeleteComment,
+                        onSubmitComment: onSubmitComment, onDeleteComment: onDeleteComment,
                         onComposerFocus: onComposerFocus
                     )
                 }
             }
+        }
+        .onAppear {
+            if !comments.isEmpty { isDrawerExpanded = true }
         }
     }
 
@@ -82,7 +83,7 @@ struct GroupFeedPostCardView: View {
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Text(post.relativeTimeLabel)
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
             }
             Spacer()
             practiceChip
@@ -91,10 +92,9 @@ struct GroupFeedPostCardView: View {
 
     private var avatarView: some View {
         Text(post.authorInitials)
-            .font(MassMatesFont.caption)
-            .fontWeight(.semibold)
+            .font(MassMatesFont.caption).fontWeight(.semibold)
             .foregroundStyle(MassMatesPalette.textSecondary)
-            .frame(width: 32, height: 32)
+            .frame(width: 34, height: 34)
             .background(MassMatesPalette.surfaceMuted)
             .clipShape(Circle())
             .overlay(Circle().stroke(MassMatesPalette.line, lineWidth: 1))
@@ -105,7 +105,7 @@ struct GroupFeedPostCardView: View {
             Image(systemName: post.practice.systemImage)
             Text(post.practice.title)
         }
-        .font(MassMatesFont.caption)
+        .font(MassMatesFont.caption).fontWeight(.medium)
         .foregroundStyle(theme.tint)
         .padding(.horizontal, MassMatesSpacing.xs)
         .padding(.vertical, MassMatesSpacing.xxs)
@@ -114,25 +114,49 @@ struct GroupFeedPostCardView: View {
     }
 
     private var reactionRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            ReactionPillButton(
-                title: "Amém",
-                systemImage: "hands.sparkles",
-                count: post.amenCount,
-                isActive: post.isAmenSelected,
-                action: { onReaction(.amen) }
-            )
-            if post.unitedCount > 0 || post.isUnitedSelected {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: MassMatesSpacing.xs) {
                 ReactionPillButton(
-                    title: "Unido em oração",
-                    systemImage: "heart",
-                    count: post.unitedCount,
-                    isActive: post.isUnitedSelected,
-                    action: { onReaction(.unitedInPrayer) }
+                    title: "Amém", systemImage: "hands.sparkles", count: post.amenCount,
+                    isActive: post.isAmenSelected, action: { onReaction(.amen) }
                 )
+                ReactionPillButton(
+                    title: "Unidos em oração", systemImage: "heart", count: post.unitedCount,
+                    isActive: post.isUnitedSelected, action: { onReaction(.unitedInPrayer) }
+                )
+                if showsComments { commentPillButton }
             }
-            Spacer()
         }
+    }
+
+    private var commentPillButton: some View {
+        Button(action: toggleCommentsDrawer) {
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Image(systemName: "bubble.left").font(MassMatesFont.caption)
+                    .foregroundStyle(isDrawerExpanded ? theme.tint : MassMatesPalette.textSecondary)
+                Text(comments.isEmpty ? "Apoio" : "\(comments.count)").font(MassMatesFont.caption)
+                    .foregroundStyle(isDrawerExpanded ? theme.tint : MassMatesPalette.textPrimary)
+            }
+            .padding(.horizontal, MassMatesSpacing.sm)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .background(isDrawerExpanded ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.chip)
+                    .stroke(isDrawerExpanded ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Apoio fraterno, \(comments.count) comentários")
+    }
+
+    private var shouldShowComments: Bool {
+        showsComments && (isDrawerExpanded || !comments.isEmpty)
+    }
+
+    private func toggleCommentsDrawer() {
+        withAnimation(.easeInOut(duration: 0.2)) { isDrawerExpanded.toggle() }
+        if isDrawerExpanded { onComposerFocus() }
     }
 }
 

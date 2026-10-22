@@ -1,11 +1,17 @@
 import Navigation
 import SwiftUI
 
+enum CheckInWizardStep: Equatable {
+    case practice
+    case fruitAndDestination
+}
+
 struct NewCheckInModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
     @Bindable private var viewModel: NewCheckInViewModel
+    @State private var currentStep: CheckInWizardStep = .practice
     private let activeStreakDays: Int
 
     // MARK: - Init
@@ -16,69 +22,41 @@ struct NewCheckInModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                topGrabberAndCloseRow
-                titleSection
-                if let result = viewModel.submissionResult {
-                    celebrationView(result)
-                } else {
-                    formContent
+        VStack(spacing: 0) {
+            Capsule().fill(MassMatesPalette.line).frame(width: 36, height: 4).padding(.vertical, 8)
+            if let result = viewModel.submissionResult {
+                CheckInCelebrationCardView(result: result, activeStreakDays: activeStreakDays) {
+                    navigator?.dismiss()
                 }
+            } else if currentStep == .practice {
+                practiceStep
+            } else {
+                fruitAndDestinationStep
             }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.md)
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.bottom, MassMatesSpacing.md)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .task {
-            await viewModel.load()
-        }
+        .task { await viewModel.load() }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var topGrabberAndCloseRow: some View {
-        HStack {
-            Color.clear.frame(width: 32, height: 32)
+    private var practiceStep: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            stepTopBar(stepText: "Passo 1 de 2", showBack: false)
+            titleHeader("O que você rezou?", subtitle: "Selecione o momento com o Senhor para registrar.")
+            practiceGrid
             Spacer()
-            Capsule()
-                .fill(MassMatesPalette.line)
-                .frame(width: 36, height: 5)
-            Spacer()
-            Button { navigator?.dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.circle)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Fechar")
+            continueActionSection
         }
     }
 
-    private var titleSection: some View {
-        Text("Novo registro")
-            .font(.system(size: 26, weight: .semibold, design: .serif))
-            .foregroundStyle(MassMatesPalette.textPrimary)
-    }
-
-    private func celebrationView(_ result: CheckInSubmissionResult) -> some View {
-        CheckInCelebrationCardView(
-            result: result,
-            activeStreakDays: activeStreakDays
-        ) {
-            navigator?.dismiss()
-        }
-    }
-
-    private var formContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            practiceSelectorSection
-            CheckInSafeguardAndNoteSectionView(
-                viewModel: viewModel,
-                activeStreakDays: activeStreakDays
-            )
+    private var fruitAndDestinationStep: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            stepTopBar(stepText: viewModel.selectedPractice.checkInChipTitle.uppercased(), showBack: true)
+            titleHeader("Fruto & Destino")
+            CheckInSafeguardAndNoteSectionView(viewModel: viewModel, activeStreakDays: activeStreakDays)
             CheckInDestinationCardView(
                 isLockedToPrivateDiary: viewModel.isDestinationLockedToPrivateDiary,
                 destinationMode: viewModel.destinationMode,
@@ -88,71 +66,105 @@ struct NewCheckInModalView: View {
                 onSelectMode: { mode in viewModel.selectDestinationMode(mode) },
                 onToggleGroup: { id in viewModel.toggleGroupSelection(id) }
             )
-            submitSection
+            Spacer()
+            confirmActionSection
         }
     }
 
-    private var practiceSelectorSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("PRÁTICA")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .tracking(0.5)
-
-            FlowWrapLayout(horizontalSpacing: MassMatesSpacing.xs, verticalSpacing: MassMatesSpacing.xs) {
-                ForEach(SpiritualPractice.allCases) { practice in
-                    practiceChip(practice)
-                }
+    private var practiceGrid: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
+            spacing: 10
+        ) {
+            ForEach(SpiritualPractice.allCases) { practice in
+                practiceTile(practice)
             }
         }
     }
 
-    private func practiceChip(_ practice: SpiritualPractice) -> some View {
+    private func practiceTile(_ practice: SpiritualPractice) -> some View {
         let isSelected = viewModel.selectedPractice == practice
-        return Button {
-            viewModel.selectPractice(practice)
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: practice.checkInIconName)
-                    .font(.system(size: 14))
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                Text(practice.checkInChipTitle)
-                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
+        return Button { viewModel.selectPractice(practice) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: practice.checkInIconName).font(.system(size: 18))
+                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                    Spacer()
+                    if isSelected {
+                        Circle().fill(theme.tint).frame(width: 8, height: 8)
+                    } else if practice == .confession {
+                        Text("PRIVADO").font(.system(size: 10, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
+                    }
+                }
+                Text(practice.checkInChipTitle).font(MassMatesFont.callout.weight(.medium))
+                    .foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
             }
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(height: 36)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            .overlay(
-                RoundedRectangle(cornerRadius: MassMatesRadius.chip)
-                    .stroke(isSelected ? theme.tint : Color.clear, lineWidth: 1)
-            )
+            .padding(MassMatesSpacing.sm).frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
+            .background(isSelected ? theme.tintSoft.opacity(0.4) : MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 1.5 : 1))
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var submitSection: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.danger)
+    private func stepTopBar(stepText: String, showBack: Bool) -> some View {
+        HStack {
+            if showBack {
+                Button { currentStep = .practice } label: {
+                    Image(systemName: "chevron.left").font(MassMatesFont.caption.weight(.semibold))
+                        .foregroundStyle(MassMatesPalette.textSecondary).frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
             }
-            Button {
-                Task { await viewModel.submit() }
-            } label: {
-                Text("Registrar")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.onTint)
-                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
-                    .background(theme.tint)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            Text(stepText).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).tracking(0.6)
+            Spacer()
+            Button { navigator?.dismiss() } label: {
+                Image(systemName: "xmark").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32).background(MassMatesPalette.surfaceMuted).clipShape(.circle)
             }
             .buttonStyle(.plain)
         }
-        .padding(.top, MassMatesSpacing.xs)
+    }
+
+    private func titleHeader(_ title: String, subtitle: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.system(size: 24, weight: .semibold, design: .serif)).foregroundStyle(MassMatesPalette.textPrimary)
+            if let subtitle {
+                Text(subtitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+            }
+        }
+    }
+
+    private var continueActionSection: some View {
+        VStack(spacing: 6) {
+            Button { currentStep = .fruitAndDestination } label: {
+                Text("Continuar").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
+                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+                    .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            }
+            .buttonStyle(.plain)
+            Text("O registro fortalecerá a sua fidelidade diária.")
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+        }
+    }
+
+    private var confirmActionSection: some View {
+        VStack(spacing: 6) {
+            if let error = viewModel.errorMessage {
+                Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
+            }
+            Button { Task { await viewModel.submit() } } label: {
+                Text("Confirmar Registro").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
+                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+                    .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            }
+            .buttonStyle(.plain)
+            Text(viewModel.isDestinationLockedToPrivateDiary
+                ? "Destino restrito ao diário pessoal para proteger o sigilo."
+                : "Seu registro fortalece a perseverança comunitária.")
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+        }
     }
 }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupIdentityBannerView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @State private var hasCopiedInviteCode: Bool = false
     private let group: CommunityGroup
     private let scoringMode: GroupScoringMode
     private let selectedSubTab: GroupDetailSubTab
@@ -33,12 +34,46 @@ struct GroupIdentityBannerView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Text(group.name)
-                .font(MassMatesFont.display)
+                .font(MassMatesFont.displayMobile)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(2)
+            metadataRow
+        }
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
             Text("\(group.memberCount) membros · \(scoringBadgeText)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+            if group.isCurrentUserAdmin && !group.inviteCode.isEmpty {
+                adminInvitePill
+            }
         }
+    }
+
+    private var adminInvitePill: some View {
+        Button {
+            UIPasteboard.general.string = group.inviteCode
+            hasCopiedInviteCode = true
+        } label: {
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Image(systemName: hasCopiedInviteCode ? "checkmark" : "key.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                Text(hasCopiedInviteCode ? "Copiado" : group.inviteCode)
+                    .font(MassMatesFont.caption)
+            }
+            .foregroundStyle(theme.tint)
+            .padding(.horizontal, MassMatesSpacing.xs)
+            .padding(.vertical, 3)
+            .background(theme.tintSoft)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            .overlay(
+                Capsule().stroke(theme.tint.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Código de convite: \(group.inviteCode)")
     }
 
     private var scoringBadgeText: String {
@@ -72,7 +107,7 @@ struct GroupIdentityBannerView: View {
             }
         } label: {
             VStack(spacing: MassMatesSpacing.xs) {
-                Text(tab.title)
+                Text(tabTitle(tab))
                     .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
                     .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
                 Rectangle()
@@ -83,6 +118,10 @@ struct GroupIdentityBannerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func tabTitle(_ tab: GroupDetailSubTab) -> String {
+        tab == .feed ? "Mural" : tab.title
     }
 }
 

@@ -26,18 +26,19 @@ struct DevotionalQuickCardsView: View {
             prayerAndRosaryRow
             hairlineDivider
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
     }
 
     // MARK: - Subviews / Private Helpers
     private var gospelRow: some View {
         Button(action: onOpenGospel) {
             devotionalRow(
-                title: "Evangelho do Dia",
+                title: "Evangelho do dia",
                 subtitle: gospelSubtitle
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Evangelho do Dia, \(gospelSubtitle)")
+        .accessibilityLabel("Evangelho do dia, \(gospelSubtitle)")
     }
 
     private var prayerAndRosaryRow: some View {
@@ -46,29 +47,30 @@ struct DevotionalQuickCardsView: View {
         } label: {
             devotionalRow(
                 title: "Oração & Terço",
-                subtitle: "Mistérios do dia"
+                subtitle: nil
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Oração & Terço, Mistérios do dia")
+        .accessibilityLabel("Oração & Terço")
     }
 
-    private func devotionalRow(title: String, subtitle: String) -> some View {
+    private func devotionalRow(title: String, subtitle: String?) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(MassMatesFont.body)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
             }
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .foregroundStyle(MassMatesPalette.textTertiary)
         }
-        .padding(.vertical, MassMatesSpacing.sm)
         .frame(minHeight: MassMatesLayout.minRowHeight)
         .contentShape(Rectangle())
     }
@@ -80,7 +82,7 @@ struct DevotionalQuickCardsView: View {
     }
 
     private var gospelSubtitle: String {
-        reading.gospelReference.isEmpty ? "Mateus 5, 1-12" : reading.gospelReference
+        reading.gospelReference.isEmpty ? "Lc 12,49-53" : reading.gospelReference
     }
 }
 

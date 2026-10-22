@@ -19,88 +19,100 @@ struct SpiritualDiaryEntryCardView: View {
         Button {
             onSelectEntry(entry)
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                metaHeaderRow
-                reflectionBody
-                confessorNotesRow
+            HStack(alignment: .center, spacing: MassMatesSpacing.xs) {
+                dayNumeral
+                practiceBadge
+                dashSeparator
+                snippetText
+                Spacer(minLength: 4)
+                chevronIndicator
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, MassMatesSpacing.sm)
+            .frame(height: MassMatesLayout.minRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var metaHeaderRow: some View {
-        HStack(spacing: 6) {
-            Text("\(dateLabel) · \(practiceHeaderLabel)")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+    private var dayNumeral: some View {
+        Text(dayString)
+            .font(MassMatesFont.headline)
+            .fontWeight(.medium)
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .frame(width: 24, alignment: .leading)
+    }
 
+    private var practiceBadge: some View {
+        HStack(spacing: 3) {
+            Text(practiceShortTitle)
+                .font(MassMatesFont.callout)
+                .fontWeight(.semibold)
+                .foregroundStyle(MassMatesPalette.textPrimary)
             if entry.practice.isStrictlyPrivate {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
             }
-            Spacer()
         }
     }
 
-    @ViewBuilder
-    private var reflectionBody: some View {
-        if entry.practice.isStrictlyPrivate && (entry.reflectionOrNotes == nil || entry.reflectionOrNotes?.isEmpty == true) {
-            Text("Registro sob sigilo sacramental")
-                .font(MassMatesFont.customScripture(size: 16, italic: true))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        } else if let reflection = entry.reflectionOrNotes, !reflection.isEmpty {
-            Text(reflection)
-                .font(MassMatesFont.scripture)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .lineSpacing(4)
-                .multilineTextAlignment(.leading)
+    private var dashSeparator: some View {
+        Text("—")
+            .font(MassMatesFont.callout)
+            .foregroundStyle(MassMatesPalette.textTertiary)
+    }
+
+    private var snippetText: some View {
+        Text(reflectionSnippet)
+            .font(MassMatesFont.customScripture(size: 15, italic: true))
+            .foregroundStyle(isPrivateBlank ? MassMatesPalette.textTertiary : MassMatesPalette.textSecondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    private var chevronIndicator: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(MassMatesPalette.textTertiary)
+    }
+
+    private var dayString: String {
+        let day = Calendar.current.component(.day, from: entry.createdAt)
+        return String(day)
+    }
+
+    private var isPrivateBlank: Bool {
+        entry.practice.isStrictlyPrivate && (entry.reflectionOrNotes == nil || entry.reflectionOrNotes?.isEmpty == true)
+    }
+
+    private var reflectionSnippet: String {
+        if isPrivateBlank {
+            return "Privado"
         }
-    }
-
-    @ViewBuilder
-    private var confessorNotesRow: some View {
-        if let penance = entry.confessorOrPenanceNotes, !penance.isEmpty {
-            Text("Penitência: \(penance)")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.top, 2)
+        if let notes = entry.reflectionOrNotes, !notes.isEmpty {
+            return notes.replacingOccurrences(of: "\n", with: " ")
         }
+        return "Sem anotações"
     }
 
-    private var dateLabel: String {
-        Self.dateFormatter.string(from: entry.createdAt).lowercased()
-    }
-
-    private var practiceHeaderLabel: String {
+    private var practiceShortTitle: String {
         switch entry.practice {
-        case .dailyGospel: "Lectio Divina"
-        case .rosary: "Santo Terço"
-        case .mentalPrayer: "Oração Mental"
+        case .dailyGospel: "Evangelho"
+        case .rosary: "Terço"
+        case .mentalPrayer: "Oração"
         case .confession: "Confissão"
         case .holyMass: "Santa Missa"
         case .adoration: "Adoração"
-        case .spiritualReading: "Leitura Espiritual"
+        case .spiritualReading: "Leitura"
         case .fasting: "Jejum"
         }
     }
-
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "dd MMM"
-        return formatter
-    }()
 }
 
-#Preview("Spiritual Diary Entry Card — 5 Seasons") {
+#Preview("Spiritual Diary Entry Row — 5 Seasons") {
     LiturgicalSeasonPreviewMatrix { _ in
         SpiritualDiaryEntryCardView(
-            entry: SpiritualDiaryViewModel.defaultSampleEntries()[1],
+            entry: SpiritualDiaryViewModel.defaultSampleEntries()[0],
             onSelectEntry: { _ in }
         )
         .padding()

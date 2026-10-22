@@ -6,7 +6,8 @@ struct ConfessionPreparationModalView: View {
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: ConfessionPrepViewModel
-    @State private var selectedTab: ConfessionTab = .commandments
+    @State private var currentCommandmentIndex: Int = 0
+    @State private var showingContrition: Bool = false
 
     // MARK: - Init
     init(viewModel: ConfessionPrepViewModel = ConfessionPrepViewModel()) {
@@ -16,8 +17,11 @@ struct ConfessionPreparationModalView: View {
     // MARK: - Body / Public API
     var body: some View {
         ZStack(alignment: .bottom) {
-            mainScrollContent
-            dockedSanctuaryActionBar
+            VStack(spacing: 0) {
+                headerBar
+                viewportContent
+                bottomActionBar
+            }
             if viewModel.isConfessionalModePresented {
                 ConfessionalModeOverlayView(viewModel: viewModel)
                     .transition(.opacity)
@@ -27,115 +31,144 @@ struct ConfessionPreparationModalView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var mainScrollContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                topNavigationBar
-                ConfessionHeaderAndStepsView(viewModel: viewModel, selectedTab: $selectedTab)
-                tabContentSection
-                if let banner = viewModel.statusBannerText {
-                    statusFeedbackCard(banner)
-                }
-            }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.top, MassMatesSpacing.sm)
-            .padding(.bottom, 120)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    private var topNavigationBar: some View {
-        HStack {
-            Button {
-                navigator?.dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            Spacer()
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: "lock.fill")
-                    .font(MassMatesFont.caption)
+    private var headerBar: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            HStack {
+                closeButton
+                Spacer()
+                privacySeal
+                Spacer()
+                Text(showingContrition ? "Ato" : "\(currentCommandmentIndex + 1) / 10")
+                    .font(MassMatesFont.caption.weight(.medium))
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                Text("Somente no seu dispositivo")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 36, alignment: .trailing)
+            }
+            tenStepProgressLine
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.top, MassMatesSpacing.sm)
+        .padding(.bottom, MassMatesSpacing.xs)
+    }
+
+    private var closeButton: some View {
+        Button {
+            navigator?.dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .frame(width: 36, height: 36)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.circle)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var privacySeal: some View {
+        HStack(spacing: MassMatesSpacing.xxs) {
+            Image(systemName: "lock.fill").font(.system(size: 12))
+            Text("Só neste iPhone").font(MassMatesFont.caption.weight(.medium))
+        }
+        .foregroundStyle(MassMatesPalette.textSecondary)
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, 4)
+        .background(MassMatesPalette.surfaceMuted.opacity(0.6))
+        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(MassMatesPalette.line, lineWidth: 1))
+    }
+
+    private var tenStepProgressLine: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<10, id: \.self) { idx in
+                Capsule()
+                    .fill((showingContrition || idx <= currentCommandmentIndex) ? theme.tint : MassMatesPalette.line)
+                    .frame(height: 2.5)
             }
         }
     }
 
-    @ViewBuilder
-    private var tabContentSection: some View {
-        switch selectedTab {
-        case .commandments:
-            ConfessionGuidedExamSectionView(viewModel: viewModel)
-        case .contrition:
-            actOfContritionCard
-        case .rite:
-            ConfessionRemindersAndRiteView(viewModel: viewModel)
+    private var viewportContent: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            if showingContrition {
+                actOfContritionSection
+            } else {
+                ConfessionGuidedExamSectionView(viewModel: viewModel, commandmentIndex: currentCommandmentIndex)
+            }
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.top, MassMatesSpacing.md)
+        .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 
-    private var actOfContritionCard: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("Ato de Contrição")
-                .font(MassMatesFont.headline)
+    private var actOfContritionSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Text("PASSO FINAL · CONTRIÇÃO")
+                    .font(MassMatesFont.caption).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
+                Text("Ato de Contrição")
+                    .font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
+            }
+            Text("“Meu Deus, eu me arrependo de todo o coração de Vos ter ofendido, porque sois tão bom e amável. Prometo firmemente, com a ajuda da Vossa graça, nunca mais Vos ofender e fugir das ocasiões de pecar. Meu Jesus, misericórdia!”")
+                .font(MassMatesFont.customScripture(size: 17, italic: true))
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("\"Meu Deus, eu me arrependo de todo o coração de Vos ter ofendido, porque sois tão bom e amável. Prometo firmemente, com a ajuda da Vossa graça, nunca mais Vos ofender e fugir das ocasiões de pecar. Meu Jesus, misericórdia!\"")
-                .font(MassMatesFont.customScripture(size: 16, italic: true))
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .lineSpacing(4)
+                .lineSpacing(5)
                 .padding(MassMatesSpacing.md)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MassMatesPalette.surface)
+                .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.card))
                 .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
         }
     }
 
-    private func statusFeedbackCard(_ text: String) -> some View {
-        Text(text)
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textPrimary)
-            .padding(MassMatesSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    private var bottomActionBar: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            HStack {
+                previousStepButton
+                Spacer()
+                nextStepButton
+            }
+            Text("Somente salvo neste aparelho · Sem histórico online")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.top, MassMatesSpacing.xs)
+        .padding(.bottom, MassMatesSpacing.md)
+        .background(MassMatesPalette.bg)
     }
 
-    private var dockedSanctuaryActionBar: some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(MassMatesPalette.line)
-                .frame(height: 1)
-            VStack(spacing: MassMatesSpacing.xxs) {
-                Button {
-                    viewModel.openConfessionalMode()
-                } label: {
-                    Text("Modo confessionário")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.surface)
-                        .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
-                        .background(MassMatesPalette.textPrimary)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                }
-                .buttonStyle(.plain)
-                Text("As notas selecionadas serão apagadas após a confissão.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.top, MassMatesSpacing.xs)
-            .padding(.bottom, MassMatesSpacing.md)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth)
-            .frame(maxWidth: .infinity)
+    private var previousStepButton: some View {
+        Button {
+            if showingContrition { showingContrition = false }
+            else if currentCommandmentIndex > 0 { currentCommandmentIndex -= 1 }
+        } label: {
+            Text(showingContrition ? "← Mandamentos" : "← Anterior")
+                .font(MassMatesFont.headline).fontWeight(.regular).foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
         }
-        .background(MassMatesPalette.bg.opacity(0.95))
+        .buttonStyle(.plain)
+        .disabled(!showingContrition && currentCommandmentIndex == 0)
+        .opacity((!showingContrition && currentCommandmentIndex == 0) ? 0.3 : 1.0)
+    }
+
+    private var nextStepButton: some View {
+        Button {
+            if showingContrition { viewModel.openConfessionalMode() }
+            else if currentCommandmentIndex == 9 { showingContrition = true }
+            else { currentCommandmentIndex += 1 }
+        } label: {
+            Text(nextButtonTitle)
+                .font(MassMatesFont.headline).foregroundStyle(theme.onTint)
+                .padding(.horizontal, MassMatesSpacing.xl).frame(height: 50)
+                .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var nextButtonTitle: String {
+        if showingContrition { return "Modo Confessionário" }
+        return currentCommandmentIndex == 9 ? "Ato de Contrição →" : "Próximo →"
     }
 }
 
