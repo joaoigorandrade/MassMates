@@ -20,17 +20,18 @@ struct ConfessionalModeOverlayView: View {
                     annotatedSinsBlock
                     actOfContritionBlock
                 }
+                .padding(.vertical, MassMatesSpacing.xs)
             }
             MassMatesPrimaryButton(
                 title: "Absolvição Recebida (Destruir Notas)",
-                systemImage: "checkmark.circle"
+                systemImage: "checkmark.seal.fill"
             ) {
                 viewModel.completeSacramentAndDestroyNotes()
             }
         }
         .padding(MassMatesLayout.readingMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.07, green: 0.07, blue: 0.07).ignoresSafeArea())
+        .background(Color(red: 18 / 255.0, green: 17 / 255.0, blue: 16 / 255.0).ignoresSafeArea())
         .environment(\.colorScheme, .dark)
     }
 
@@ -42,6 +43,7 @@ struct ConfessionalModeOverlayView: View {
                     .foregroundStyle(theme.tint)
                 Text("MODO CONFESSIONÁRIO")
                     .font(MassMatesFont.caption)
+                    .fontWeight(.semibold)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
@@ -60,64 +62,73 @@ struct ConfessionalModeOverlayView: View {
     }
 
     private var openingFormulaBlock: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             Text("FÓRMULA DE INÍCIO")
                 .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Text("\"Abençoai-me, Padre, porque pequei. Minha última confissão foi há 24 dias.\"")
                 .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(4)
         }
     }
 
     private var annotatedSinsBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            darkSectionHairline
             Text("MINHAS FALTAS ANOTADAS")
                 .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             if viewModel.privateNotes.isEmpty {
                 Text("Nenhuma anotação registrada. Fale com o sacerdote com confiança.")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.vertical, MassMatesSpacing.xs)
             } else {
-                ForEach(viewModel.privateNotes) { note in
-                    confessionalNoteRow(note)
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.privateNotes.enumerated()), id: \.element.id) { index, note in
+                        if index > 0 { darkSectionHairline }
+                        confessionalNoteRow(note)
+                    }
                 }
             }
         }
     }
 
     private func confessionalNoteRow(_ note: ConfessionPrivateNote) -> some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
+        HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
             Text("•")
                 .font(MassMatesFont.headline)
                 .foregroundStyle(theme.tint)
             Text(note.text)
                 .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.button)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+        .padding(.vertical, MassMatesSpacing.sm)
     }
 
     private var actOfContritionBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Rectangle()
-                .fill(MassMatesPalette.line)
-                .frame(height: 1)
+            darkSectionHairline
             Text("ATO DE CONTRIÇÃO")
                 .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Text("\"Meu Deus, eu me arrependo de todo o coração de Vos ter ofendido, porque sois tão bom e amável. Prometo com Vossa graça não mais pecar e fugir das ocasiões. Meu Jesus, misericórdia!\"")
                 .font(MassMatesFont.scriptureEmphasis)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(4)
         }
+    }
+
+    private var darkSectionHairline: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
     }
 }
 

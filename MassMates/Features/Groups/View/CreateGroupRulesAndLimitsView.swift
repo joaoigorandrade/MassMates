@@ -12,117 +12,109 @@ struct CreateGroupRulesAndLimitsView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            sharingRequirementCard
-            rulesAndIntercessionCard
-            pilgrimLimitCard
+        VStack(spacing: 0) {
+            Divider().overlay(MassMatesPalette.line)
+            typeRow
+            Divider().overlay(MassMatesPalette.line)
+            scoringModeRow
+            Divider().overlay(MassMatesPalette.line)
+            sharingRequirementRow
+            Divider().overlay(MassMatesPalette.line)
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var sharingRequirementCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                Text("Exigência de Partilha")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Defina como os irmãos registram seus frutos de oração.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                ForEach(GroupSharingRequirement.allCases) { requirement in
-                    sharingRequirementOptionRow(requirement)
+    private var typeRow: some View {
+        Menu {
+            ForEach(CommunityGroupType.allCases) { type in
+                Button {
+                    viewModel.draft.type = type
+                } label: {
+                    if viewModel.draft.type == type {
+                        Label(type.title, systemImage: "checkmark")
+                    } else {
+                        Text(type.title)
+                    }
                 }
             }
-        }
-    }
-
-    private func sharingRequirementOptionRow(_ requirement: GroupSharingRequirement) -> some View {
-        let isSelected = viewModel.draft.sharingRequirement == requirement
-        return Button {
-            viewModel.draft.sharingRequirement = requirement
         } label: {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textTertiary)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(requirement.title)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(requirement.badgeText)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(MassMatesSpacing.sm)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+            configurationRow(
+                title: "Tipo",
+                value: viewModel.draft.type == .fraternity ? "Fraternidade contínua" : viewModel.draft.type.title
+            )
         }
         .buttonStyle(.plain)
     }
 
-    private var rulesAndIntercessionCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                Text("Regras & Intercessão Secreta").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Tradições espirituais para dinamizar a caridade mútua.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-                Toggle(isOn: $viewModel.isSecretGuardianAngelEnabled) {
-                    ruleToggleLabel("Anjo da Guarda Secreto", "Sorteio semanal anônimo: você reza e oferece sacrifícios por um irmão específico, revelado no domingo.")
-                }
-                .tint(theme.tint).padding(MassMatesSpacing.xs).background(Theme(season: .purple).tintSoft).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                Toggle(isOn: $viewModel.isPhotoCheckInEnabled) {
-                    ruleToggleLabel("Comprovação com Foto Respeitosa", "Permite anexar o altar pessoal, vela ou oratório nos registros de hábitos.")
-                }
-                .tint(theme.tint).padding(MassMatesSpacing.xs).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                sacredSealCallout
-            }
-        }
-    }
-
-    private func ruleToggleLabel(_ title: String, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textPrimary)
-            Text(subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var sacredSealCallout: some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
-            Image(systemName: "lock.fill").font(MassMatesFont.caption).foregroundStyle(Theme(season: .white).tint)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Garantia do Sigilo Sagrado").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Exames de consciência, diários íntimos e anotações sacramentais permanecem estritamente no seu aparelho e nunca são compartilhados em fraternidades.")
-                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            }
-        }
-        .padding(MassMatesSpacing.xs).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-    }
-
-    private var pilgrimLimitCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Limite de Peregrinos").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                        Text("Grupos menores favorecem intimidade real e acolhimento.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+    private var scoringModeRow: some View {
+        Menu {
+            ForEach(GroupScoringMode.allCases) { mode in
+                Button {
+                    viewModel.draft.scoringMode = mode
+                } label: {
+                    if viewModel.draft.scoringMode == mode {
+                        Label(mode.title, systemImage: "checkmark")
+                    } else {
+                        Text(mode.title)
                     }
-                    Spacer()
-                    Text("\(Int(viewModel.pilgrimLimit)) Irmãos").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                        .padding(.horizontal, MassMatesSpacing.sm).padding(.vertical, 4).background(theme.tintSoft).clipShape(Capsule())
                 }
-                Slider(value: $viewModel.pilgrimLimit, in: 3...30, step: 1).tint(theme.tint)
-                pilgrimScaleRow
             }
+        } label: {
+            configurationRow(
+                title: "Pontuação",
+                value: viewModel.draft.scoringMode.title
+            )
         }
+        .buttonStyle(.plain)
     }
 
-    private var pilgrimScaleRow: some View {
-        HStack {
-            Text("3 (Célula)"); Spacer()
-            Text("12 (Cenáculo Apostólico)").foregroundStyle(theme.tint); Spacer()
-            Text("30 (Capela)")
+    private var sharingRequirementRow: some View {
+        Menu {
+            ForEach(GroupSharingRequirement.allCases) { req in
+                Button {
+                    viewModel.draft.sharingRequirement = req
+                } label: {
+                    if viewModel.draft.sharingRequirement == req {
+                        Label(req.title, systemImage: "checkmark")
+                    } else {
+                        Text(req.title)
+                    }
+                }
+            }
+        } label: {
+            configurationRow(
+                title: "Partilha",
+                value: sharingRequirementValueText(viewModel.draft.sharingRequirement)
+            )
         }
-        .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+        .buttonStyle(.plain)
+    }
+
+    private func configurationRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Text(value)
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Image(systemName: "chevron.right")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
+        }
+        .frame(minHeight: MassMatesLayout.minRowHeight)
+        .contentShape(Rectangle())
+    }
+
+    private func sharingRequirementValueText(_ requirement: GroupSharingRequirement) -> String {
+        switch requirement {
+        case .openHonor: "Aberta (Amém)"
+        case .writtenFruit: "Fruto Escrito"
+        case .photoWitness: "Comprovação com Foto"
+        }
     }
 }
 

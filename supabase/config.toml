@@ -1,0 +1,93 @@
+# MassMates — Supabase project configuration
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+# This file describes the LOCAL dev stack. The remote project
+# (ref: khovpljkitslmjmonizu) is the source of truth for applied migrations.
+# Schema contract for every backend agent: supabase/SCHEMA.md
+
+project_id = "massmates"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+# Extensions installed by A1 (supabase/migrations/0001_install_extensions.sql).
+# No other agent may `create extension` — see supabase/SCHEMA.md §9.
+# pg_cron and pg_net own dedicated schemas (cron / net) and cannot be relocated.
+[db.extensions]
+pgcrypto = { schema = "extensions" }
+pgtap = { schema = "extensions" }
+pg_net = { schema = "extensions" }
+pg_cron = { schema = "extensions" }
+
+[db.pooler]
+enabled = false
+port = 6543
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[auth]
+enabled = true
+site_url = "massmates://"
+additional_redirect_urls = ["massmates://auth/callback", "http://localhost:3000/auth/callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.apple]
+enabled = true
+client_id = "env(SUPABASE_AUTH_APPLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_APPLE_SECRET)"
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+
+[storage]
+enabled = true
+file_size_limit = "25MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic", "text/plain", "application/pdf"]
+
+[storage.buckets.avatars]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
+
+[storage.buckets.group-covers]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
+
+[storage.buckets.check-in-proofs]
+public = false
+file_size_limit = "25MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 8083

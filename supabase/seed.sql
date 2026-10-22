@@ -1,0 +1,6 @@
+-- MassMates — local seed data
+-- Intentionally empty. A1 (schema foundation) seeds no rows: the foundation
+-- tables reference `auth.users`, which only exists for real accounts.
+-- Agents that own demo/dev data may append idempotent INSERTs here, guarded by
+-- `on conflict do nothing` and wrapped in `begin; ... rollback;` when the data
+-- is only needed for local exploration.

@@ -3,6 +3,7 @@ import SwiftUI
 struct StreakRingView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let streakDays: Int
     private let progress: Double
     private let size: CGFloat
@@ -19,11 +20,11 @@ struct StreakRingView: View {
         ZStack {
             trackCircle
             progressCircle
-            centerLabel
+            centerContent
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Constância de \(streakDays) dias, \(Int(progress * 100)) por cento concluído hoje")
+        .accessibilityLabel(accessibilityLabelText)
     }
 
     // MARK: - Subviews / Private Helpers
@@ -40,17 +41,44 @@ struct StreakRingView: View {
                 style: StrokeStyle(lineWidth: MassMatesLayout.streakRingStroke, lineCap: .round)
             )
             .rotationEffect(.degrees(-90))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: progress)
     }
 
-    private var centerLabel: some View {
-        Text("\(streakDays)")
-            .font(MassMatesFont.numeral)
-            .foregroundStyle(MassMatesPalette.textPrimary)
+    private var centerContent: some View {
+        VStack(spacing: 1) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: flameSize))
+                .foregroundStyle(flameColor)
+            Text("\(streakDays)")
+                .font(numeralFont)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+    }
+
+    private var flameColor: Color {
+        streakDays > 0 ? theme.tint : MassMatesPalette.textTertiary
+    }
+
+    private var flameSize: CGFloat {
+        max(size * 0.18, 10)
+    }
+
+    private var numeralFont: Font {
+        if size >= 60 {
+            return MassMatesFont.numeral
+        } else {
+            return .system(size: size * 0.36, weight: .medium, design: .rounded)
+        }
+    }
+
+    private var accessibilityLabelText: String {
+        let percent = Int((progress * 100).rounded())
+        return "Constância de \(streakDays) dias, \(percent) por cento concluído hoje"
     }
 }
 
 #Preview("Streak Ring — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
-        StreakRingView(streakDays: 12, progress: 0.75)
+        StreakRingView(streakDays: 14, progress: 0.6)
     }
 }

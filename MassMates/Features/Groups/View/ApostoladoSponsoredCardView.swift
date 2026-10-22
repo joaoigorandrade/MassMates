@@ -3,71 +3,69 @@ import SwiftUI
 struct ApostoladoSponsoredCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    private let sponsorName: String
+    private let title: String
+    private let action: (() -> Void)?
 
     // MARK: - Init
-    init() {}
+    init(
+        sponsorName: String = "Edições CNBB",
+        title: String = "Novena a N. Sra. Aparecida",
+        action: (() -> Void)? = nil
+    ) {
+        self.sponsorName = sponsorName
+        self.title = title
+        self.action = action
+    }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            headerRow
-            contentRow
-            footerRow
+        Button(action: { action?() }) {
+            HStack(spacing: MassMatesSpacing.sm) {
+                iconView
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("PATROCINADO")
+                        .font(MassMatesFont.caption)
+                        .tracking(0.6)
+                        .foregroundStyle(MassMatesPalette.sponsored)
+                    Text(title)
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                        .lineLimit(1)
+                    Text(sponsorName)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 14))
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            .padding(MassMatesSpacing.sm)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minRowHeight)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+            .overlay(cardBorder)
         }
-        .padding(MassMatesSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerRow: some View {
-        HStack {
-            Text("PATROCINADO • APOSTOLADO")
-                .font(MassMatesFont.caption)
-                .tracking(0.8)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-            Spacer()
-            Image(systemName: "info.circle")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
+    private var iconView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(theme.tintSoft)
+                .frame(width: 44, height: 44)
+            Image(systemName: "church.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(theme.tint)
         }
     }
 
-    private var contentRow: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "book.closed.fill")
-                .font(MassMatesFont.title)
-                .foregroundStyle(Theme(season: .white).tint)
-                .frame(width: 48, height: 56)
-                .background(Theme(season: .white).tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Livraria Loyola — Espiritualidade & Liturgia")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Edições comentadas da Liturgia das Horas e clássicos da oração inaciana com desconto pastoral.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .lineLimit(2)
-            }
-        }
-    }
-
-    private var footerRow: some View {
-        HStack {
-            Spacer()
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Text("Acessar Acervo Sagrado")
-                Image(systemName: "arrow.up.right.square")
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(theme.tint)
-        }
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: MassMatesRadius.card)
+            .stroke(MassMatesPalette.line, lineWidth: 1)
     }
 }
 

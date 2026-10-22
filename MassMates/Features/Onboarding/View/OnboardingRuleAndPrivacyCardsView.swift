@@ -13,135 +13,123 @@ struct OnboardingRuleAndPrivacyCardsView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            ruleOfLifeSection
-            includedPracticesCard
+            presetSelectionSection
+            practiceSelectionSection
             sacredTransparencyCard
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var ruleOfLifeSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "book.pages.fill")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
-                Text("Sua Regra de Vida")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Text("Escolha um modelo inicial para guiar seu dia a dia com serenidade. Você poderá personalizar tudo a qualquer momento.")
-                .font(MassMatesFont.callout)
+    private var presetSelectionSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("MODELO DE ORAÇÃO")
+                .font(MassMatesFont.caption)
+                .fontWeight(.semibold)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-            ForEach(RuleOfLifePreset.allCases) { preset in
-                templateCard(for: preset)
+            VStack(spacing: 0) {
+                ForEach(Array(RuleOfLifePreset.allCases.enumerated()), id: \.element) { index, preset in
+                    if index > 0 {
+                        Rectangle()
+                            .fill(MassMatesPalette.line)
+                            .frame(height: 1)
+                    }
+                    presetRow(for: preset)
+                }
             }
         }
     }
 
-    private func templateCard(for preset: RuleOfLifePreset) -> some View {
+    private func presetRow(for preset: RuleOfLifePreset) -> some View {
         let isSelected = viewModel.selectedPreset == preset
         return Button {
             viewModel.selectedPreset = preset
         } label: {
-            HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-                templateCardText(for: preset, isSelected: isSelected)
-                Spacer(minLength: 0)
-                templateSelectionIndicator(isSelected: isSelected)
+            HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(preset.onboardingTitle)
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
+                    Text(preset.onboardingPracticeCountLabel.replacingOccurrences(of: "· ", with: ""))
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer()
+                presetIndicator(isSelected: isSelected)
             }
-            .padding(MassMatesSpacing.md)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                    .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
-            )
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
-    private func templateCardText(for preset: RuleOfLifePreset, isSelected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Text(preset.onboardingBadge)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                    .padding(.horizontal, MassMatesSpacing.xs)
-                    .padding(.vertical, 2)
-                    .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                Text(preset.onboardingPracticeCountLabel)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Text(preset.onboardingTitle)
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(preset.onboardingDescription)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private func templateSelectionIndicator(isSelected: Bool) -> some View {
+    private func presetIndicator(isSelected: Bool) -> some View {
         ZStack {
             Circle()
-                .fill(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
-                .frame(width: 24, height: 24)
+                .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 0 : 1.5)
+                .background(Circle().fill(isSelected ? theme.tint : Color.clear))
+                .frame(width: 20, height: 20)
             if isSelected {
                 Image(systemName: "checkmark")
-                    .font(MassMatesFont.caption)
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(theme.onTint)
             }
         }
     }
 
-    private var includedPracticesCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Text("PRÁTICAS INCLUÍDAS NO MODELO")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                    Spacer()
-                    Text("Personalizável")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                }
+    private var practiceSelectionSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            HStack {
+                Text("PRÁTICAS INCLUÍDAS")
+                    .font(MassMatesFont.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Spacer()
+                Text("Personalizável")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+            }
+            VStack(spacing: MassMatesSpacing.xs) {
                 ForEach(viewModel.practicePreviewItems) { item in
-                    practiceToggleRow(item)
+                    practiceSelectionRow(item)
                 }
             }
         }
     }
 
-    private func practiceToggleRow(_ item: OnboardingPracticePreviewItem) -> some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: item.systemImage)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(theme.tint)
-                .frame(width: 32, height: 32)
-                .background(theme.tintSoft)
-                .clipShape(Circle())
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
+    private func practiceSelectionRow(_ item: OnboardingPracticePreviewItem) -> some View {
+        Button {
+            viewModel.togglePracticePreview(id: item.id)
+        } label: {
+            HStack(spacing: MassMatesSpacing.sm) {
+                Image(systemName: item.systemImage)
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(item.isEnabled ? theme.tintSoft : MassMatesPalette.surface)
+                    .clipShape(Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(item.isEnabled ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
+                    Text(item.subtitle)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer()
+                Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text(item.subtitle)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textTertiary)
             }
-            Spacer()
-            Toggle("", isOn: Binding(
-                get: { item.isEnabled },
-                set: { _ in viewModel.togglePracticePreview(id: item.id) }
-            ))
-            .labelsHidden()
-            .tint(theme.tint)
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            .background(item.isEnabled ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                    .stroke(item.isEnabled ? theme.tint : Color.clear, lineWidth: 1)
+            )
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .buttonStyle(.plain)
     }
 
     private var sacredTransparencyCard: some View {

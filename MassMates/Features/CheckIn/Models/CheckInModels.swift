@@ -81,3 +81,56 @@ enum CheckInValidationError: Error, Sendable, Equatable {
         }
     }
 }
+
+enum DiaryCategoryFilter: String, CaseIterable, Identifiable, Sendable, Equatable {
+    case all = "Todos"
+    case rosary = "Terço"
+    case mass = "Missa"
+    case gospel = "Evangelho"
+    case mentalPrayer = "Oração Mental"
+    case examen = "Exame"
+    case confession = "Confissão"
+
+    var id: String { rawValue }
+
+    var practice: SpiritualPractice? {
+        switch self {
+        case .all: nil
+        case .rosary: .rosary
+        case .mass: .holyMass
+        case .gospel: .dailyGospel
+        case .mentalPrayer: .mentalPrayer
+        case .examen: .confession
+        case .confession: .confession
+        }
+    }
+}
+
+extension SpiritualPractice {
+    var checkInChipTitle: String {
+        switch self {
+        case .rosary: "Terço"
+        case .holyMass: "Missa"
+        case .dailyGospel: "Evangelho"
+        case .adoration: "Adoração"
+        case .mentalPrayer: "Oração Mental"
+        case .spiritualReading: "Leitura"
+        case .fasting: "Jejum"
+        case .confession: "Confissão"
+        }
+    }
+
+    var checkInIconName: String {
+        switch self {
+        case .rosary: "circle.inset.filled"
+        case .holyMass: "church"
+        case .dailyGospel: "book.closed"
+        case .adoration: "sparkles"
+        case .mentalPrayer: "figure.mind.and.body"
+        case .spiritualReading: "text.book.closed"
+        case .fasting: "flame"
+        case .confession: "lock"
+        }
+    }
+}
+

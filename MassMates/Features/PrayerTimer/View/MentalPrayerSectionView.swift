@@ -12,142 +12,80 @@ struct MentalPrayerSectionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.lg) {
+        VStack(spacing: MassMatesSpacing.xl) {
             circularTimerDial
-            durationChipsRow
-            gentleSoundAndLockScreenSection
+            durationPillsRow
+            tactileOptionSection
         }
+        .padding(.vertical, MassMatesSpacing.sm)
     }
 
     // MARK: - Subviews / Private Helpers
     private var circularTimerDial: some View {
         ZStack {
             Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 6)
+                .stroke(MassMatesPalette.line, lineWidth: 2)
             Circle()
                 .trim(from: 0, to: viewModel.progress)
                 .stroke(
                     theme.tint,
-                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
             VStack(spacing: MassMatesSpacing.xxs) {
-                Text("TEMPO RESTANTE")
-                    .font(MassMatesFont.caption)
-                    .tracking(0.8)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
                 Text(viewModel.formattedRemainingTime)
                     .font(MassMatesFont.timerNumeral)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(theme.tint)
-                        .frame(width: 8, height: 8)
-                    Text("Silêncio & Presença")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                }
-                .padding(.top, 2)
+                Text("Oração mental")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
         .frame(width: 256, height: 256)
     }
 
-    private var durationChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                ForEach([10, 15, 20, 30], id: \.self) { minutes in
-                    durationPresetButton(minutes: minutes)
-                }
-                customDurationButton
+    private var durationPillsRow: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach([5, 10, 15, 20], id: \.self) { minutes in
+                durationPill(minutes: minutes)
             }
         }
     }
 
-    private var customDurationButton: some View {
-        Button {
-            viewModel.selectDuration(minutes: 25)
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .padding(.vertical, MassMatesSpacing.xs)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func durationPresetButton(minutes: Int) -> some View {
+    private func durationPill(minutes: Int) -> some View {
         let isSelected = viewModel.totalSeconds == minutes * 60
         return Button {
             viewModel.selectDuration(minutes: minutes)
         } label: {
             Text("\(minutes) min")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(isSelected ? theme.onTint : MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.md)
-                .padding(.vertical, MassMatesSpacing.xs)
-                .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
+                .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
+                .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(isSelected ? MassMatesPalette.surfaceMuted : Color.clear)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .buttonStyle(.plain)
     }
 
-    private var gentleSoundAndLockScreenSection: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            chimeToggleCard
-            lockScreenAssuranceBadge
-        }
-    }
-
-    private var chimeToggleCard: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            ZStack {
-                Circle()
-                    .fill(theme.tintSoft)
-                    .frame(width: 36, height: 36)
-                Image(systemName: "bell.fill")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(theme.tint)
+    private var tactileOptionSection: some View {
+        VStack(spacing: MassMatesSpacing.md) {
+            Divider()
+                .background(MassMatesPalette.line.opacity(0.6))
+            Toggle(isOn: $viewModel.isChimeEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Contador tátil & carrilhão suave")
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text("Sinos discretos ao iniciar, meio e término")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Carrilhão Suave")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Toca no início, meio e término")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
-            Toggle("Carrilhão Suave", isOn: $viewModel.isChimeEnabled)
-                .labelsHidden()
-                .tint(theme.tint)
+            .tint(theme.tint)
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay {
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        }
-    }
-
-    private var lockScreenAssuranceBadge: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Image(systemName: "clock.badge.checkmark")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(theme.tint)
-            Text("Continua ativo na tela de bloqueio e em segundo plano com hinos silenciosos.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .padding(.horizontal, MassMatesSpacing.xs)
     }
 }
 

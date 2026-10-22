@@ -26,6 +26,13 @@ struct SacredRitesStitchScreensTests {
     func nightlyExamenStepAdvancementAndConclusion() {
         let vm = NightlyExamenViewModel()
 
+        vm.selectPresence(.bem)
+        #expect(vm.selectedPresence == .bem)
+        vm.goToNextStep()
+        #expect(vm.currentStepIndex == 2)
+        vm.goToPreviousStep()
+        #expect(vm.currentStepIndex == 1)
+
         vm.selectEvaluation(.fidelidade)
         #expect(vm.selectedEvaluation == .fidelidade)
 

@@ -68,6 +68,22 @@ enum AccountDeletionState: Sendable, Equatable {
     case idle
     case awaitingSecondTapConfirmation
     case permanentlyDeleted
+
+    var descriptionText: String {
+        switch self {
+        case .idle: "Exclua permanentemente sua conta e dados locais em 2 toques."
+        case .awaitingSecondTapConfirmation: "Toque novamente para confirmar a exclusão irreversível."
+        case .permanentlyDeleted: "Conta e registros locais apagados permanentemente."
+        }
+    }
+
+    var buttonTitle: String {
+        switch self {
+        case .idle: "1º Toque: Solicitar Exclusão da Conta"
+        case .awaitingSecondTapConfirmation: "2º Toque: Confirmar Exclusão Definitiva"
+        case .permanentlyDeleted: "Conta Excluída"
+        }
+    }
 }
 
 extension EncryptedDiaryBackupEnvelope {

@@ -2,6 +2,14 @@ import CoreGraphics
 import Foundation
 import Observation
 
+enum DailyReadingSection: String, CaseIterable, Sendable, Identifiable {
+    case firstReading = "1ª Leitura"
+    case psalm = "Salmo"
+    case gospel = "Evangelho"
+
+    var id: String { rawValue }
+}
+
 @MainActor
 @Observable
 final class DailyGospelViewModel {
@@ -9,6 +17,7 @@ final class DailyGospelViewModel {
     private let onCompleteReading: () -> Void
 
     let reading: DailyLiturgicalReading
+    var selectedSection: DailyReadingSection = .gospel
     var scriptureFontSize: CGFloat = 19
     var activeLectioStepID: String
     var expandedLectioStepIDs: Set<String>

@@ -39,124 +39,105 @@ struct TodayHeaderView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            topSeasonRow
-            saintHeroSection
-            streakBannerSection
-        }
-        .padding(MassMatesSpacing.md)
-        .background(headerWashGradient)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay {
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
+            headerMainRow
+            if !saintOrFeast.isEmpty {
+                saintSection
+            }
+            hairlineDivider
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .padding(.top, MassMatesSpacing.sm)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var topSeasonRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            HStack(spacing: 6) {
-                Circle().fill(theme.tint).frame(width: 8, height: 8)
-                Text("\(seasonTitle) • \(colorDisplayName)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-            }
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .padding(.vertical, 6)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            .overlay {
-                Capsule().stroke(MassMatesPalette.line, lineWidth: 1)
-            }
-            Spacer(minLength: MassMatesSpacing.xs)
-            Text(weekdayAndWeekLabel)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var saintHeroSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(feastRankLabel.uppercased())
-                .font(MassMatesFont.caption)
-                .tracking(0.6)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(saintOrFeast)
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(saintQuote)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var streakBannerSection: some View {
-        VStack(spacing: MassMatesSpacing.sm) {
-            Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-            HStack(spacing: MassMatesSpacing.sm) {
-                StreakRingView(
-                    streakDays: progress.activeStreakDays,
-                    progress: progress.ruleCompletionRatio,
-                    size: 64
-                )
-                streakCopyStack
-                Spacer(minLength: MassMatesSpacing.xs)
-                historyCalendarButton
-            }
-        }
-    }
-
-    private var streakCopyStack: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: "flame.fill")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.warning)
-                Text("\(progress.activeStreakDays) dias em oração")
-                    .font(MassMatesFont.headline)
+    private var headerMainRow: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Text("Hoje")
+                    .font(MassMatesFont.display)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                seasonSubtitleRow
             }
-            Text("Mais um dia de fidelidade no amor.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .lineLimit(2)
+            Spacer(minLength: MassMatesSpacing.md)
+            streakRingButton
         }
     }
 
-    private var historyCalendarButton: some View {
+    private var seasonSubtitleRow: some View {
+        Menu {
+            ForEach(LiturgicalColor.allCases) { color in
+                Button(color.defaultSeasonName) {
+                    onSelectSeason(color)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(theme.tint)
+                    .frame(width: 6, height: 6)
+                Text(seasonSubtitle)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var streakRingButton: some View {
         Button {
             (onOpenHistory ?? onOpenOnboarding)?()
         } label: {
-            Image(systemName: "calendar")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 40, height: 40)
-                .background(MassMatesPalette.surface)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                .overlay {
-                    Circle().stroke(MassMatesPalette.line, lineWidth: 1)
-                }
+            StreakRingView(
+                streakDays: progress.activeStreakDays,
+                progress: progress.ruleCompletionRatio,
+                size: 58
+            )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Ver histórico de oração")
+        .accessibilityLabel("Ver histórico de oração: \(progress.activeStreakDays) dias em oração")
     }
 
-    private var colorDisplayName: String {
-        switch theme.season {
-        case .green: "Verde"
-        case .purple: "Roxo"
-        case .white: "Branco"
-        case .red: "Vermelho"
-        case .rose: "Rosa"
+    private var saintSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            if !feastRankLabel.isEmpty {
+                Text(feastRankLabel.uppercased())
+                    .font(MassMatesFont.caption)
+                    .tracking(0.6)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            Text(saintOrFeast)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !saintQuote.isEmpty {
+                Text(saintQuote)
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
-    private var headerWashGradient: some View {
-        LinearGradient(colors: [theme.tintSoft, MassMatesPalette.bg], startPoint: .top, endPoint: .bottom)
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+            .padding(.top, MassMatesSpacing.xs)
+    }
+
+    private var seasonSubtitle: String {
+        let separatorCandidates = ["•", "·", "-"]
+        for sep in separatorCandidates where weekdayAndWeekLabel.contains(sep) {
+            let parts = weekdayAndWeekLabel.components(separatedBy: sep)
+            if parts.count > 1 {
+                let suffix = parts[1].trimmingCharacters(in: .whitespaces)
+                return "\(seasonTitle) · \(suffix)"
+            }
+        }
+        if weekdayAndWeekLabel.isEmpty {
+            return "\(seasonTitle) · Semana 29"
+        }
+        return "\(seasonTitle) · \(weekdayAndWeekLabel)"
     }
 }
 
@@ -166,7 +147,7 @@ struct TodayHeaderView: View {
             seasonTitle: season.defaultSeasonName,
             saintOrFeast: "Santa Clara de Assis, Virgem",
             progress: TodayProgressSummary(
-                baseStreakDays: 13,
+                baseStreakDays: 14,
                 items: [RuleOfLifeItem(practice: .rosary, isCompleted: true)],
                 selectedPreset: .essentialDaily
             )

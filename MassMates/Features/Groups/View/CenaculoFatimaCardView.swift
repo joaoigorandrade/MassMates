@@ -16,50 +16,51 @@ struct CenaculoFatimaCardView: View {
     // MARK: - Body / Public API
     var body: some View {
         Button { onSelectGroup(group) } label: {
-            MassMatesCard {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                    cenaculoHeader
-                    latestCheckInRow
-                }
+            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+                cardHeader
+                Rectangle()
+                    .fill(MassMatesPalette.line)
+                    .frame(height: 1)
+                latestCheckInRow
             }
+            .padding(MassMatesSpacing.md)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                    .stroke(MassMatesPalette.line, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var cenaculoHeader: some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-            Image(systemName: "sparkles")
-                .font(MassMatesFont.title)
-                .foregroundStyle(Theme(season: .white).tint)
-                .frame(width: 48, height: 48)
-                .background(Theme(season: .white).tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    private var cardHeader: some View {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
                 Text(group.name.isEmpty ? "Cenáculo N. Sra. de Fátima" : group.name)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                HStack(spacing: MassMatesSpacing.xs) {
-                    Label("\(group.memberCount) irmãos", systemImage: "person.2.fill")
-                    Text("•")
-                    Text("Modo: Dias Fiéis").foregroundStyle(Theme(season: .white).tint)
-                }
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                Text("\(group.memberCount) membros · Dias Fiéis")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
-            Image(systemName: "ellipsis").foregroundStyle(MassMatesPalette.textTertiary)
+            Image(systemName: "ellipsis")
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
         }
     }
 
     private var latestCheckInRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             Text("G")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(width: 28, height: 28)
-                .background(theme.tintSoft)
+                .font(Font.system(size: 13, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 32, height: 32)
+                .background(MassMatesPalette.surfaceMuted)
                 .clipShape(Circle())
+                .overlay(Circle().stroke(MassMatesPalette.line, lineWidth: 1))
             VStack(alignment: .leading, spacing: 2) {
                 Text("**Gabriel** cumpriu o Terço da Tarde")
                     .font(MassMatesFont.caption)
@@ -73,17 +74,12 @@ struct CenaculoFatimaCardView: View {
                 isLiked.toggle()
             } label: {
                 Image(systemName: isLiked ? "heart.fill" : "heart")
-                    .font(MassMatesFont.caption)
+                    .font(MassMatesFont.body)
                     .foregroundStyle(isLiked ? Theme(season: .red).tint : MassMatesPalette.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(MassMatesPalette.surface)
-                    .clipShape(Circle())
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 }
 

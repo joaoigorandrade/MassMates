@@ -7,6 +7,7 @@ struct SpiritualDiaryModalView: View {
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
     @Bindable private var viewModel: SpiritualDiaryViewModel
     @State private var selectedEntryForReading: PrivateDiaryCheckInEntry?
+    @State private var selectedCategory: DiaryCategoryFilter = .all
 
     // MARK: - Init
     init(viewModel: SpiritualDiaryViewModel = SpiritualDiaryViewModel()) {
@@ -17,11 +18,12 @@ struct SpiritualDiaryModalView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                editorialTopHeader
+                topNavigationBar
+                headerSection
                 if viewModel.isDiaryUnlocked {
                     unlockedDiaryContent
                 } else {
-                    lockedBiometricGateCard
+                    lockedBiometricGate
                 }
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
@@ -35,136 +37,163 @@ struct SpiritualDiaryModalView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var editorialTopHeader: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            HStack {
-                Label("SIGILO PESSOAL", systemImage: "lock.shield.fill")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                    .padding(.horizontal, MassMatesSpacing.sm)
-                    .padding(.vertical, 4)
-                    .background(theme.tintSoft)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                Spacer()
-                Button { _ = viewModel.exportEncryptedBackup() } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(MassMatesFont.callout)
+    private var topNavigationBar: some View {
+        HStack {
+            Button {
+                navigator?.dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            if viewModel.isDiaryUnlocked {
+                Button {
+                    viewModel.lockDiaryNow()
+                } label: {
+                    Image(systemName: "lock")
+                        .font(.system(size: 16))
                         .foregroundStyle(MassMatesPalette.textSecondary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
                 }
                 .buttonStyle(.plain)
-                MassMatesTextButton(title: "Fechar") { navigator?.dismiss() }
             }
-            Text("Diário de Graças")
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("“Memória viva das consolações e frutos colhidos no recolhimento interior.”")
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Label("\(viewModel.allEntries.count) registros íntimos protegidos neste aparelho • Criptografia ponta a ponta", systemImage: "lock.fill")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(MassMatesSpacing.sm)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         }
     }
 
-    private var lockedBiometricGateCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                Label("Protegido por Face ID / Touch ID", systemImage: "faceid")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Desbloqueie seu Diário Espiritual para ler suas reflexões e registros de Confissão.")
-                    .font(MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesPrimaryButton(title: "Desbloquear com Biometria", systemImage: "lock.open") {
-                    _ = viewModel.unlockWithBiometrics(simulateSuccess: true)
-                }
-            }
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("Diário Espiritual")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+
+            Label("Privado · Apenas neste dispositivo", systemImage: "lock.fill")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
     }
 
     private var unlockedDiaryContent: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            searchAndFilterSection
-            monthGroupSection(title: "OUTUBRO 2024", subtitle: "\(viewModel.filteredEntries.count) registros neste mês")
+            searchField
+            categoryFilterChips
+            entriesListSection
             SpiritualDiaryFooterView(viewModel: viewModel)
         }
     }
 
-    private var searchAndFilterSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                TextField("Buscar palavra, passagem bíblica ou fruto...", text: $viewModel.searchQuery)
-                    .font(MassMatesFont.callout)
-            }
-            .padding(MassMatesSpacing.sm)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    private var searchField: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            TextField("Buscar no diário...", text: $viewModel.searchQuery)
+                .font(MassMatesFont.callout)
+        }
+        .padding(.horizontal, MassMatesSpacing.md)
+        .frame(height: 52)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+    }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: MassMatesSpacing.xs) {
-                    filterChip(title: "Todas as Práticas", practice: nil, count: 42)
-                    filterChip(title: "Lectio Divina", practice: .dailyGospel, icon: "book.closed", count: 18)
-                    filterChip(title: "Santo Terço", practice: .rosary, icon: "circle.grid.cross", count: 14)
-                    filterChip(title: "Oração Mental", practice: .mentalPrayer, icon: "sun.horizon.fill", count: 7)
-                    filterChip(title: "Exame", practice: .confession, icon: "moon.stars", count: 3)
-                    filterChip(title: "Graça Notável", practice: .adoration, icon: "sparkles")
+    private var categoryFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: MassMatesSpacing.xs) {
+                ForEach(DiaryCategoryFilter.allCases) { category in
+                    categoryChip(for: category)
                 }
             }
         }
     }
 
-    private func filterChip(title: String, practice: SpiritualPractice?, icon: String? = nil, count: Int? = nil) -> some View {
-        let isSelected = viewModel.selectedPracticeFilter == practice
-        return Button { viewModel.selectedPracticeFilter = practice } label: {
-            HStack(spacing: 4) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(MassMatesFont.caption)
-                }
-                Text(title)
-                if let count {
-                    Text("\(count)")
-                        .font(MassMatesFont.caption)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(isSelected ? theme.tint.opacity(0.18) : MassMatesPalette.surface)
-                        .clipShape(Capsule())
-                }
-            }
-            .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
-            .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(height: 36)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+    private func categoryChip(for category: DiaryCategoryFilter) -> some View {
+        let isSelected = selectedCategory == category
+        return Button {
+            selectCategory(category)
+        } label: {
+            Text(category.rawValue)
+                .font(MassMatesFont.caption)
+                .fontWeight(isSelected ? .semibold : .medium)
+                .foregroundStyle(isSelected ? MassMatesPalette.bg : MassMatesPalette.textSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.surfaceMuted)
+                .clipShape(Capsule())
         }
         .buttonStyle(.plain)
     }
 
-    private func monthGroupSection(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Label(title, systemImage: "calendar")
-                    .font(MassMatesFont.headline)
+    private func selectCategory(_ category: DiaryCategoryFilter) {
+        selectedCategory = category
+        viewModel.selectedPracticeFilter = category.practice
+    }
+
+    private var entriesListSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if displayedEntries.isEmpty {
+                Text("Nenhum registro encontrado")
+                    .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                Spacer()
-                Text(subtitle)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-            ForEach(viewModel.filteredEntries) { entry in
-                SpiritualDiaryEntryCardView(entry: entry) { chosen in
-                    selectedEntryForReading = chosen
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, MassMatesSpacing.xl)
+            } else {
+                ForEach(Array(displayedEntries.enumerated()), id: \.element.id) { index, entry in
+                    if index > 0 {
+                        Rectangle()
+                            .fill(MassMatesPalette.line)
+                            .frame(height: 1)
+                    }
+                    SpiritualDiaryEntryCardView(entry: entry) { chosen in
+                        selectedEntryForReading = chosen
+                    }
                 }
             }
         }
+    }
+
+    private var displayedEntries: [PrivateDiaryCheckInEntry] {
+        let entries = viewModel.filteredEntries
+        if selectedCategory == .examen {
+            return entries.filter {
+                ($0.reflectionOrNotes ?? "").localizedCaseInsensitiveContains("exame") ||
+                ($0.confessorOrPenanceNotes ?? "").localizedCaseInsensitiveContains("exame") ||
+                $0.practice == .confession
+            }
+        }
+        return entries
+    }
+
+    private var lockedBiometricGate: some View {
+        VStack(spacing: MassMatesSpacing.md) {
+            Image(systemName: "faceid")
+                .font(.system(size: 40))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(.top, MassMatesSpacing.xl)
+
+            Text("Diário Protegido")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+
+            Text("Autentique-se com Face ID para acessar suas anotações íntimas.")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center)
+
+            if let error = viewModel.securityErrorMessage {
+                Text(error)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.danger)
+            }
+
+            MassMatesPrimaryButton(title: "Desbloquear com Biometria", systemImage: "lock.open") {
+                _ = viewModel.unlockWithBiometrics(simulateSuccess: true)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, MassMatesSpacing.lg)
     }
 }
 

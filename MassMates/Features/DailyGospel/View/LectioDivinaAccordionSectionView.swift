@@ -12,112 +12,111 @@ struct LectioDivinaAccordionSectionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
             sectionHeader
-            Text("Guia tradicional dos Padres do Deserto para acolher e ruminar a Palavra de Deus.")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            VStack(spacing: MassMatesSpacing.sm) {
-                ForEach(viewModel.reading.lectioSteps) { step in
-                    accordionCard(for: step)
-                }
-            }
+            stepsList
         }
     }
 
     // MARK: - Subviews / Private Helpers
     private var sectionHeader: some View {
-        HStack {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "book.pages")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
-                Text("Lectio Divina")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+        Text("Lectio Divina")
+            .font(MassMatesFont.headline)
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .padding(.bottom, MassMatesSpacing.xxs)
+    }
+
+    private var stepsList: some View {
+        VStack(spacing: 0) {
+            ForEach(viewModel.reading.lectioSteps) { step in
+                stepRow(for: step)
+                if step.id != viewModel.reading.lectioSteps.last?.id {
+                    Rectangle()
+                        .fill(MassMatesPalette.line)
+                        .frame(height: 1)
+                }
             }
-            Spacer()
-            Text("4 Passos")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
     }
 
-    private func accordionCard(for step: LectioDivinaStep) -> some View {
+    private func stepRow(for step: LectioDivinaStep) -> some View {
         let isExpanded = viewModel.isStepExpanded(step)
         return VStack(alignment: .leading, spacing: 0) {
-            accordionHeaderButton(step: step, isExpanded: isExpanded)
+            stepHeaderButton(step: step, isExpanded: isExpanded)
             if isExpanded {
-                accordionBodyContent(step: step)
+                accordionBody(step: step)
             }
-        }
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay {
-            RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
         }
     }
 
-    private func accordionHeaderButton(step: LectioDivinaStep, isExpanded: Bool) -> some View {
+    private func stepHeaderButton(step: LectioDivinaStep, isExpanded: Bool) -> some View {
         Button {
-            viewModel.selectLectioStep(step)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewModel.selectLectioStep(step)
+            }
         } label: {
-            HStack(spacing: MassMatesSpacing.sm) {
-                Text("\(step.number)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                    .frame(width: 28, height: 28)
-                    .background(theme.tintSoft)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(step.title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(step.subtitle.isEmpty ? step.stage : step.subtitle)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textTertiary)
-                }
-                Spacer()
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+            HStack(spacing: MassMatesSpacing.xs) {
+                Text("\(step.number). \(step.title)")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("•")
+                    .foregroundStyle(MassMatesPalette.line)
+                Text(stepSubtitle(for: step))
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .lineLimit(1)
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
             }
-            .padding(MassMatesSpacing.md)
+            .contentShape(Rectangle())
+            .padding(.vertical, MassMatesSpacing.sm)
         }
         .buttonStyle(.plain)
     }
 
-    private func accordionBodyContent(step: LectioDivinaStep) -> some View {
+    private func accordionBody(step: LectioDivinaStep) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             Text(step.guidance)
                 .font(step.id == "oratio" ? MassMatesFont.scriptureEmphasis : MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
             if let attentionTitle = step.attentionPointTitle,
                let attentionBody = step.attentionPointBody {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(attentionTitle)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(attentionBody)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(MassMatesSpacing.sm)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                attentionPointBox(title: attentionTitle, body: attentionBody)
             }
         }
-        .padding(.horizontal, MassMatesSpacing.md)
-        .padding(.bottom, MassMatesSpacing.md)
+        .padding(.top, MassMatesSpacing.xs)
+        .padding(.bottom, MassMatesSpacing.sm)
+    }
+
+    private func attentionPointBox(title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text(body)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .overlay {
+            RoundedRectangle(cornerRadius: MassMatesRadius.photo)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        }
+    }
+
+    private func stepSubtitle(for step: LectioDivinaStep) -> String {
+        if let dotIndex = step.subtitle.range(of: "•")?.upperBound {
+            return step.subtitle[dotIndex...].trimmingCharacters(in: .whitespaces)
+        }
+        return step.subtitle.isEmpty ? step.stage : step.subtitle
     }
 }
 

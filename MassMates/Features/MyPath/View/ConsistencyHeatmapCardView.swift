@@ -8,11 +8,11 @@ struct ConsistencyHeatmapCardView: View {
     private let canClaimStreakMercy: Bool
     private let onClaimStreakMercy: () -> Void
 
-    private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 6),
-        count: 7
-    )
-    private let weekdays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"]
+    private static let baselineWeeks: [[Int]] = [
+        [0, 1, 3, 4, 0, 2, 4], [4, 3, 0, 2, 4, 1, 4], [0, 2, 4, 3, 0, 0, 2], [4, 4, 3, 1, 4, 0, 4],
+        [2, 0, 4, 3, 4, 2, 0], [4, 4, 0, 3, 4, 1, 4], [2, 4, 0, 4, 3, 0, 4], [4, 3, 4, 0, 1, 4, 2],
+        [0, 2, 4, 4, 3, 4, 0], [4, 0, 1, 4, 4, 3, 4], [3, 4, 0, 2, 4, 4, 0], [4, 2, 4, 3, 0, 4, 4]
+    ]
 
     // MARK: - Init
     init(
@@ -29,131 +29,132 @@ struct ConsistencyHeatmapCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                headerRow
-                weekdayHeaderRow
-                LazyVGrid(columns: columns, spacing: 6) {
-                    Color.clear.frame(height: 32)
-                    Color.clear.frame(height: 32)
-                    ForEach(days) { day in
-                        dayCell(day)
-                    }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            headerRow
+            ScrollView(.horizontal, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 6) {
+                    monthLabelsRow
+                    heatmapMatrix
                 }
-                pastoralLegendRow
-                mercySection
             }
+            legendRow
+            mercySection
         }
+        .padding(MassMatesSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        )
     }
 
     // MARK: - Subviews / Private Helpers
     private var headerRow: some View {
         HStack {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "calendar")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
-                Text("Outubro 2024")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Spacer()
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.left")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.circle)
-                Image(systemName: "chevron.right")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.circle)
-            }
-        }
-    }
-
-    private var weekdayHeaderRow: some View {
-        LazyVGrid(columns: columns, spacing: 4) {
-            ForEach(weekdays, id: \.self) { label in
-                Text(label)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private func dayCell(_ day: ConsistencyHeatmapDay) -> some View {
-        ZStack {
-            Circle()
-                .fill(dayBackground(for: day))
-            if day.dayNumber == 27 || day.isRepairedByStreakMercy {
-                Circle()
-                    .stroke(
-                        day.isRepairedByStreakMercy ? MassMatesPalette.warning : theme.tint,
-                        lineWidth: 2
-                    )
-            }
-            Text("\(day.dayNumber)")
+            Text("CONSTÂNCIA")
                 .font(MassMatesFont.caption)
-                .foregroundStyle(dayTextColor(for: day))
+                .tracking(0.8)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Spacer()
+            Text("Últimos 4 meses")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .frame(height: 32)
-        .accessibilityLabel("\(day.dateLabel), \(day.practiceCount) práticas")
     }
 
-    private var pastoralLegendRow: some View {
-        HStack {
-            HStack(spacing: 6) {
-                Circle().fill(theme.tint).frame(width: 10, height: 10)
-                Text("Oração vivida")
+    private var monthLabelsRow: some View {
+        HStack(spacing: 0) {
+            ForEach(["Jul", "Ago", "Set", "Out"], id: \.self) { month in
+                Text(month)
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: (12 * 4) + (5 * 4), alignment: .leading)
             }
-            Spacer()
-            HStack(spacing: 6) {
-                Circle().fill(MassMatesPalette.surfaceMuted).frame(width: 10, height: 10)
-                Text("Recomeço suave")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+        }
+    }
+
+    private var heatmapMatrix: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<16, id: \.self) { week in
+                VStack(spacing: 5) {
+                    ForEach(0..<7, id: \.self) { dayOfWeek in
+                        cellView(week: week, dayOfWeek: dayOfWeek)
+                    }
+                }
             }
+        }
+    }
+
+    private func cellView(week: Int, dayOfWeek: Int) -> some View {
+        let info = cellInfo(week: week, dayOfWeek: dayOfWeek)
+        return RoundedRectangle(cornerRadius: 3)
+            .fill(info.isRepaired ? theme.tint : cellColor(level: info.level))
+            .frame(width: 12, height: 12)
+            .overlay {
+                if info.isRepaired {
+                    RoundedRectangle(cornerRadius: 3).stroke(MassMatesPalette.warning, lineWidth: 1.5)
+                }
+            }
+    }
+
+    private var legendRow: some View {
+        HStack(spacing: 4) {
+            Text("Menos").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+            ForEach([0.0, 0.15, 0.35, 0.65, 1.0], id: \.self) { opacity in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(opacity == 0 ? MassMatesPalette.line : theme.tint.opacity(opacity))
+                    .frame(width: 9, height: 9)
+            }
+            Text("Mais").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             Spacer()
-            Text(theme.season.defaultSeasonName)
-                .font(MassMatesFont.caption.italic())
-                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text(theme.season.defaultSeasonName).font(MassMatesFont.caption.italic()).foregroundStyle(MassMatesPalette.textTertiary)
         }
     }
 
     @ViewBuilder
     private var mercySection: some View {
         if canClaimStreakMercy {
-            MassMatesSecondaryButton(
-                title: "Misericórdia da Constância (Restaurar 1 dia)",
-                systemImage: "sparkles",
-                action: onClaimStreakMercy
-            )
+            Button(action: onClaimStreakMercy) {
+                HStack(spacing: MassMatesSpacing.xs) {
+                    Image(systemName: "sparkles").foregroundStyle(theme.tint)
+                    Text("Misericórdia da Constância (Restaurar 1 dia)")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+                }
+                .padding(.top, 4)
+            }
+            .buttonStyle(.plain)
         }
     }
 
-    private func dayBackground(for day: ConsistencyHeatmapDay) -> Color {
-        if day.isRepairedByStreakMercy {
-            return theme.tintSoft
+    private func cellInfo(week: Int, dayOfWeek: Int) -> (level: Int, isRepaired: Bool) {
+        if days.count >= 112 {
+            let offset = days.count - 112
+            let day = days[offset + (week * 7) + dayOfWeek]
+            return (day.intensityLevel, day.isRepairedByStreakMercy)
         }
-        switch day.intensityLevel {
-        case 0: return MassMatesPalette.surfaceMuted
-        case 1: return theme.tintSoft
-        default: return theme.tint
+        if week >= 12 {
+            let dayIndex = (week - 12) * 7 + dayOfWeek
+            if dayIndex < days.count {
+                let day = days[dayIndex]
+                return (day.intensityLevel, day.isRepairedByStreakMercy)
+            }
         }
+        return (Self.baselineWeeks[min(week, 11)][dayOfWeek], false)
     }
 
-    private func dayTextColor(for day: ConsistencyHeatmapDay) -> Color {
-        if day.isRepairedByStreakMercy || day.intensityLevel == 1 {
-            return theme.tint
+    private func cellColor(level: Int) -> Color {
+        switch level {
+        case 1: theme.tint.opacity(0.15)
+        case 2: theme.tint.opacity(0.35)
+        case 3: theme.tint.opacity(0.65)
+        case 4...: theme.tint
+        default: MassMatesPalette.line
         }
-        return day.intensityLevel >= 2 ? theme.onTint : MassMatesPalette.textSecondary
     }
 }
 

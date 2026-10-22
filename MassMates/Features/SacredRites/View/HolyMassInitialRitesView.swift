@@ -9,142 +9,113 @@ struct HolyMassInitialRitesView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            initialGreetingCard
-            penitentialActCard
-            gloriaCard
-            collectPrayerCard
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            initialGreetingSection
+            hairlineDivider
+            penitentialActSection
+            hairlineDivider
+            gloriaSection
+            hairlineDivider
+            collectPrayerSection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var initialGreetingCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                cardHeader(title: "Saudação Inicial", posture: .standing)
-                ForEach(HolyMassRitesCatalog.initialGreetingTurns) { turn in
-                    dialogueBlock(turn)
-                }
+    private var initialGreetingSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Saudação Inicial", posture: .standing)
+            ForEach(HolyMassRitesCatalog.initialGreetingTurns) { turn in
+                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
             }
         }
     }
 
-    private var penitentialActCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Ato Penitencial")
-                    Spacer()
-                    Text("CONFISSÃO COMUNITÁRIA")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                confiteorBox
-                ForEach(HolyMassRitesCatalog.kyrieTurns) { turn in
-                    compactDialogueRow(turn)
-                }
+    private var penitentialActSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Ato Penitencial", subtitle: "Confissão Comunitária")
+            confiteorBlock
+            ForEach(HolyMassRitesCatalog.kyrieTurns) { turn in
+                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
             }
         }
     }
 
-    private var confiteorBox: some View {
+    private var confiteorBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("FÓRMULA TRADICIONAL • TODOS")
+            Text("TODOS")
                 .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Text("«Confesso a Deus todo-poderoso e a vós, irmãos e irmãs, que pequei muitas vezes por pensamentos e palavras, atos e omissões, por minha culpa, minha tão grande culpa...»")
-                .font(MassMatesFont.scriptureEmphasis)
+                .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private var gloriaCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    cardTitleBar("Glória a Deus nas Alturas")
-                    Spacer()
-                    Text("Hino de Louvor").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                }
-                Text("«Glória a Deus nas alturas, e paz na terra aos homens por Ele amados. Senhor Deus, Rei dos céus, Deus Pai todo-poderoso: nós vos louvamos, nós vos bendizemos, nós vos adoramos, nós vos glorificamos, nós vos damos graças por vossa imensa glória...»")
-                    .font(MassMatesFont.scripture)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
+                .lineSpacing(6)
         }
     }
 
-    private var collectPrayerCard: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            HStack {
-                Text("ORAÇÃO DA COLETA").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                Spacer()
-                Text("Conclusão dos Ritos Iniciais").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            }
+    private var gloriaSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            sectionHeader(title: "Glória a Deus nas Alturas", subtitle: "Hino de Louvor")
+            Text("«Glória a Deus nas alturas, e paz na terra aos homens por Ele amados. Senhor Deus, Rei dos céus, Deus Pai todo-poderoso: nós vos louvamos, nós vos bendizemos, nós vos adoramos, nós vos glorificamos, nós vos damos graças por vossa imensa glória...»")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+        }
+    }
+
+    private var collectPrayerSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            sectionHeader(title: "Oração da Coleta", subtitle: "Conclusão dos Ritos Iniciais")
             Text("«Ó Deus, cuja providência jamais falha em seus desígnios, afastai de nós todo mal e concedei-nos tudo o que for de proveito para a nossa salvação...»")
-                .font(MassMatesFont.scriptureEmphasis)
+                .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("Todos: Amém.")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(theme.tint)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .lineSpacing(6)
+            dialogueTurnView(speaker: "Assembleia", text: "Amém.", isAssembly: true)
         }
-        .padding(MassMatesSpacing.md)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
     }
 
-    private func dialogueBlock(_ turn: MassDialogueTurn) -> some View {
+    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(turn.speaker.uppercased())
+            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
                 .font(MassMatesFont.caption)
-                .foregroundStyle(turn.isAssembly ? theme.tint : MassMatesPalette.textSecondary)
-            Text(turn.text)
-                .font(turn.isAssembly ? MassMatesFont.scriptureEmphasis : MassMatesFont.scripture)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(turn.isAssembly ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private func compactDialogueRow(_ turn: MassDialogueTurn) -> some View {
-        HStack {
-            Text(turn.speaker)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(turn.isAssembly ? theme.tint : MassMatesPalette.textSecondary)
-            Spacer()
-            Text(turn.text)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(turn.isAssembly ? theme.tint : MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.xs)
-        .background(turn.isAssembly ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private func cardHeader(title: String, posture: LiturgicalPosture) -> some View {
-        HStack {
-            cardTitleBar(title)
-            Spacer()
-            Label(posture.rawValue, systemImage: posture.systemImage)
-                .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.xs)
-                .padding(.vertical, 2)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            Text(text)
+                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
         }
     }
 
-    private func cardTitleBar(_ title: String) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            RoundedRectangle(cornerRadius: 3).fill(theme.tint).frame(width: 6, height: 16)
-            Text(title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+    private func sectionHeader(title: String, subtitle: String? = nil, posture: LiturgicalPosture? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            if let subtitle {
+                Text(subtitle.uppercased())
+                    .font(MassMatesFont.caption)
+                    .tracking(0.4)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            if let posture {
+                Label(posture.rawValue, systemImage: posture.systemImage)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.horizontal, MassMatesSpacing.xs)
+                    .padding(.vertical, 2)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            }
         }
+    }
+
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+            .padding(.vertical, MassMatesSpacing.xs)
     }
 }
 

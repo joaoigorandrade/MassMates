@@ -14,11 +14,62 @@ struct HolyMassGuideModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
+        VStack(spacing: 0) {
+            headerBar
+            progressTrack
+            scrollViewContent
+        }
+        .background(MassMatesPalette.bg.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) {
+            dockedBottomNavigation
+        }
+    }
+
+    // MARK: - Subviews / Private Helpers
+    private var headerBar: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Button { navigator?.dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(MassMatesPalette.textSecondary)
+            Spacer(minLength: 0)
+            let curr = viewModel.currentSectionIndex + 1
+            let total = HolyMassRiteSection.allCases.count
+            Text("\(viewModel.selectedSection.title.uppercased()) · \(curr)/\(total)")
+                .font(MassMatesFont.caption).tracking(0.5).foregroundStyle(MassMatesPalette.textSecondary)
+            Spacer(minLength: 0)
+            Button { viewModel.toggleSilentMode() } label: {
+                Image(systemName: viewModel.isSilentModeActive ? "bell.slash" : "bell")
+                    .font(.system(size: 16)).foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(viewModel.isSilentModeActive ? "Silêncio ativo" : "Notificações ativas")
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .frame(height: 48)
+    }
+
+    private var progressTrack: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Rectangle().fill(MassMatesPalette.line)
+                Rectangle().fill(theme.tint)
+                    .frame(width: max(0, geo.size.width * CGFloat(viewModel.progressRatio)))
+                    .animation(.easeInOut(duration: 0.25), value: viewModel.progressRatio)
+            }
+        }
+        .frame(height: 2)
+    }
+
+    private var scrollViewContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                headerToolbar
-                statusBanner
-                riteTabs
+                riteHeaderTitle
+                riteSectionTabs
                 selectedRiteContent
                 HolyMassCheckInCardView(viewModel: viewModel)
                 contemplativeFooter
@@ -27,97 +78,44 @@ struct HolyMassGuideModalView: View {
             .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
-    // MARK: - Subviews / Private Helpers
-    private var headerToolbar: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Button { navigator?.dismiss() } label: {
-                Image(systemName: "chevron.left")
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Celebração Da Santa Missa & Guia Dos Ritos")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .lineLimit(2)
+    private var riteHeaderTitle: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("Celebração da Santa Missa")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            HStack(spacing: MassMatesSpacing.sm) {
                 HStack(spacing: MassMatesSpacing.xxs) {
                     Circle().fill(theme.tint).frame(width: 6, height: 6)
-                    Text("TEMPO COMUM • MODO CELEBRAÇÃO")
+                    Text("TEMPO COMUM").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 }
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                Label(viewModel.currentPosture.rawValue, systemImage: viewModel.currentPosture.systemImage)
+                    .font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                    .padding(.horizontal, MassMatesSpacing.xs).padding(.vertical, 2)
+                    .background(theme.tintSoft).clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             }
-            Spacer(minLength: 0)
-            silentModeButton
         }
     }
 
-    private var silentModeButton: some View {
-        Button { viewModel.toggleSilentMode() } label: {
-            Image(systemName: viewModel.isSilentModeActive ? "bell.slash" : "bell")
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(viewModel.isSilentModeActive ? "Silêncio ativo" : "Notificações ativas")
-    }
-
-    private var statusBanner: some View {
-        HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Circle().fill(theme.tint).frame(width: 8, height: 8)
-                    Text("28º DOMINGO DO TEMPO COMUM • ANO B")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                }
-                Text("Modo Igreja Ativo • Silêncio Sagrado")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer(minLength: 0)
-            Label(viewModel.currentPosture.rawValue, systemImage: viewModel.currentPosture.systemImage)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .padding(.vertical, MassMatesSpacing.xxs)
-                .background(theme.tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                .contentTransition(.opacity)
-        }
-        .padding(MassMatesSpacing.md)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-    }
-
-    private var riteTabs: some View {
+    private var riteSectionTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MassMatesSpacing.xs) {
                 ForEach(HolyMassRiteSection.allCases) { section in
-                    riteTabButton(section)
+                    let isSel = viewModel.selectedSection == section
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectSection(section) }
+                    } label: {
+                        Text(section.title).font(MassMatesFont.callout)
+                            .foregroundStyle(isSel ? MassMatesPalette.surface : MassMatesPalette.textSecondary)
+                            .padding(.horizontal, MassMatesSpacing.md).frame(minHeight: 36)
+                            .background(isSel ? theme.tint : MassMatesPalette.surfaceMuted)
+                            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
-    }
-
-    private func riteTabButton(_ section: HolyMassRiteSection) -> some View {
-        let isSelected = viewModel.selectedSection == section
-        return Button {
-            withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectSection(section) }
-        } label: {
-            Label(section.title, systemImage: section.systemImage)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(isSelected ? MassMatesPalette.surface : MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.md)
-                .frame(minHeight: 40)
-                .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -130,18 +128,46 @@ struct HolyMassGuideModalView: View {
         }
     }
 
+    private var dockedBottomNavigation: some View {
+        HStack {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { viewModel.goToPreviousSection() }
+            } label: {
+                Label("Anterior", systemImage: "chevron.left")
+                    .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget)
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canGoToPreviousSection)
+            .opacity(viewModel.canGoToPreviousSection ? 1.0 : 0.3)
+            Spacer()
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { viewModel.goToNextSection() }
+            } label: {
+                HStack(spacing: MassMatesSpacing.xxs) {
+                    Text("Próximo").font(MassMatesFont.callout.weight(.semibold))
+                    Image(systemName: "chevron.right")
+                }
+                .foregroundStyle(theme.tint).frame(minHeight: MassMatesLayout.minTapTarget)
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canGoToNextSection)
+            .opacity(viewModel.canGoToNextSection ? 1.0 : 0.3)
+        }
+        .padding(.horizontal, MassMatesLayout.readingMargin).frame(height: 56)
+        .background(MassMatesPalette.bg.opacity(0.95).background(.ultraThinMaterial))
+        .overlay(alignment: .top) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
+    }
+
     private var contemplativeFooter: some View {
         VStack(spacing: MassMatesSpacing.xxs) {
             Label("ITE, MISSA EST", systemImage: "building.columns")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             Text("«O silêncio interior é o espaço sagrado onde Deus nos visita.»")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, MassMatesSpacing.lg)
+        .frame(maxWidth: .infinity).padding(.vertical, MassMatesSpacing.lg)
     }
 }
 

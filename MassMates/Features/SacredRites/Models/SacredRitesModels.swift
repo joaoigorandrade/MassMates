@@ -15,6 +15,15 @@ struct IgnatianGratitudeChip: Identifiable, Sendable, Equatable {
     ]
 }
 
+enum ExamenPresenceEvaluation: String, CaseIterable, Identifiable, Sendable, Equatable {
+    case bem = "Bem"
+    case comLuta = "Com luta"
+    case falhei = "Falhei"
+
+    var id: String { rawValue }
+    var title: String { rawValue }
+}
+
 enum LectioResolutionEvaluation: String, CaseIterable, Identifiable, Sendable, Equatable {
     case fidelidade
     case deslize
@@ -73,6 +82,22 @@ struct ExamenVirtueOption: Identifiable, Sendable, Equatable {
 }
 
 // MARK: - Confession Preparation Models
+
+enum ConfessionTab: String, CaseIterable, Identifiable, Sendable, Equatable {
+    case commandments
+    case contrition
+    case rite
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .commandments: "Mandamentos"
+        case .contrition: "Ato de Contrição"
+        case .rite: "Rito"
+        }
+    }
+}
 
 struct GoodConfessionStep: Identifiable, Sendable, Equatable {
     let number: Int

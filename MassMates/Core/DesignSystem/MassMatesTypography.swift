@@ -2,6 +2,7 @@ import SwiftUI
 
 enum MassMatesFont {
     static let display = Font.system(size: 34, weight: .semibold, design: .serif)
+    static let displayMobile = Font.system(size: 28, weight: .semibold, design: .serif)
     static let title = Font.system(size: 24, weight: .semibold, design: .default)
     static let headline = Font.system(size: 17, weight: .semibold, design: .default)
     static let body = Font.system(size: 17, weight: .regular, design: .default)

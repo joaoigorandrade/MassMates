@@ -12,90 +12,145 @@ struct ConfessionGuidedExamSectionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Text("Exame Guiado de Consciência")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Text(viewModel.selectionCounterText)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-            }
-            categoryTabsRow
-            ForEach(viewModel.filteredCommandmentGroups) { group in
-                commandmentGroupCard(group)
-            }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeaderRow
+            categoryFilterTabs
+            commandmentsList
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var categoryTabsRow: some View {
+    private var sectionHeaderRow: some View {
+        HStack {
+            Text("Exame dos Dez Mandamentos")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Text(viewModel.selectionCounterText)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(.horizontal, MassMatesSpacing.xs)
+                .padding(.vertical, 2)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        }
+    }
+
+    private var categoryFilterTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MassMatesSpacing.xs) {
                 ForEach(ConfessionExamCategory.allCases) { category in
-                    categoryTabButton(category)
+                    categoryFilterChip(category)
                 }
             }
         }
     }
 
-    private func categoryTabButton(_ category: ConfessionExamCategory) -> some View {
+    private func categoryFilterChip(_ category: ConfessionExamCategory) -> some View {
         let isSelected = viewModel.selectedCategory == category
         return Button {
-            viewModel.selectCategory(category)
+            withAnimation(.snappy(duration: 0.2)) {
+                viewModel.selectCategory(category)
+            }
         } label: {
             Text(category.title)
                 .font(MassMatesFont.caption)
-                .foregroundStyle(isSelected ? theme.onTint : MassMatesPalette.textSecondary)
+                .foregroundStyle(isSelected ? MassMatesPalette.surface : MassMatesPalette.textSecondary)
                 .padding(.horizontal, MassMatesSpacing.sm)
                 .padding(.vertical, MassMatesSpacing.xs)
-                .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
+                .background(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .buttonStyle(.plain)
     }
 
-    private func commandmentGroupCard(_ group: CommandmentExamGroup) -> some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    Circle().fill(theme.tint).frame(width: 8, height: 8)
-                    Text(group.title)
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text(group.badge)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textTertiary)
-                }
-                Text(group.summary)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                ForEach(group.items) { item in
-                    examItemRow(item)
-                }
+    private var commandmentsList: some View {
+        VStack(spacing: MassMatesSpacing.md) {
+            ForEach(viewModel.filteredCommandmentGroups) { group in
+                commandmentGroupSection(group)
             }
         }
     }
 
-    private func examItemRow(_ item: CommandmentExamItem) -> some View {
+    private func commandmentGroupSection(_ group: CommandmentExamGroup) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            groupHeader(group)
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
+            ForEach(Array(group.items.enumerated()), id: \.element.id) { index, item in
+                if index > 0 {
+                    Rectangle()
+                        .fill(MassMatesPalette.line)
+                        .frame(height: 1)
+                }
+                checklistRow(item)
+            }
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
+        }
+    }
+
+    private func groupHeader(_ group: CommandmentExamGroup) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(group.title)
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Text(group.badge)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            Text(group.summary)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+        .padding(.vertical, MassMatesSpacing.xs)
+    }
+
+    private func checklistRow(_ item: CommandmentExamItem) -> some View {
         let isChecked = viewModel.isExamItemChecked(item)
         return Button {
-            viewModel.toggleExamItem(item)
-        } label: {
-            HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
-                Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(isChecked ? theme.tint : MassMatesPalette.textTertiary)
-                Text(item.question)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .multilineTextAlignment(.leading)
+            withAnimation(.snappy(duration: 0.15)) {
+                viewModel.toggleExamItem(item)
             }
-            .padding(.vertical, MassMatesSpacing.xxs)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
+                Text(item.question)
+                    .font(MassMatesFont.customScripture(size: 16))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineSpacing(3)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                circularCheckmark(isChecked: isChecked)
+            }
+            .padding(.vertical, MassMatesSpacing.sm)
+            .padding(.horizontal, MassMatesSpacing.xxs)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            .background(isChecked ? MassMatesPalette.surfaceMuted.opacity(0.6) : Color.clear)
+            .clipShape(.rect(cornerRadius: MassMatesSpacing.xxs))
         }
         .buttonStyle(.plain)
+    }
+
+    private func circularCheckmark(isChecked: Bool) -> some View {
+        ZStack {
+            if isChecked {
+                Circle()
+                    .fill(MassMatesPalette.textPrimary)
+                    .frame(width: 20, height: 20)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(MassMatesPalette.surface)
+            } else {
+                Circle()
+                    .stroke(MassMatesPalette.line, lineWidth: 1.5)
+                    .frame(width: 20, height: 20)
+            }
+        }
+        .frame(width: 24, height: 24)
     }
 }
 

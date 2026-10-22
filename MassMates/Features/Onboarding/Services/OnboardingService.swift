@@ -92,9 +92,9 @@ final class LocalOnboardingService: OnboardingStateReading, OnboardingCompleting
         OnboardingSlide(
             id: "slide-consistency",
             badgeTitle: "Tempo Comum • Fidelidade Diária",
-            title: "Regra de Vida e Hábitos",
-            bodyText: "Acompanhamento diário sem pressa ou culpa, focado na fidelidade a Deus.",
-            systemImage: "calendar"
+            title: "Constância espiritual em comunidade",
+            bodyText: "Uma comunidade serena para cultivar a vida de oração diária e caminhar em comunhão.",
+            systemImage: "flame"
         ),
         OnboardingSlide(
             id: "slide-fraternities",

@@ -1,8 +1,11 @@
+import Navigation
 import SwiftUI
 
 struct GroupDetailView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
+    @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: GroupDetailViewModel
 
     // MARK: - Init
@@ -12,45 +15,63 @@ struct GroupDetailView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                GroupIdentityBannerView(
-                    group: viewModel.group,
-                    inviteCode: viewModel.currentInviteCode,
-                    selectedSubTab: viewModel.selectedSubTab,
-                    onSelectSubTab: { tab in viewModel.selectedSubTab = tab },
-                    onToggleModeration: { viewModel.isShowingModerationPanel.toggle() }
-                )
-                if viewModel.isShowingModerationPanel {
-                    GroupSafetyModerationView(viewModel: viewModel)
+        VStack(spacing: 0) {
+            navigationBar
+            ScrollView {
+                VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+                    GroupIdentityBannerView(
+                        group: viewModel.group,
+                        scoringMode: viewModel.scoringSummary.scoringMode,
+                        selectedSubTab: viewModel.selectedSubTab,
+                        onSelectSubTab: { tab in viewModel.selectedSubTab = tab }
+                    )
+                    if viewModel.isShowingModerationPanel {
+                        GroupSafetyModerationView(viewModel: viewModel)
+                    }
+                    activeSubTabContent
                 }
-                activeSubTabContent
+                .padding(.horizontal, MassMatesLayout.screenMargin)
+                .padding(.top, MassMatesSpacing.xs)
+                .padding(.bottom, MassMatesSpacing.xl)
             }
-            .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var recentCommunionSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Text("Comunhão Recente").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Button("Ver tudo") { viewModel.selectedSubTab = .feed }
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(theme.tint)
-                    .buttonStyle(.plain)
+    private var navigationBar: some View {
+        HStack {
+            Button {
+                if let navigator { navigator.dismiss() } else { dismiss() }
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
             }
-            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item, showsComments: false) }
-            SponsoredNativeCardView(
-                sponsorName: "Livraria Paulus",
-                headline: "Livraria Paulus — Retiro Inaciano Guiado",
-                bodyText: "Caderno de oração para 30 dias de discernimento e exercícios espirituais no lar.",
-                couponCode: "Edição especial com capa em linho • Conhecer"
-            )
+            .buttonStyle(.plain)
+            .accessibilityLabel("Voltar")
+            Spacer()
+            Text("MassMates").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Menu {
+                Text("Convite: \(viewModel.currentInviteCode)")
+                Button("Moderação & Segurança", systemImage: "shield.lefthalf.filled") {
+                    viewModel.isShowingModerationPanel.toggle()
+                }
+                Button("Redefinir Código de Convite", systemImage: "arrow.clockwise") { viewModel.resetInviteCode() }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+            }
+            .accessibilityLabel("Mais opções")
         }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .frame(height: 44)
     }
 
     @ViewBuilder
@@ -61,31 +82,41 @@ struct GroupDetailView: View {
             feedSection
         case .progress:
             GroupProgressTabView(
-                summary: viewModel.scoringSummary,
-                guardianAngelState: viewModel.guardianAngelState,
-                onOptInGuardianAngel: { viewModel.optInGuardianAngel() },
-                onSendGuardianAngelNudge: { viewModel.sendGuardianAngelPrayerNudge() },
-                onRevealGuardianAngelCycle: { viewModel.revealGuardianAngelCycle() }
+                summary: viewModel.scoringSummary, guardianAngelState: viewModel.guardianAngelState,
+                onOptInGuardianAngel: viewModel.optInGuardianAngel,
+                onSendGuardianAngelNudge: viewModel.sendGuardianAngelPrayerNudge,
+                onRevealGuardianAngelCycle: viewModel.revealGuardianAngelCycle
             )
             recentCommunionSection
         case .intentions:
             GroupPrayerWallTabView(
-                newIntentionDraft: $viewModel.newPrayerIntentionDraft,
-                intentions: viewModel.prayerIntentions,
-                errorMessage: viewModel.errorMessage,
-                onSubmitIntention: { viewModel.submitPrayerIntention() },
-                onTogglePrayed: { id in viewModel.togglePrayedForIntention(id) }
+                newIntentionDraft: $viewModel.newPrayerIntentionDraft, intentions: viewModel.prayerIntentions,
+                errorMessage: viewModel.errorMessage, onSubmitIntention: viewModel.submitPrayerIntention,
+                onTogglePrayed: viewModel.togglePrayedForIntention
             )
         case .chat:
             GroupChatTabView(
-                pinnedNotice: viewModel.pinnedNotice,
-                messages: viewModel.chatMessages,
-                isEditingNotice: $viewModel.isEditingPinnedNotice,
-                noticeDraft: $viewModel.pinnedNoticeDraft,
-                messageDraft: $viewModel.chatMessageDraft,
-                errorMessage: viewModel.errorMessage,
-                onSaveNotice: { viewModel.savePinnedNotice() },
-                onSendMessage: { viewModel.sendChatMessage() }
+                pinnedNotice: viewModel.pinnedNotice, messages: viewModel.chatMessages,
+                isEditingNotice: $viewModel.isEditingPinnedNotice, noticeDraft: $viewModel.pinnedNoticeDraft,
+                messageDraft: $viewModel.chatMessageDraft, errorMessage: viewModel.errorMessage,
+                onSaveNotice: viewModel.savePinnedNotice, onSendMessage: viewModel.sendChatMessage
+            )
+        }
+    }
+
+    private var recentCommunionSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            HStack {
+                Text("Comunhão Recente").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                Button("Ver tudo") { viewModel.selectedSubTab = .feed }
+                    .font(MassMatesFont.callout).foregroundStyle(theme.tint).buttonStyle(.plain)
+            }
+            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item, showsComments: false) }
+            SponsoredNativeCardView(
+                sponsorName: "Livraria Paulus", headline: "Livraria Paulus — Retiro Inaciano Guiado",
+                bodyText: "Caderno de oração para 30 dias de discernimento e exercícios espirituais no lar.",
+                couponCode: "Edição especial com capa em linho • Conhecer"
             )
         }
     }
@@ -93,24 +124,18 @@ struct GroupDetailView: View {
     private var quickWitnessCard: some View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Partilhar fruto da oração com o grupo")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Partilhar fruto da oração com o grupo").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                 Picker("Prática", selection: $viewModel.quickPostPractice) {
                     ForEach(SpiritualPractice.allCases.filter { !$0.isStrictlyPrivate }) { practice in
                         Text(practice.title).tag(practice)
                     }
                 }
                 TextField("Fruto da oração (opcional)", text: $viewModel.quickPostFruit)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                    .padding(MassMatesSpacing.sm).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.button))
                 if let error = viewModel.errorMessage {
                     Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
                 }
-                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane") {
-                    viewModel.submitQuickWitness()
-                }
+                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane", action: viewModel.submitQuickWitness)
             }
         }
     }
@@ -127,9 +152,7 @@ struct GroupDetailView: View {
         switch item {
         case .post(let post):
             GroupFeedPostCardView(
-                post: post,
-                commentDraft: commentBinding(for: post.id),
-                showsComments: showsComments,
+                post: post, commentDraft: commentBinding(for: post.id), showsComments: showsComments,
                 onReaction: { reaction in viewModel.toggleReaction(reaction, for: post.id) },
                 onSubmitComment: { viewModel.submitComment(for: post.id) }
             )

@@ -55,7 +55,7 @@ struct HolyMassCheckInCardView: View {
         } label: {
             Label(viewModel.registerMassButtonTitle, systemImage: viewModel.registerMassButtonIcon)
                 .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.surface)
+                .foregroundStyle(theme.onTint)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                 .background(theme.tint)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))

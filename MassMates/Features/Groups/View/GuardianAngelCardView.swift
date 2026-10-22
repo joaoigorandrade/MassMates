@@ -23,18 +23,16 @@ struct GuardianAngelCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            headerRow
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
             if state.isOptedIn {
-                assignedSoulSection
-                actionButtonSection
+                optedInContent
             } else {
-                optInSection
+                optInContent
             }
         }
         .padding(MassMatesSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.tintSoft)
+        .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(
             RoundedRectangle(cornerRadius: MassMatesRadius.card)
@@ -43,113 +41,67 @@ struct GuardianAngelCardView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerRow: some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-            Image(systemName: "shield.lefthalf.filled")
-                .font(MassMatesFont.title)
-                .foregroundStyle(theme.tint)
-                .frame(width: 40, height: 40)
-                .background(MassMatesPalette.surface)
-                .clipShape(Circle())
+    private var optedInContent: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Text("ANJO DA GUARDA SECRETO")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                    Circle().fill(theme.tint).frame(width: 4, height: 4)
-                    Text("Ciclo de 7 dias")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                Text("Seu Protegido da Semana")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Spacer(minLength: 0)
-            Text("Dia 4/7")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .padding(.horizontal, MassMatesSpacing.xs)
-                .padding(.vertical, MassMatesSpacing.xxs)
-                .background(MassMatesPalette.surface)
-                .clipShape(Capsule())
-        }
-    }
-
-    private var assignedSoulSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Text("Você está intercedendo em segredo por")
-                    .font(MassMatesFont.body)
+                Text("Você protege")
+                    .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                 Text(state.protectedSoulName)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            personalIntentionBox
-            if let nudge = state.anonymousNudgeStatusText {
-                Text(nudge)
+                Text("Em intenção secreta nesta semana")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                if let nudge = state.anonymousNudgeStatusText {
+                    Text(nudge)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(theme.tint)
+                        .padding(.top, 2)
+                }
+            }
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
+            HStack {
+                Spacer()
+                Button(action: onSendPrayerNudge) {
+                    Text(state.hasPrayedForProtectedSoulToday ? "Oração entregue ✓" : "Rezei por esta alma")
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(state.hasPrayedForProtectedSoulToday ? MassMatesPalette.textSecondary : theme.tint)
+                        .frame(minHeight: MassMatesLayout.minTapTarget)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    private var personalIntentionBox: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: "bookmark.fill")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(Theme(season: .white).tint)
-                Text("INTENÇÃO PESSOAL")
-                    .font(MassMatesFont.caption)
-                    .tracking(0.5)
-                    .foregroundStyle(Theme(season: .white).tint)
-            }
-            Text("“\(state.protectedSoulIntention)”")
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surface.opacity(0.85))
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-    }
-
-    private var actionButtonSection: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            Button(action: onSendPrayerNudge) {
-                Label(
-                    state.hasPrayedForProtectedSoulToday
-                        ? "Oração enviada com carinho ✓"
-                        : "Rezei por meu protegido hoje",
-                    systemImage: "hands.sparkles.fill"
-                )
-                .font(MassMatesFont.headline)
-                .foregroundStyle(theme.onTint)
-                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
-                .background(state.hasPrayedForProtectedSoulToday ? MassMatesPalette.success : theme.tint)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-            .buttonStyle(.plain)
-            Text("As identidades serão reveladas no domingo fraterno ao fim do ciclo.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private var optInSection: some View {
+    private var optInContent: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Text("Receba secretamente um irmão do grupo para sustentar em oração diária durante este ciclo.")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            MassMatesPrimaryButton(
-                title: "Participar do Sorteio de Oração",
-                systemImage: "hands.sparkles.fill",
-                action: onOptIn
-            )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Anjo da Guarda Secreto")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Text("Corrente de Oração Secreta")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Receba secretamente um irmão do grupo para sustentar em oração diária.")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
+            HStack {
+                Spacer()
+                Button(action: onOptIn) {
+                    Text("Participar do Sorteio")
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(theme.tint)
+                        .frame(minHeight: MassMatesLayout.minTapTarget)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 }
@@ -162,5 +114,6 @@ struct GuardianAngelCardView: View {
             onSendPrayerNudge: {},
             onRevealCycle: {}
         )
+        .padding()
     }
 }

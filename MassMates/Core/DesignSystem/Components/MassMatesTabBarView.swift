@@ -24,7 +24,6 @@ struct MassMatesTabBarView: View {
             tabItemView(tab: .groups, title: "Grupos", icon: "person.2")
             centerActionButton
             tabItemView(tab: .myPath, title: "Meu Caminho", icon: "person.crop.circle")
-            tabItemView(tab: .sacredRites, title: "Mais", icon: "book.closed")
         }
         .frame(height: 56)
         .padding(.horizontal, MassMatesSpacing.xs)
@@ -38,15 +37,9 @@ struct MassMatesTabBarView: View {
 
     // MARK: - Subviews / Private Helpers
     private var barBackground: some View {
-        MassMatesPalette.surface
-            .opacity(colorScheme == .dark ? 0.92 : 0.94)
+        MassMatesPalette.bg
+            .opacity(0.95)
             .background(.ultraThinMaterial)
-            .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.04),
-                radius: 8,
-                x: 0,
-                y: -2
-            )
     }
 
     private func tabItemView(tab: AppTab, title: String, icon: String) -> some View {
@@ -90,10 +83,10 @@ struct MassMatesTabBarView: View {
                         )
                 )
                 .shadow(
-                    color: colorScheme == .dark ? .clear : theme.tint.opacity(0.35),
+                    color: colorScheme == .dark ? Color.black.opacity(0.3) : theme.tint.opacity(0.28),
                     radius: 10,
                     x: 0,
-                    y: 6
+                    y: 4
                 )
         }
         .buttonStyle(.plain)

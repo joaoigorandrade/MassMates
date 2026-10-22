@@ -9,125 +9,145 @@ struct HolyMassCommunionAndFinalRitesView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            ourFatherAndPeaceCard
-            agnusDeiCard
-            silentThanksgivingCard
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            ourFatherAndPeaceSection
+            hairlineDivider
+            agnusDeiSection
+            hairlineDivider
+            thanksgivingAndDismissalSection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var ourFatherAndPeaceCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Oração do Senhor (Pai Nosso)")
-                    Spacer()
-                    Label("De pé", systemImage: "figure.stand")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .padding(.horizontal, MassMatesSpacing.xs)
-                        .padding(.vertical, 2)
-                        .background(MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                }
+    private var ourFatherAndPeaceSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Oração do Senhor (Pai Nosso)", posture: .standing)
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Text("TODOS")
+                    .font(MassMatesFont.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
                 Text("«Pai nosso que estais nos céus, santificado seja o vosso nome; venha a nós o vosso reino, seja feita a vossa vontade assim na terra como no céu. O pão nosso de cada dia nos dai hoje; perdoai-nos as nossas ofensas assim como nós perdoamos a quem nos tem ofendido; e não nos deixeis cair em tentação, mas livrai-nos do mal.»")
                     .font(MassMatesFont.scripture)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                peaceDialogueBox
+                    .lineSpacing(6)
             }
+            peaceDialogueBlock
         }
     }
 
-    private var peaceDialogueBox: some View {
-        VStack(spacing: MassMatesSpacing.xxs) {
-            HStack {
-                Text("Celebrante:").foregroundStyle(MassMatesPalette.textSecondary)
-                Spacer()
-                Text("A paz do Senhor esteja sempre convosco.").foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            HStack {
-                Text("Todos:")
-                Spacer()
-                Text("O amor de Cristo nos uniu.")
-            }
-            .foregroundStyle(theme.tint)
-        }
-        .font(MassMatesFont.callout)
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private var agnusDeiCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Text("Cordeiro de Deus").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text("Fração do Pão").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                agnusDeiLinesBox
-                humilityPrayerBox
-            }
+    private var peaceDialogueBlock: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            dialogueTurnView(speaker: "Celebrante", text: "A paz do Senhor esteja sempre convosco.", isAssembly: false)
+            dialogueTurnView(speaker: "Assembleia", text: "O amor de Cristo nos uniu.", isAssembly: true)
         }
     }
 
-    private var agnusDeiLinesBox: some View {
+    private var agnusDeiSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Cordeiro de Deus", subtitle: "Fração do Pão")
+            agnusDeiLinesBlock
+            latinAgnusDeiBlock
+            humilityPrayerBlock
+        }
+    }
+
+    private var agnusDeiLinesBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             ForEach(Array(HolyMassRitesCatalog.agnusDeiLines.enumerated()), id: \.offset) { _, line in
-                Text("\(Text(line.lead)) \(Text(line.response).bold().foregroundStyle(theme.tint))")
+                Text("\(Text(line.lead))\(Text(line.response).bold())")
                     .font(MassMatesFont.scripture)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineSpacing(4)
             }
-            Text("«Agnus Dei, qui tollis peccata mundi, miserere nobis... dona nobis pacem.»")
-                .font(MassMatesFont.customScripture(size: 13, italic: true))
-                .foregroundStyle(MassMatesPalette.textTertiary)
-                .padding(.top, 2)
         }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
     }
 
-    private var humilityPrayerBox: some View {
+    private var latinAgnusDeiBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text("ORAÇÃO DE HUMILDADE • TODOS").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-            Text("«Senhor, eu não sou digno de que entreis em minha morada, mas dizei uma palavra e serei salvo.»")
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.tintSoft)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private var silentThanksgivingCard: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            Image(systemName: "leaf.fill")
-                .foregroundStyle(theme.tint)
-                .frame(width: 40, height: 40)
-                .background(theme.tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            Text("Ação de Graças & Silêncio").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-            Text("«Alma de Cristo, santificai-me. Corpo de Cristo, salvai-me. Sangue de Cristo, inebriai-me. Água do lado de Cristo, lavai-me. Paixão de Cristo, confortai-me. Ó bom Jesus, ouvi-me...»")
-                .font(MassMatesFont.scriptureEmphasis)
+            Text("LATIM")
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text("«Agnus Dei, qui tollis peccata mundi, miserere nobis... dona nobis pacem.»")
+                .font(MassMatesFont.customScripture(size: 15, italic: true))
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .multilineTextAlignment(.center)
         }
-        .padding(MassMatesSpacing.md)
-        .frame(maxWidth: .infinity)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
     }
 
-    private func cardTitleBar(_ title: String) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            RoundedRectangle(cornerRadius: 3).fill(theme.tint).frame(width: 6, height: 16)
-            Text(title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+    private var humilityPrayerBlock: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("ORAÇÃO DE HUMILDADE • TODOS")
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text("«Senhor, eu não sou digno de que entreis em minha morada, mas dizei uma palavra e serei salvo.»")
+                .font(Font.system(size: 19, weight: .semibold, design: .serif))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
         }
+    }
+
+    private var thanksgivingAndDismissalSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Ação de Graças & Silêncio", subtitle: "Pós-Comunhão")
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                Text("ALMA DE CRISTO")
+                    .font(MassMatesFont.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Text("«Alma de Cristo, santificai-me. Corpo de Cristo, salvai-me. Sangue de Cristo, inebriai-me. Água do lado de Cristo, lavai-me. Paixão de Cristo, confortai-me. Ó bom Jesus, ouvi-me...»")
+                    .font(MassMatesFont.scripture)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineSpacing(6)
+            }
+            dialogueTurnView(speaker: "Celebrante", text: "Ide em paz e o Senhor vos acompanhe.", isAssembly: false)
+            dialogueTurnView(speaker: "Assembleia", text: "Graças a Deus.", isAssembly: true)
+        }
+    }
+
+    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text(text)
+                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+        }
+    }
+
+    private func sectionHeader(title: String, subtitle: String? = nil, posture: LiturgicalPosture? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            if let subtitle {
+                Text(subtitle.uppercased())
+                    .font(MassMatesFont.caption)
+                    .tracking(0.4)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            if let posture {
+                Label(posture.rawValue, systemImage: posture.systemImage)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.horizontal, MassMatesSpacing.xs)
+                    .padding(.vertical, 2)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            }
+        }
+    }
+
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+            .padding(.vertical, MassMatesSpacing.xs)
     }
 }
 

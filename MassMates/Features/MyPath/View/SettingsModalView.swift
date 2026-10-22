@@ -18,10 +18,10 @@ struct SettingsModalView: View {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                 headerSection
                 statusBanner
-                remindersCard
-                languageAndIconCard
-                privacyAndBackupCard
-                accountDeletionCard
+                remindersSection
+                preferencesSection
+                privacyAndBackupSection
+                accountDeletionSection
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.vertical, MassMatesSpacing.lg)
@@ -31,144 +31,136 @@ struct SettingsModalView: View {
 
     // MARK: - Subviews / Private Helpers
     private var headerSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Preferências • \(theme.season.defaultSeasonName)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text("Configurações e Lembretes")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Configurações").font(MassMatesFont.title).foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Preferências • \(theme.season.defaultSeasonName)").font(MassMatesFont.caption).foregroundStyle(theme.tint)
             }
             Spacer()
-            MassMatesTextButton(title: "Fechar") {
-                navigator?.dismiss()
-            }
+            Button("Fechar") { navigator?.dismiss() }.font(MassMatesFont.body).foregroundStyle(theme.tint)
         }
     }
 
     @ViewBuilder
     private var statusBanner: some View {
         if let message = viewModel.statusBannerMessage {
-            Text(message)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .padding(MassMatesSpacing.sm)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(theme.tintSoft)
+            Text(message).font(MassMatesFont.caption).foregroundStyle(theme.tint).padding(MassMatesSpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading).background(theme.tintSoft)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
     }
 
-    private var remindersCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Lembretes Litúrgicos e do Angelus")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                ForEach(viewModel.reminders) { item in
-                    reminderRow(item)
+    private var remindersSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("LEMBRETES LITÚRGICOS")
+            hairline
+            ForEach(viewModel.reminders) { item in
+                HStack(spacing: MassMatesSpacing.sm) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                        Text("\(item.timeLabel) • \(item.subtitle)").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(get: { item.isEnabled }, set: { _ in viewModel.toggleReminder(item.id) }))
+                        .labelsHidden().tint(theme.tint)
                 }
+                .frame(minHeight: MassMatesLayout.minRowHeight)
+                hairline
             }
         }
     }
 
-    private func reminderRow(_ item: LiturgicalReminderItem) -> some View {
-        Button {
-            viewModel.toggleReminder(item.id)
-        } label: {
-            HStack(spacing: MassMatesSpacing.sm) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title)
-                        .font(MassMatesFont.body)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("\(item.timeLabel) • \(item.subtitle)")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
+    private var preferencesSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("IDIOMA & ÍCONE")
+            hairline
+            HStack {
+                Text("Idioma do Aplicativo").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
-                Image(systemName: item.isEnabled ? "bell.fill" : "bell.slash")
-                    .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textTertiary)
-            }
-            .frame(minHeight: MassMatesLayout.minTapTarget)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var languageAndIconCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Idioma (pt-BR / EN) e Ícone do App")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
                 HStack(spacing: MassMatesSpacing.xs) {
-                    ForEach(AppLanguage.allCases) { language in
-                        MassMatesSecondaryButton(title: language.displayName) {
-                            viewModel.selectLanguage(language)
-                        }
+                    ForEach(AppLanguage.allCases) { lang in
+                        let isSelected = viewModel.selectedLanguage == lang
+                        Button(lang.displayName) { viewModel.selectLanguage(lang) }
+                            .font(MassMatesFont.caption)
+                            .foregroundStyle(isSelected ? theme.onTint : MassMatesPalette.textSecondary)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
+                            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                     }
                 }
-                Text("Ícone ativo: \(viewModel.activeAppIcon.title) (\(viewModel.activeAppIcon.saintPatronTitle))")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
-        }
-    }
-
-    private var privacyAndBackupCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Privacidade, Consentimento e Backup")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                MassMatesSecondaryButton(
-                    title: viewModel.isPersonalizedAdConsentEnabled
-                        ? "Anúncios Personalizados: Ativados"
-                        : "Anúncios Contextuais Silenciosos (Padrão)",
-                    systemImage: "hand.raised"
-                ) {
-                    viewModel.togglePersonalizedAdConsent(!viewModel.isPersonalizedAdConsentEnabled)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            hairline
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ícone do Aplicativo").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(viewModel.activeAppIcon.title).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 }
-                MassMatesSecondaryButton(
-                    title: "Exportar Backup Criptografado do Diário",
-                    systemImage: "lock.doc"
-                ) {
-                    viewModel.requestDiaryBackupExport()
-                }
+                Spacer()
+                Image(systemName: viewModel.activeAppIcon.systemImage).font(MassMatesFont.headline).foregroundStyle(theme.tint)
             }
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            hairline
         }
     }
 
-    private var accountDeletionCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Exclusão de Conta e Dados Locais")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.danger)
-                Text(deletionDescriptionText)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesSecondaryButton(title: deletionButtonTitle, systemImage: "trash") {
-                    viewModel.tapDeleteAccountStep()
+    private var privacyAndBackupSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("PRIVACIDADE & BACKUP")
+            hairline
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Anúncios Personalizados").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text("Silenciosos e contextuais por padrão").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 }
+                Spacer()
+                Toggle("", isOn: Binding(get: { viewModel.isPersonalizedAdConsentEnabled }, set: { viewModel.togglePersonalizedAdConsent($0) }))
+                    .labelsHidden().tint(theme.tint)
             }
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            hairline
+            Button { viewModel.requestDiaryBackupExport() } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Exportar Backup Criptografado").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                        Text("Diário salvo com AES-GCM").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                .frame(minHeight: MassMatesLayout.minRowHeight)
+            }
+            .buttonStyle(.plain)
+            hairline
         }
     }
 
-    private var deletionDescriptionText: String {
-        switch viewModel.accountDeletionState {
-        case .idle: "Exclua permanentemente sua conta e todos os registros privados em 2 toques."
-        case .awaitingSecondTapConfirmation: "Toque novamente para confirmar a exclusão definitiva e irreversível."
-        case .permanentlyDeleted: "Conta e registros locais excluídos permanentemente."
+    private var accountDeletionSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("CONTA")
+            hairline
+            Button { viewModel.tapDeleteAccountStep() } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(viewModel.accountDeletionState.buttonTitle).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.danger)
+                        Text(viewModel.accountDeletionState.descriptionText).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "trash").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.danger)
+                }
+                .frame(minHeight: MassMatesLayout.minRowHeight)
+            }
+            .buttonStyle(.plain)
+            hairline
         }
     }
 
-    private var deletionButtonTitle: String {
-        switch viewModel.accountDeletionState {
-        case .idle: "1º Toque: Solicitar Exclusão"
-        case .awaitingSecondTapConfirmation: "2º Toque: Confirmar Exclusão Definitiva"
-        case .permanentlyDeleted: "Dados Excluídos"
-        }
+    private var hairline: some View {
+        Rectangle().fill(MassMatesPalette.line).frame(height: 1)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title).font(MassMatesFont.caption).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary).padding(.bottom, MassMatesSpacing.xs)
     }
 }
 

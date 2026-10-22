@@ -10,16 +10,18 @@ final class NightlyExamenViewModel {
     let gratitudeChips: [IgnatianGratitudeChip]
     let attentionPrompts: [ConscienceAttentionPrompt]
     let virtueOptions: [ExamenVirtueOption]
-    var isAmbientMusicPlaying: Bool
-    var selectedGratitudeIDs: Set<String>
-    var gratitudeJournalText: String
+    var isAmbientMusicPlaying: Bool = false
+    var selectedGratitudeIDs: Set<String> = []
+    var gratitudeJournalText: String = ""
+    var selectedPresence: ExamenPresenceEvaluation?
     var selectedEvaluation: LectioResolutionEvaluation?
-    var checkedAttentionIDs: Set<String>
-    var isConfessionNoteExpanded: Bool
-    var privateConfessionNote: String
+    var checkedAttentionIDs: Set<String> = []
+    var isConfessionNoteExpanded: Bool = false
+    var privateConfessionNote: String = ""
     var selectedVirtueID: String?
-    var isExamenConcluded: Bool
-    var isSavedToLocalJournal: Bool
+    var isExamenConcluded: Bool = false
+    var isSavedToLocalJournal: Bool = false
+    private var explicitStep: Int?
 
     // MARK: - Init
     init(
@@ -28,103 +30,82 @@ final class NightlyExamenViewModel {
         gratitudeChips: [IgnatianGratitudeChip] = IgnatianGratitudeChip.defaults,
         attentionPrompts: [ConscienceAttentionPrompt] = ConscienceAttentionPrompt.defaults,
         virtueOptions: [ExamenVirtueOption] = ExamenVirtueOption.defaults,
-        isAmbientMusicPlaying: Bool = false,
-        selectedGratitudeIDs: Set<String> = [],
-        gratitudeJournalText: String = "",
-        selectedEvaluation: LectioResolutionEvaluation? = nil,
-        checkedAttentionIDs: Set<String> = [],
-        isConfessionNoteExpanded: Bool = false,
-        privateConfessionNote: String = "",
-        selectedVirtueID: String? = nil,
-        isExamenConcluded: Bool = false,
-        isSavedToLocalJournal: Bool = false
+        isExamenConcluded: Bool = false
     ) {
         self.checkInEngine = checkInEngine
         self.onSaveJournalReflection = onSaveJournalReflection
         self.gratitudeChips = gratitudeChips
         self.attentionPrompts = attentionPrompts
         self.virtueOptions = virtueOptions
-        self.isAmbientMusicPlaying = isAmbientMusicPlaying
-        self.selectedGratitudeIDs = selectedGratitudeIDs
-        self.gratitudeJournalText = gratitudeJournalText
-        self.selectedEvaluation = selectedEvaluation
-        self.checkedAttentionIDs = checkedAttentionIDs
-        self.isConfessionNoteExpanded = isConfessionNoteExpanded
-        self.privateConfessionNote = privateConfessionNote
-        self.selectedVirtueID = selectedVirtueID
         self.isExamenConcluded = isExamenConcluded
-        self.isSavedToLocalJournal = isSavedToLocalJournal
     }
 
     // MARK: - Body / Public API
-    var ambientAudioLabel: String {
-        isAmbientMusicPlaying ? "Música Sacra Suave" : "Silêncio Sagrado"
-    }
-
-    var ambientAudioSystemImage: String {
-        isAmbientMusicPlaying ? "music.note" : "speaker.slash.fill"
-    }
-
     var currentStepIndex: Int {
-        if isExamenConcluded { return 5 }
-        return calculateActiveStep()
+        get {
+            if isExamenConcluded { return 5 }
+            if let explicitStep { return explicitStep }
+            return calculateActiveStep()
+        }
+        set { explicitStep = min(max(newValue, 1), 5) }
     }
 
-    var stepsIndicatorText: String {
-        isExamenConcluded ? "Exame Concluído" : "Passo \(currentStepIndex) de 5"
+    var stepCaption: String {
+        switch currentStepIndex {
+        case 1: "PASSO 1 · PRESENÇA DE DEUS"
+        case 2: "PASSO 2 · AÇÃO DE GRAÇAS"
+        case 3: "PASSO 3 · REVISÃO DO DIA"
+        case 4: "PASSO 4 · PERDÃO"
+        default: "PASSO 5 · RESOLUÇÃO DE AMANHÃ"
+        }
     }
 
-    var progressFraction: Double {
-        isExamenConcluded ? 1.0 : Double(currentStepIndex) / 5.0
+    var stepTitle: String {
+        switch currentStepIndex {
+        case 1: "Presença de Deus"
+        case 2: "Ação de Graças"
+        case 3: "Revisão do Dia"
+        case 4: "Contrição & Perdão"
+        default: "Resolução de Amanhã"
+        }
     }
 
-    var concludeButtonTitle: String {
-        isExamenConcluded ? "Noite Entregue em Deus" : "Concluir Exame & Descansar na Paz"
+    var currentStepButtonTitle: String {
+        if isExamenConcluded { return "Noite Entregue em Deus" }
+        return currentStepIndex == 5 ? "Concluir Exame" : "Próximo Passo"
     }
 
-    var concludeButtonSystemImage: String {
-        isExamenConcluded ? "checkmark" : "leaf.fill"
+    var currentStepButtonSystemImage: String {
+        if isExamenConcluded { return "checkmark.circle.fill" }
+        return currentStepIndex == 5 ? "checkmark" : "arrow.right"
     }
 
-    var saveJournalButtonTitle: String {
-        isSavedToLocalJournal ? "Salvo em Sigilo no Aparelho ✓" : "Salvar no Diário de Oração Local"
-    }
+    var stepsIndicatorText: String { isExamenConcluded ? "Exame Concluído" : "Passo \(currentStepIndex) de 5" }
+    var progressFraction: Double { isExamenConcluded ? 1.0 : Double(currentStepIndex) / 5.0 }
+    var concludeButtonTitle: String { isExamenConcluded ? "Noite Entregue em Deus" : "Concluir Exame & Descansar na Paz" }
+    var concludeButtonSystemImage: String { isExamenConcluded ? "checkmark" : "leaf.fill" }
+    var ambientAudioLabel: String { isAmbientMusicPlaying ? "Música Sacra Suave" : "Silêncio Sagrado" }
+    var ambientAudioSystemImage: String { isAmbientMusicPlaying ? "music.note" : "speaker.slash.fill" }
+    var saveJournalButtonTitle: String { isSavedToLocalJournal ? "Salvo em Sigilo no Aparelho ✓" : "Salvar no Diário de Oração Local" }
 
-    func toggleAmbientAudio() {
-        isAmbientMusicPlaying.toggle()
-    }
-
+    func goToNextStep() { if currentStepIndex < 5 { currentStepIndex += 1 } else { concludeExamen() } }
+    func goToPreviousStep() { if currentStepIndex > 1 { currentStepIndex -= 1 } }
+    func goToStep(_ step: Int) { currentStepIndex = step }
+    func toggleAmbientAudio() { isAmbientMusicPlaying.toggle() }
+    func selectPresence(_ presence: ExamenPresenceEvaluation) { selectedPresence = (selectedPresence == presence) ? nil : presence }
     func toggleGratitudeChip(_ chipID: String) {
-        if selectedGratitudeIDs.contains(chipID) {
-            selectedGratitudeIDs.remove(chipID)
-        } else {
-            selectedGratitudeIDs.insert(chipID)
-        }
+        if selectedGratitudeIDs.contains(chipID) { selectedGratitudeIDs.remove(chipID) } else { selectedGratitudeIDs.insert(chipID) }
     }
-
-    func selectEvaluation(_ evaluation: LectioResolutionEvaluation) {
-        selectedEvaluation = evaluation
-    }
-
+    func selectEvaluation(_ evaluation: LectioResolutionEvaluation) { selectedEvaluation = evaluation }
     func toggleAttentionPrompt(_ promptID: String) {
-        if checkedAttentionIDs.contains(promptID) {
-            checkedAttentionIDs.remove(promptID)
-        } else {
-            checkedAttentionIDs.insert(promptID)
-        }
+        if checkedAttentionIDs.contains(promptID) { checkedAttentionIDs.remove(promptID) } else { checkedAttentionIDs.insert(promptID) }
     }
-
-    func toggleConfessionNoteInput() {
-        isConfessionNoteExpanded.toggle()
-    }
-
+    func toggleConfessionNoteInput() { isConfessionNoteExpanded.toggle() }
     func selectVirtue(_ virtueID: String) {
         selectedVirtueID = virtueID
+        if explicitStep != nil { explicitStep = 5 }
     }
-
-    func concludeExamen() {
-        isExamenConcluded = true
-    }
+    func concludeExamen() { isExamenConcluded = true }
 
     func saveToPrivateJournal(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) {
         let targetEngine = overrideEngine ?? self.checkInEngine
@@ -137,11 +118,7 @@ final class NightlyExamenViewModel {
                 confessorOrPenanceNotes: penance,
                 destinationMode: .privateDiaryOnly
             )
-            do {
-                _ = try targetEngine.submitCheckIn(draft, at: Date())
-            } catch {
-                // Keep journal saved locally even if group validation fails
-            }
+            try? _ = targetEngine.submitCheckIn(draft, at: Date())
         }
         onSaveJournalReflection?(reflection)
         isSavedToLocalJournal = true
@@ -150,6 +127,7 @@ final class NightlyExamenViewModel {
     // MARK: - Subviews / Private Helpers
     private func composeExamenReflection() -> String {
         var parts: [String] = []
+        if let presence = selectedPresence { parts.append("Presença: \(presence.title)") }
         let gratitude = gratitudeJournalText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !gratitude.isEmpty {
             parts.append("Gratidão: \(gratitude)")
@@ -157,9 +135,7 @@ final class NightlyExamenViewModel {
             let names = gratitudeChips.filter { selectedGratitudeIDs.contains($0.id) }.map(\.title).joined(separator: ", ")
             parts.append("Gratidão: \(names)")
         }
-        if let evaluation = selectedEvaluation {
-            parts.append("Resolução do dia: \(evaluation.title)")
-        }
+        if let evaluation = selectedEvaluation { parts.append("Resolução: \(evaluation.title)") }
         if let virtue = virtueOptions.first(where: { $0.id == selectedVirtueID }) {
             parts.append("Virtude para amanhã: \(virtue.title)")
         }

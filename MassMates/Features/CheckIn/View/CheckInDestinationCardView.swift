@@ -32,67 +32,27 @@ struct CheckInDestinationCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                Text("DESTINO DA PUBLICAÇÃO")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .tracking(0.5)
-                if isLockedToPrivateDiary {
-                    lockedPrivateDestinationCard
-                } else {
-                    selectableDestinationContent
-                }
-            }
-            streakSoftConfirmationRow
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("ENVIAR PARA")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .tracking(0.5)
+
+            checklistContainer
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var streakSoftConfirmationRow: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            ZStack {
-                Circle().stroke(MassMatesPalette.line, lineWidth: 2.5)
-                Circle()
-                    .trim(from: 0, to: 0.85)
-                    .stroke(theme.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Text("\(activeStreakDays)d")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
+    private var checklistContainer: some View {
+        VStack(spacing: 0) {
+            if !isLockedToPrivateDiary {
+                ForEach(availableGroups) { group in
+                    groupRow(group)
+                    Divider().overlay(MassMatesPalette.line)
+                }
             }
-            .frame(width: 36, height: 36)
-            Text("Mais um dia em oração. Sua chama e regra de vida serão atualizadas sem expor detalhes deste sacramento.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+            privateDiaryRow
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-    }
-
-    private var lockedPrivateDestinationCard: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Image(systemName: "lock.fill")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 32, height: 32)
-                .background(MassMatesPalette.surface)
-                .clipShape(.circle)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Apenas no Meu Diário Espiritual (Privado)")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Grupos públicos desabilitados para esta prática.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
-            Image(systemName: "lock.fill")
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-        }
-        .padding(MassMatesSpacing.md)
         .background(MassMatesPalette.surfaceMuted)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(
@@ -101,58 +61,63 @@ struct CheckInDestinationCardView: View {
         )
     }
 
-    private var selectableDestinationContent: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                destinationModeButtons
-                if destinationMode == .selectedGroups {
-                    ForEach(availableGroups) { group in
-                        groupDestinationRow(group)
-                    }
-                }
-            }
-        }
-    }
-
-    private var destinationModeButtons: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            ForEach(CheckInDestinationMode.allCases) { mode in
-                let isSelected = destinationMode == mode
-                Button {
-                    onSelectMode(mode)
-                } label: {
-                    Label(mode.title, systemImage: mode.systemImage)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                        .padding(.horizontal, MassMatesSpacing.xs)
-                        .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
-                        .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private func groupDestinationRow(_ group: CommunityGroup) -> some View {
-        let isSelected = selectedGroupIds.contains(group.id)
+    private func groupRow(_ group: CommunityGroup) -> some View {
+        let isSelected = destinationMode == .selectedGroups && selectedGroupIds.contains(group.id)
         return Button {
             onToggleGroup(group.id)
         } label: {
             HStack {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
                 Text(group.name)
-                    .font(MassMatesFont.body)
+                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.body)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
-                Text(group.sharingRequirement.badgeText)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                selectionIndicator(isSelected: isSelected)
             }
-            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(height: 54)
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var privateDiaryRow: some View {
+        let isSelected = isLockedToPrivateDiary || destinationMode == .privateDiaryOnly
+        return Button {
+            onSelectMode(.privateDiaryOnly)
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "lock")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Text("Somente no meu Diário")
+                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.body)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Spacer()
+                selectionIndicator(isSelected: isSelected)
+            }
+            .padding(.horizontal, MassMatesSpacing.md)
+            .frame(height: 54)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private func selectionIndicator(isSelected: Bool) -> some View {
+        if isSelected {
+            Circle()
+                .fill(theme.tint)
+                .frame(width: 24, height: 24)
+                .overlay(
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(theme.onTint)
+                )
+        } else {
+            Circle()
+                .stroke(MassMatesPalette.line, lineWidth: 1.5)
+                .frame(width: 20, height: 20)
+        }
     }
 }
 

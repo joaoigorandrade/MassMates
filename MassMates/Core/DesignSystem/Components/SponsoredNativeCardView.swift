@@ -4,79 +4,75 @@ struct SponsoredNativeCardView: View {
     // MARK: - Dependencies & State
     private let sponsorName: String
     private let headline: String
-    private let bodyText: String
+    private let bodyText: String?
     private let couponCode: String?
+    private let action: (() -> Void)?
 
     // MARK: - Init
     init(
-        sponsorName: String = "Livraria Católica Vozes da Fé",
-        headline: String = "Leituras espirituais para o Tempo Comum",
-        bodyText: String = "Obras clássicas dos santos e subsídios litúrgicos selecionados para sua fraternidade.",
-        couponCode: String? = "MASSMATES10"
+        sponsorName: String = "Edições CNBB",
+        headline: String = "Edições CNBB — Bíblia Sagrada Edição Pastoral",
+        bodyText: String? = nil,
+        couponCode: String? = nil,
+        action: (() -> Void)? = nil
     ) {
         self.sponsorName = sponsorName
         self.headline = headline
         self.bodyText = bodyText
         self.couponCode = couponCode
+        self.action = action
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            sponsorBadgeRow
-            Text(headline)
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(bodyText)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let couponCode {
-                couponChip(code: couponCode)
+        Group {
+            if let action {
+                Button(action: action) {
+                    cardContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                cardContent
             }
         }
-        .padding(MassMatesSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay(cardBorder)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Patrocinado por \(sponsorName). \(headline). \(bodyText)")
+        .accessibilityLabel("Patrocinado: \(displayTitle)")
     }
 
     // MARK: - Subviews / Private Helpers
-    private var sponsorBadgeRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Text("Patrocinado")
-                .font(MassMatesFont.caption)
-                .tracking(0.48)
-                .foregroundStyle(MassMatesPalette.sponsored)
-            Text("•")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-            Text(sponsorName)
-                .font(MassMatesFont.caption)
+    private var cardContent: some View {
+        HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("PATROCINADO")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.6)
+                    .foregroundStyle(MassMatesPalette.sponsored)
+                Text(displayTitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: MassMatesSpacing.xs)
+            Image(systemName: "arrow.up.right")
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(cardBorder)
     }
 
-    private func couponChip(code: String) -> some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
-            Image(systemName: "bookmark")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(code.contains(" ") ? code : "Cupom: \(code)")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+    private var displayTitle: String {
+        if headline.isEmpty {
+            return sponsorName
         }
-        .padding(.horizontal, MassMatesSpacing.sm)
-        .padding(.vertical, MassMatesSpacing.xxs)
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.chip)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+        if headline.localizedCaseInsensitiveContains(sponsorName) {
+            return headline
+        }
+        return "\(sponsorName) — \(headline)"
     }
 
     private var cardBorder: some View {

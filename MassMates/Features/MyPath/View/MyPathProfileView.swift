@@ -21,7 +21,7 @@ struct MyPathProfileView: View {
     // MARK: - Body / Public API
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
                 MyPathIdentityAndMetricsSectionView(
                     activeStreakDays: viewModel.milestones.activeStreakDays,
                     onOpenSettings: triggerOpenSettings
@@ -34,9 +34,7 @@ struct MyPathProfileView: View {
                     onClaimStreakMercy: { _ = viewModel.claimStreakMercy() }
                 )
                 MyPathRuleOfLifeDistributionCardView()
-                milestonesCard
-                saintIconsCard
-                widgetAndQuickShortcutsCard
+                milestonesSection
                 MyPathDiaryPreviewAndPrivacySectionView(
                     onOpenDiary: triggerOpenDiary,
                     onOpenSettings: triggerOpenSettings
@@ -62,79 +60,31 @@ struct MyPathProfileView: View {
         }
     }
 
-    private var milestonesCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Marcos Espirituais")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                HStack(spacing: MassMatesSpacing.sm) {
-                    milestoneStat(value: "\(viewModel.milestones.rosariesPrayed)", label: "Terços")
-                    milestoneStat(value: "\(viewModel.milestones.massesAttended)", label: "Missas")
-                    milestoneStat(value: "\(viewModel.milestones.mentalPrayerHours)h", label: "Oração Mental")
-                }
+    private var milestonesSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            Text("MARCOS")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .tracking(0.5)
+            HStack(spacing: MassMatesSpacing.md) {
+                milestoneStat(value: "\(viewModel.milestones.rosariesPrayed)", label: "terços")
+                milestoneStat(value: "\(viewModel.milestones.massesAttended)", label: "missas")
+                milestoneStat(value: "\(viewModel.milestones.mentalPrayerHours)h", label: "oração")
             }
         }
+        .padding(.horizontal, 2)
     }
 
     private func milestoneStat(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(value).font(MassMatesFont.numeral).foregroundStyle(theme.tint)
-            Text(label).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            Text(value)
+                .font(MassMatesFont.numeral)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text(label)
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-    }
-
-    private var saintIconsCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Ícones de Santos Padroeiros")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                ForEach(SaintAppIconOption.allCases) { icon in
-                    saintIconRow(icon)
-                }
-            }
-        }
-    }
-
-    private func saintIconRow(_ icon: SaintAppIconOption) -> some View {
-        let isUnlocked = viewModel.milestones.unlockedSaintIcons.contains(icon)
-        let isActive = viewModel.milestones.activeAppIcon == icon
-        return Button { viewModel.unlockOrSelectSaintIcon(icon) } label: {
-            HStack(spacing: MassMatesSpacing.sm) {
-                Image(systemName: icon.systemImage)
-                    .foregroundStyle(isActive ? theme.tint : MassMatesPalette.textSecondary)
-                Text(icon.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Text(isActive ? "Ativo" : (isUnlocked ? "Usar" : "Vídeo de Apoio"))
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(isActive ? theme.tint : MassMatesPalette.textSecondary)
-            }
-            .frame(minHeight: MassMatesLayout.minTapTarget)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var widgetAndQuickShortcutsCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Widgets e Atalhos Rápidos (Tela Inicial / Bloqueio)")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                MassMatesProgressBar(progress: viewModel.widgetSnapshot.progressRatio)
-                HStack(spacing: MassMatesSpacing.xs) {
-                    ForEach(viewModel.widgetSnapshot.quickPractices) { practice in
-                        MassMatesSecondaryButton(title: practice.title, systemImage: practice.systemImage) {
-                            viewModel.triggerQuickWidgetCheckIn(practice)
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private func triggerOpenDiary() {

@@ -15,8 +15,8 @@ enum PrayerTimerMode: String, CaseIterable, Identifiable, Sendable, Equatable, H
 
     var pillLabel: String {
         switch self {
-        case .mentalPrayer: "Oração Mental"
-        case .rosary: "Santo Terço Guiado"
+        case .mentalPrayer: "Silêncio"
+        case .rosary: "Terço"
         }
     }
 

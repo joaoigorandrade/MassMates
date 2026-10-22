@@ -15,131 +15,126 @@ struct CreateJoinGroupModalView: View {
     // MARK: - Body / Public API
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                dragHandle
-                modalHeader
-                segmentedTabSelector
-                seasonalCapacityPill
+            VStack(alignment: .leading, spacing: 0) {
+                grabberBar
+                headerCloseRow
+                segmentedControl
+                headerTitleSection
                 if let error = viewModel.errorMessage {
                     errorBanner(message: error)
                 }
-                activeTabBody
-                sacredQuoteFootnote
+                activeContent
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.vertical, MassMatesSpacing.md)
+            .padding(.bottom, MassMatesSpacing.xl)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    private var dragHandle: some View {
+    private var grabberBar: some View {
         HStack {
             Spacer()
             Capsule()
                 .fill(MassMatesPalette.line)
-                .frame(width: 40, height: 4)
+                .frame(width: 36, height: 4)
             Spacer()
         }
+        .padding(.top, MassMatesSpacing.sm)
+        .padding(.bottom, MassMatesSpacing.xs)
     }
 
-    private var modalHeader: some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.md) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: "hands.sparkles.fill")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                    Text("COMUNHÃO ESPIRITUAL")
-                        .font(MassMatesFont.caption)
-                        .tracking(0.6)
-                        .foregroundStyle(theme.tint)
-                }
-                Text("Comunhão Fraterna")
-                    .font(MassMatesFont.display)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Caminhe junto em oração diária, terço em comum ou propósitos sazonais com seus irmãos.")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer(minLength: 0)
+    private var headerCloseRow: some View {
+        HStack {
+            Spacer()
             Button {
                 navigator?.dismiss()
             } label: {
                 Image(systemName: "xmark")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 32, height: 32)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
         }
+        .padding(.bottom, MassMatesSpacing.xs)
     }
 
-    private var segmentedTabSelector: some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
-            tabButton(for: .joinByCode, icon: "key.fill")
-            tabButton(for: .createNew, icon: "plus.circle.fill")
+    private var segmentedControl: some View {
+        HStack {
+            Spacer()
+            HStack(spacing: 0) {
+                segmentButton(title: "Entrar", tab: .joinByCode)
+                segmentButton(title: "Criar", tab: .createNew)
+            }
+            .padding(MassMatesSpacing.xxs)
+            .frame(maxWidth: 280)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(Capsule())
+            Spacer()
         }
-        .padding(MassMatesSpacing.xxs)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .padding(.bottom, MassMatesSpacing.lg)
     }
 
-    private func tabButton(for tab: CreateJoinGroupTab, icon: String) -> some View {
+    private func segmentButton(title: String, tab: CreateJoinGroupTab) -> some View {
         let isSelected = viewModel.selectedTab == tab
         return Button {
-            viewModel.selectedTab = tab
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewModel.selectedTab = tab
+            }
         } label: {
-            Label(tab.title, systemImage: icon)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+            Text(title)
+                .font(MassMatesFont.callout.weight(isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
                 .background(isSelected ? MassMatesPalette.surface : Color.clear)
-                .clipShape(.rect(cornerRadius: MassMatesSpacing.xs))
+                .clipShape(Capsule())
+                .shadow(color: isSelected ? Color.black.opacity(0.04) : Color.clear, radius: 2, y: 1)
         }
         .buttonStyle(.plain)
     }
 
-    private var seasonalCapacityPill: some View {
-        HStack {
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "person.2.fill")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                Text("Você possui **\(viewModel.slotCapacity.personalGroupCount) de \(viewModel.slotCapacity.maxAllowedPersonalGroups)** fraternidades ativas")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-            }
-            Spacer()
-            Text(theme.season.defaultSeasonName)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint.opacity(0.85))
+    private var headerTitleSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(viewModel.selectedTab == .createNew ? "Criar Fraternidade" : "Entrar na Fraternidade")
+                .font(MassMatesFont.customScripture(size: 26, italic: false).weight(.semibold))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text(viewModel.selectedTab == .createNew ? "Um espaço de oração e perseverança mútua" : "Insira a chave recebida de um irmão")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(.horizontal, MassMatesSpacing.sm)
-        .padding(.vertical, MassMatesSpacing.xs)
-        .background(theme.tintSoft)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .padding(.bottom, MassMatesSpacing.lg)
     }
 
     private func errorBanner(message: String) -> some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                Text(message)
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.danger)
-                if !viewModel.slotCapacity.hasRewardedSlotUnlocked {
-                    MassMatesSecondaryButton(title: "Liberar +1 vaga por 30 dias", systemImage: "play.rectangle") {
-                        viewModel.unlockRewardedSlot()
-                    }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(message)
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.danger)
+            if !viewModel.slotCapacity.hasRewardedSlotUnlocked {
+                Button {
+                    viewModel.unlockRewardedSlot()
+                } label: {
+                    Text("Liberar +1 vaga por 30 dias")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(theme.tint)
                 }
+                .buttonStyle(.plain)
             }
         }
+        .padding(MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MassMatesPalette.surfaceMuted)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .padding(.bottom, MassMatesSpacing.md)
     }
 
     @ViewBuilder
-    private var activeTabBody: some View {
+    private var activeContent: some View {
         if viewModel.selectedTab == .joinByCode {
             JoinGroupByCodeTabView(viewModel: viewModel) {
                 navigator?.dismiss()
@@ -149,21 +144,6 @@ struct CreateJoinGroupModalView: View {
                 navigator?.dismiss()
             }
         }
-    }
-
-    private var sacredQuoteFootnote: some View {
-        VStack(spacing: MassMatesSpacing.xxs) {
-            Text("“Onde dois ou três estiverem reunidos em meu nome, ali estou eu no meio deles.”")
-                .font(MassMatesFont.customScripture(size: 14, italic: true))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .multilineTextAlignment(.center)
-            Text("SÃO MATEUS 18, 20")
-                .font(MassMatesFont.caption)
-                .tracking(0.6)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, MassMatesSpacing.xs)
     }
 }
 

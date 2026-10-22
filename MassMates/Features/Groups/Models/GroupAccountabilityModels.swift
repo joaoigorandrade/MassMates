@@ -13,7 +13,7 @@ enum GroupDetailSubTab: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .feed: "Feed"
         case .progress: "Progresso"
         case .intentions: "Intenções"
-        case .chat: "Chat Fraterno"
+        case .chat: "Chat"
         }
     }
 

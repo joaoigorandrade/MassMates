@@ -31,28 +31,19 @@ struct TodayDashboardView: View {
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: viewModel.currentTheme.season)
         .task {
-            if case .idle = viewModel.viewState {
-                viewModel.loadDashboard()
-            }
+            if case .idle = viewModel.viewState { viewModel.loadDashboard() }
         }
     }
 
     // MARK: - Subviews / Private Helpers
     private var loadingContent: some View {
-        VStack {
-            ProgressView().tint(viewModel.currentTheme.tint)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ProgressView().tint(viewModel.currentTheme.tint).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var errorContent: some View {
         VStack(spacing: MassMatesSpacing.md) {
-            Text("Recomece hoje, com leveza.")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            MassMatesSecondaryButton(title: "Atualizar") {
-                viewModel.loadDashboard()
-            }
+            Text("Recomece hoje, com leveza.").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+            MassMatesSecondaryButton(title: "Atualizar") { viewModel.loadDashboard() }
         }
         .padding(MassMatesLayout.screenMargin)
     }
@@ -61,7 +52,7 @@ struct TodayDashboardView: View {
         VStack(spacing: 0) {
             topAppBar(data: data)
             ScrollView {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+                VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
                     TodayHeaderView(
                         seasonTitle: data.activeSeasonTitle,
                         saintOrFeast: data.liturgicalDay.saintOrFeast,
@@ -75,6 +66,8 @@ struct TodayDashboardView: View {
                     )
                     mainSectionsStack(data)
                 }
+                .padding(.top, MassMatesSpacing.md)
+                .padding(.bottom, MassMatesSpacing.xxl)
             }
         }
     }
@@ -88,47 +81,56 @@ struct TodayDashboardView: View {
             )
             DevotionalQuickCardsView(
                 reading: data.liturgicalDay.reading,
-                onOpenGospel: {
-                    navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor))
-                },
-                onOpenTimer: { mode in
-                    navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor))
-                }
+                onOpenGospel: { navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor)) },
+                onOpenTimer: { mode in navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor)) }
             )
             editorialReflectionCard
             SponsoredNativeCardView(
                 sponsorName: "Edições CNBB",
-                headline: "Edições CNBB — Bíblia Sagrada Edição Pastoral",
-                bodyText: "Apoio à evangelização e oração diária com notas explicativas e mapas litúrgicos.",
-                couponCode: "Frete fraterno disponível • Conhecer"
+                headline: "Edições CNBB — Bíblia Sagrada Edição Pastoral"
             )
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.bottom, MassMatesSpacing.xxl)
     }
 
     private func topAppBar(data: TodayDashboardData) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Image(systemName: "cross.circle.fill")
-                .font(MassMatesFont.title)
-                .foregroundStyle(viewModel.currentTheme.tint)
-            Text("MassMates").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-            seasonSelectorMenu(activeTitle: data.activeSeasonTitle)
+        HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
+            seasonAndDateColumn(data: data)
             Spacer()
+            streakAndProfileRow(data: data)
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.vertical, MassMatesSpacing.sm)
+        .background(MassMatesPalette.bg)
+        .overlay(alignment: .bottom) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
+    }
+
+    private func seasonAndDateColumn(data: TodayDashboardData) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            seasonSelectorMenu(activeTitle: data.activeSeasonTitle)
+            Text(data.liturgicalDay.weekdayAndWeekLabel)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func streakAndProfileRow(data: TodayDashboardData) -> some View {
+        HStack(spacing: MassMatesSpacing.sm) {
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill").font(.system(size: 15)).foregroundStyle(viewModel.currentTheme.tint)
+                Text("\(data.progress.activeStreakDays)").font(.system(size: 14, weight: .semibold)).foregroundStyle(MassMatesPalette.textPrimary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(data.progress.activeStreakDays) dias em oração")
             Button {
                 navigator?.present(.onboarding(season: data.activeSeasonColor))
             } label: {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Image(systemName: "person.crop.circle.fill").font(.system(size: 26)).foregroundStyle(MassMatesPalette.textSecondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Perfil e configurações")
         }
-        .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.vertical, MassMatesSpacing.sm)
-        .background(MassMatesPalette.surface)
-        .overlay(alignment: .bottom) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
     }
 
     private func seasonSelectorMenu(activeTitle: String) -> some View {
@@ -137,32 +139,22 @@ struct TodayDashboardView: View {
                 Button(season.defaultSeasonName) { viewModel.selectSeasonColor(season) }
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Circle().fill(viewModel.currentTheme.tint).frame(width: 6, height: 6)
-                Text(activeTitle.uppercased()).font(MassMatesFont.caption).lineLimit(1)
+                Text(activeTitle.uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.6).foregroundStyle(MassMatesPalette.textSecondary)
             }
-            .foregroundStyle(viewModel.currentTheme.tint)
-            .padding(.horizontal, MassMatesSpacing.xs)
-            .padding(.vertical, 4)
-            .background(viewModel.currentTheme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
     }
 
     private var editorialReflectionCard: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("REFLEXÃO DO DIA").font(MassMatesFont.caption).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
+            Text("REFLEXÃO DO DIA").font(.system(size: 11, weight: .semibold)).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
             Text("“Não percas de vista teu ponto de partida; conserva o que tens, faze o que fazes.”")
-                .font(MassMatesFont.scripture)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .font(MassMatesFont.scripture).foregroundStyle(MassMatesPalette.textPrimary).fixedSize(horizontal: false, vertical: true)
             Text("— Carta de Santa Clara a Santa Inês").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(MassMatesSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-        .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1) }
+        .padding(.top, MassMatesSpacing.sm).frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .top) { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
     }
 }
 

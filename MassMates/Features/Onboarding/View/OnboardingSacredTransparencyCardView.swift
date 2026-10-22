@@ -12,8 +12,8 @@ struct OnboardingSacredTransparencyCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            transparencyCard
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            transparencyHairlineCard
             if viewModel.currentStep == .privacyAndAdConsent {
                 deferredAdConsentCard
             }
@@ -22,30 +22,35 @@ struct OnboardingSacredTransparencyCardView: View {
     }
 
     // MARK: - Subviews / Private Helpers
-    private var transparencyCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                transparencyHeader
-                biometryToggleRow
-                localDiaryAcknowledgeRow
-            }
+    private var transparencyHairlineCard: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            transparencyHeader
+            hairlineSeparator
+            biometryToggleRow
+            hairlineSeparator
+            localDiaryAcknowledgeRow
         }
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        )
     }
 
     private var transparencyHeader: some View {
         HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-            Image(systemName: "checkmark.shield.fill")
+            Image(systemName: "lock.fill")
                 .font(MassMatesFont.headline)
-                .foregroundStyle(theme.tint)
-                .frame(width: 40, height: 40)
-                .background(theme.tintSoft)
-                .clipShape(Circle())
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 24, height: 24)
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
                 Text("Transparência & Sigilo Sagrado")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("O MassMates é 100% gratuito sustentado por anúncios éticos e discretos. Suas orações pessoais, exame de consciência e registros de Confissão NUNCA saem do seu aparelho nem são usados para direcionar publicidade.")
-                    .font(MassMatesFont.callout)
+                Text("Suas orações, exame de consciência e Confissão nunca saem do seu aparelho nem são rastreados.")
+                    .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
@@ -58,8 +63,8 @@ struct OnboardingSacredTransparencyCardView: View {
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                 Text("Proteger Diário Espiritual com Face ID")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
         .tint(theme.tint)
@@ -67,7 +72,7 @@ struct OnboardingSacredTransparencyCardView: View {
 
     private var localDiaryAcknowledgeRow: some View {
         Toggle(isOn: $viewModel.acknowledgedLocalDiaryWarning) {
-            Text("Confirmo ciência do armazenamento local exclusivo do Diário e Confissão neste aparelho")
+            Text("Confirmo armazenamento local exclusivo do Diário e Confissão")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
@@ -75,35 +80,61 @@ struct OnboardingSacredTransparencyCardView: View {
     }
 
     private var deferredAdConsentCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Preferência de Anúncios Éticos")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Telas sagradas (Evangelho, Terço, Timer e Confissão) nunca exibem anúncios. Escolha como apoiar gratuitamente a comunidade:")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesSecondaryButton(title: "Apenas Anúncios Contextuais • Concluir") {
-                    viewModel.completeOnboardingWithConsent(allowPersonalizedAds: false)
-                }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            Text("Preferência de Anúncios Éticos")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Telas sagradas nunca exibem anúncios. O MassMates é gratuito e mantido com patrocínio discreto.")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            MassMatesSecondaryButton(title: "Apenas Anúncios Contextuais • Concluir") {
+                viewModel.completeOnboardingWithConsent(allowPersonalizedAds: false)
             }
         }
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        )
     }
 
     private var primaryActionSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(
-                title: "Consagrar Regra e Concluir",
+                title: continueButtonTitle,
                 systemImage: "arrow.right",
-                action: handleConsecrateTap
+                action: handleContinueTap
             )
-            Text("Você pode ajustar seus compromissos e notificações a qualquer instante.")
+            Text("Você poderá personalizar cada momento livremente mais tarde.")
                 .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .foregroundStyle(MassMatesPalette.textTertiary)
                 .multilineTextAlignment(.center)
             if viewModel.isConsecrationToastVisible {
                 consecrationToastBanner
             }
+        }
+        .padding(.top, MassMatesSpacing.xs)
+    }
+
+    private var hairlineSeparator: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+    }
+
+    private var continueButtonTitle: String {
+        viewModel.currentStep == .privacyAndAdConsent
+            ? "Consagrar Regra e Concluir"
+            : "Continuar"
+    }
+
+    private func handleContinueTap() {
+        if viewModel.currentStep == .privacyAndAdConsent {
+            viewModel.completeOnboardingWithConsent(allowPersonalizedAds: true)
+        } else {
+            viewModel.proceedToPrivacyConsent()
         }
     }
 
@@ -125,14 +156,6 @@ struct OnboardingSacredTransparencyCardView: View {
         .padding(MassMatesSpacing.md)
         .background(MassMatesPalette.textPrimary)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-    }
-
-    private func handleConsecrateTap() {
-        if viewModel.currentStep == .privacyAndAdConsent {
-            viewModel.completeOnboardingWithConsent(allowPersonalizedAds: true)
-        } else {
-            viewModel.proceedToPrivacyConsent()
-        }
     }
 }
 

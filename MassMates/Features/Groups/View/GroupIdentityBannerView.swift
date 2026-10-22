@@ -4,99 +4,82 @@ struct GroupIdentityBannerView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let group: CommunityGroup
-    private let inviteCode: String
+    private let scoringMode: GroupScoringMode
     private let selectedSubTab: GroupDetailSubTab
     private let onSelectSubTab: (GroupDetailSubTab) -> Void
-    private let onToggleModeration: () -> Void
 
     // MARK: - Init
     init(
         group: CommunityGroup,
-        inviteCode: String,
+        scoringMode: GroupScoringMode,
         selectedSubTab: GroupDetailSubTab,
-        onSelectSubTab: @escaping (GroupDetailSubTab) -> Void,
-        onToggleModeration: @escaping () -> Void
+        onSelectSubTab: @escaping (GroupDetailSubTab) -> Void
     ) {
         self.group = group
-        self.inviteCode = inviteCode
+        self.scoringMode = scoringMode
         self.selectedSubTab = selectedSubTab
         self.onSelectSubTab = onSelectSubTab
-        self.onToggleModeration = onToggleModeration
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            metadataRow
-            Text(group.name)
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("Homens e Mulheres de Oração reunidos no silêncio diário")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            headerSection
             subTabsBar
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var metadataRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            metadataPill {
-                Circle().fill(theme.tint).frame(width: 6, height: 6)
-                Text(group.type.title)
-            }
-            metadataPill {
-                Image(systemName: "person.2")
-                Text("\(group.memberCount) membros")
-            }
-            Spacer(minLength: 0)
-            Menu {
-                Text("Convite: \(inviteCode)")
-                Button("Moderação & Segurança", systemImage: "shield.lefthalf.filled", action: onToggleModeration)
-            } label: {
-                Image(systemName: "ellipsis")
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-            }
-            .accessibilityLabel("Mais opções do grupo")
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(group.name)
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("\(group.memberCount) membros · \(scoringBadgeText)")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
     }
 
-    private func metadataPill<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        HStack(spacing: MassMatesSpacing.xxs) { content() }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            .padding(.horizontal, MassMatesSpacing.sm)
-            .padding(.vertical, MassMatesSpacing.xxs)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+    private var scoringBadgeText: String {
+        switch scoringMode {
+        case .faithfulDays: "Dias Fiéis"
+        case .collectiveTreasure: "Tesouro Coletivo"
+        case .customPoints: "Pontos por Prática"
+        }
     }
 
     private var subTabsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: MassMatesSpacing.xs) {
-                ForEach(GroupDetailSubTab.allCases) { tab in subTabCapsule(tab) }
+            HStack(spacing: MassMatesSpacing.lg) {
+                ForEach(GroupDetailSubTab.allCases) { tab in
+                    tabButton(tab)
+                }
             }
-            .padding(.vertical, MassMatesSpacing.xxs)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
         }
     }
 
-    private func subTabCapsule(_ tab: GroupDetailSubTab) -> some View {
+    private func tabButton(_ tab: GroupDetailSubTab) -> some View {
         let isSelected = selectedSubTab == tab
-        return Button { onSelectSubTab(tab) } label: {
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: tab.systemImage)
-                Text(tab.title)
-                if tab == .intentions {
-                    Circle().fill(MassMatesPalette.warning).frame(width: 6, height: 6)
-                }
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) {
+                onSelectSubTab(tab)
             }
-            .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
-            .foregroundStyle(isSelected ? MassMatesPalette.surface : MassMatesPalette.textSecondary)
-            .padding(.horizontal, MassMatesSpacing.md)
-            .frame(minHeight: 40)
-            .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+        } label: {
+            VStack(spacing: MassMatesSpacing.xs) {
+                Text(tab.title)
+                    .font(isSelected ? MassMatesFont.headline : MassMatesFont.callout)
+                    .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
+                Rectangle()
+                    .fill(isSelected ? theme.tint : Color.clear)
+                    .frame(height: 2)
+                    .clipShape(Capsule())
+            }
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -107,10 +90,9 @@ struct GroupIdentityBannerView: View {
     LiturgicalSeasonPreviewMatrix { _ in
         GroupIdentityBannerView(
             group: CommunitySampleData.parishFraternity,
-            inviteCode: "482913",
+            scoringMode: .faithfulDays,
             selectedSubTab: .progress,
-            onSelectSubTab: { _ in },
-            onToggleModeration: {}
+            onSelectSubTab: { _ in }
         )
         .padding()
     }

@@ -9,167 +9,152 @@ struct HolyMassWordRitesView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            firstReadingCard
-            responsorialPsalmCard
-            secondReadingCard
-            holyGospelCard
-            creedCard
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            firstReadingSection
+            hairlineDivider
+            psalmSection
+            hairlineDivider
+            secondReadingSection
+            hairlineDivider
+            holyGospelSection
+            hairlineDivider
+            creedSection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var firstReadingCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Primeira Leitura")
-                    Spacer()
-                    Label("Sentados", systemImage: "chair.lounge")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .padding(.horizontal, MassMatesSpacing.xs)
-                        .padding(.vertical, 2)
-                        .background(MassMatesPalette.surfaceMuted)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                }
-                Label("Sabedoria 7, 7-11", systemImage: "bookmark.fill")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(theme.tint)
-                Text("«Supliquei e foi-me dada a prudência; invoquei a Deus e veio a mim o espírito da sabedoria. Preferi a sabedoria aos cetros e tronos e tive as riquezas em nada comparadas a ela...»")
-                    .font(MassMatesFont.scripture)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                acclamationFooterRow(lead: "Palavra do Senhor.", response: "Todos: Graças a Deus.")
-            }
-        }
-    }
-
-    private var responsorialPsalmCard: some View {
+    private var firstReadingSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Label("Salmo Responsorial 89 (90)", systemImage: "music.note")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Text("Meditação").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            }
+            sectionHeader(title: "Primeira Leitura", citation: "Sabedoria 7, 7-11", posture: .seated)
+            Text("«Supliquei e foi-me dada a prudência; invoquei a Deus e veio a mim o espírito da sabedoria. Preferi a sabedoria aos cetros e tronos e tive as riquezas em nada comparadas a ela...»")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+            acclamationBlock(lead: "Palavra do Senhor.", response: "Graças a Deus.")
+        }
+    }
+
+    private var psalmSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            Text("Salmo Responsorial 89 (90)")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("RESPOSTA DE TODOS").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                Text("«Saciai-nos, ó Senhor, com vossa graça, e exultaremos de alegria!»")
-                    .font(MassMatesFont.scriptureEmphasis)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            .padding(MassMatesSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            Text("«Ensinai-nos a contar os nossos dias, para que alcancemos um coração sábio. Voltai-vos, Senhor! Até quando? Tende piedade de vossos servos!»")
-                .font(MassMatesFont.customScripture(size: 15, italic: true))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-        .padding(MassMatesSpacing.md)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-    }
-
-    private var secondReadingCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Segunda Leitura")
-                    Spacer()
-                    Text("Hebreus 4, 12-13").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                Text("«A Palavra de Deus é viva, eficaz e mais cortante do que qualquer espada de dois gumes... Nenhuma criatura fica oculta aos olhos de Deus; tudo está descoberto perante Ele.»")
-                    .font(MassMatesFont.scripture)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                acclamationFooterRow(lead: "Palavra do Senhor.", response: "Todos: Graças a Deus.")
-            }
-        }
-    }
-
-    private var holyGospelCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                gospelHeaderAndAcclamation
-                ForEach(HolyMassRitesCatalog.gospelDialogueTurns) { turn in
-                    acclamationFooterRow(lead: turn.speaker, response: turn.text, isAssembly: turn.isAssembly)
-                }
-                gospelBodyBox
-                acclamationFooterRow(lead: "Palavra da Salvação.", response: "Todos: Glória a vós, Senhor.")
-            }
-        }
-    }
-
-    private var gospelHeaderAndAcclamation: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            HStack {
-                cardTitleBar("Santo Evangelho")
-                Spacer()
-                Label("De pé", systemImage: "figure.stand")
+                Text("RESPOSTA DE TODOS")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                    .padding(.horizontal, MassMatesSpacing.xs)
-                    .padding(.vertical, 2)
-                    .background(theme.tintSoft)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                    .tracking(0.5)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                Text("«Saciai-nos, ó Senhor, com vossa graça, e exultaremos de alegria!»")
+                    .font(Font.system(size: 19, weight: .semibold, design: .serif))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineSpacing(6)
             }
-            HStack {
-                Text("Aclamação:").font(MassMatesFont.callout).foregroundStyle(theme.tint)
-                Spacer()
-                Text("«Aleluia, Aleluia, Aleluia!»").font(MassMatesFont.scriptureEmphasis).foregroundStyle(theme.tint)
-            }
-            .padding(MassMatesSpacing.xs)
-            .background(theme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            Text("«Ensinai-nos a contar os nossos dias, para que alcancemos um coração sábio. Voltai-vos, Senhor! Até quando? Tende piedade de vossos servos!»")
+                .font(MassMatesFont.customScripture(size: 17, italic: true))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineSpacing(5)
         }
     }
 
-    private var gospelBodyBox: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            Text("SÃO MARCOS 10, 17-30")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+    private var secondReadingSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            sectionHeader(title: "Segunda Leitura", citation: "Hebreus 4, 12-13")
+            Text("«A Palavra de Deus é viva, eficaz e mais cortante do que qualquer espada de dois gumes... Nenhuma criatura fica oculta aos olhos de Deus; tudo está descoberto perante Ele.»")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+            acclamationBlock(lead: "Palavra do Senhor.", response: "Graças a Deus.")
+        }
+    }
+
+    private var holyGospelSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            sectionHeader(title: "Santo Evangelho", citation: "São Marcos 10, 17-30", posture: .standing)
+            acclamationAlleluia
+            ForEach(HolyMassRitesCatalog.gospelDialogueTurns) { turn in
+                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
+            }
             Text("«Naquele tempo, Jesus se pôs a caminho, quando um homem correu ao seu encontro, ajoelhou-se e perguntou: “Bom Mestre, que devo fazer para ganhar a vida eterna?” Jesus respondeu: “Por que me chamas de bom? Só Deus é bom... Só te falta uma coisa: vai, vende tudo o que tens e dá aos pobres, e terás um tesouro no céu. Depois, vem e segue-me!”»")
                 .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+            acclamationBlock(lead: "Palavra da Salvação.", response: "Glória a vós, Senhor.")
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
     }
 
-    private var creedCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack {
-                    Text("Profissão de Fé (Credo)").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text("Símbolo dos Apóstolos").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                Text("«Creio em Deus Pai todo-poderoso, Criador do céu e da terra. E em Jesus Cristo, seu único Filho, nosso Senhor, que foi concebido pelo poder do Espírito Santo, nasceu da Virgem Maria... Ressuscitou ao terceiro dia; subiu aos céus; está sentado à direita de Deus Pai todo-poderoso...»")
-                    .font(MassMatesFont.scriptureEmphasis)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+    private var acclamationAlleluia: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("ACLAMAÇÃO AO EVANGELHO")
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text("«Aleluia, Aleluia, Aleluia!»")
+                .font(Font.system(size: 19, weight: .semibold, design: .serif))
+                .foregroundStyle(theme.tint)
+        }
+    }
+
+    private var creedSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            sectionHeader(title: "Profissão de Fé (Credo)", citation: "Símbolo dos Apóstolos")
+            Text("«Creio em Deus Pai todo-poderoso, Criador do céu e da terra. E em Jesus Cristo, seu único Filho, nosso Senhor, que foi concebido pelo poder do Espírito Santo, nasceu da Virgem Maria... Ressuscitou ao terceiro dia; subiu aos céus; está sentado à direita de Deus Pai todo-poderoso...»")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+        }
+    }
+
+    private func acclamationBlock(lead: String, response: String) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(lead)
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text(response)
+                .font(Font.system(size: 17, weight: .semibold, design: .serif))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+    }
+
+    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text(text)
+                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+    }
+
+    private func sectionHeader(title: String, citation: String? = nil, posture: LiturgicalPosture? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            if let citation {
+                Text(citation)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            Spacer()
+            if let posture {
+                Label(posture.rawValue, systemImage: posture.systemImage)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.horizontal, MassMatesSpacing.xs)
+                    .padding(.vertical, 2)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             }
         }
     }
 
-    private func acclamationFooterRow(lead: String, response: String, isAssembly: Bool = false) -> some View {
-        HStack {
-            Text(lead).font(MassMatesFont.callout).foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textSecondary)
-            Spacer()
-            Text(response).font(MassMatesFont.callout).foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.xs)
-        .background(isAssembly ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private func cardTitleBar(_ title: String) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            RoundedRectangle(cornerRadius: 3).fill(theme.tint).frame(width: 6, height: 16)
-            Text(title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-        }
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+            .padding(.vertical, MassMatesSpacing.xs)
     }
 }
 

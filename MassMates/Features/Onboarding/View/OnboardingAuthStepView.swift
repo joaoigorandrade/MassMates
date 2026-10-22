@@ -4,6 +4,7 @@ struct OnboardingAuthStepView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: OnboardingViewModel
+    @State private var isEmailExpanded: Bool = false
 
     // MARK: - Init
     init(viewModel: OnboardingViewModel) {
@@ -12,17 +13,19 @@ struct OnboardingAuthStepView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.md) {
+        VStack(spacing: MassMatesSpacing.lg) {
             topNavigationBar
-            seasonIndicator
-            welcomeEmblemHeader
-            socialProvidersSection
-            insetEmailDivider
-            OnboardingEmailAuthFormView(viewModel: viewModel)
+            headerSection
+            if let error = viewModel.errorMessage {
+                errorMessageView(error)
+            }
+            actionsSection
             OnboardingAuthTrustCardsView {
                 viewModel.signIn(with: .apple)
             }
         }
+        .frame(maxWidth: .infinity)
+        .background(MassMatesPalette.bg)
     }
 
     // MARK: - Subviews / Private Helpers
@@ -32,118 +35,110 @@ struct OnboardingAuthStepView: View {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
-            Spacer()
-            HStack(spacing: MassMatesSpacing.xs) {
-                Image(systemName: "church.fill")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
-                Text("MassMates")
-                    .font(MassMatesFont.display)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Spacer()
-            Image(systemName: "person.fill")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.onTint)
-                .frame(width: 32, height: 32)
-                .background(theme.tint)
-                .clipShape(Circle())
-        }
-    }
-
-    private var seasonIndicator: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Circle()
-                .fill(theme.tint)
-                .frame(width: 6, height: 6)
-            Text("TEMPO COMUM • SEMANA V")
-                .font(MassMatesFont.caption)
-                .tracking(1.0)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var welcomeEmblemHeader: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            emblemCircleBadge
-            Text("Bem-vindo ao MassMates")
-                .font(MassMatesFont.display)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .multilineTextAlignment(.center)
-            Text("Acesse sua Regra de Vida, fraternidades e mantenha seu ritmo espiritual diário com serenidade.")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private var emblemCircleBadge: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ZStack {
-                Circle()
-                    .fill(theme.tintSoft)
-                    .frame(width: 64, height: 64)
-                Circle()
-                    .fill(MassMatesPalette.surface)
-                    .frame(width: 48, height: 48)
-                Image(systemName: "sparkles")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(theme.tint)
-            }
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(width: 24, height: 24)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(Circle())
-        }
-    }
-
-    private var socialProvidersSection: some View {
-        VStack(spacing: MassMatesSpacing.sm) {
-            Button {
-                viewModel.signIn(with: .apple)
-            } label: {
-                Label("Continuar com a Apple", systemImage: "apple.logo")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.bg)
-                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
-                    .background(MassMatesPalette.textPrimary)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                viewModel.signIn(with: .google)
-            } label: {
-                Label("Continuar com o Google", systemImage: "globe")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
-                    .background(MassMatesPalette.surface)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MassMatesRadius.button)
-                            .stroke(MassMatesPalette.line, lineWidth: 1)
+                    .frame(
+                        width: MassMatesLayout.minTapTarget,
+                        height: MassMatesLayout.minTapTarget,
+                        alignment: .leading
                     )
             }
             .buttonStyle(.plain)
+            Spacer()
         }
     }
 
-    private var insetEmailDivider: some View {
-        ZStack {
-            Rectangle()
-                .fill(MassMatesPalette.line)
-                .frame(height: 1)
-            Text("OU COM SEU E-MAIL")
-                .font(MassMatesFont.caption)
+    private var headerSection: some View {
+        VStack(spacing: MassMatesSpacing.xs) {
+            Text("MassMates")
+                .font(MassMatesFont.display)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Entre para começar")
+                .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .background(MassMatesPalette.bg)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, MassMatesSpacing.xl)
+        .padding(.bottom, MassMatesSpacing.sm)
+    }
+
+    private func errorMessageView(_ error: String) -> some View {
+        Text(error)
+            .font(MassMatesFont.callout)
+            .foregroundStyle(MassMatesPalette.danger)
+            .multilineTextAlignment(.center)
+    }
+
+    private var actionsSection: some View {
+        VStack(spacing: MassMatesSpacing.sm) {
+            appleSignInButton
+            googleSignInButton
+            emailActionSection
+        }
+        .frame(maxWidth: 340)
+    }
+
+    private var appleSignInButton: some View {
+        Button {
+            viewModel.signIn(with: .apple)
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "apple.logo")
+                    .font(MassMatesFont.headline)
+                Text("Continuar com a Apple")
+                    .font(MassMatesFont.headline)
+            }
+            .foregroundStyle(MassMatesPalette.bg)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(MassMatesPalette.textPrimary)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var googleSignInButton: some View {
+        Button {
+            viewModel.signIn(with: .google)
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: "globe")
+                    .font(MassMatesFont.headline)
+                Text("Continuar com o Google")
+                    .font(MassMatesFont.headline)
+            }
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                    .stroke(MassMatesPalette.line, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var emailActionSection: some View {
+        if isEmailExpanded || !viewModel.emailDraft.isEmpty {
+            OnboardingEmailAuthFormView(
+                viewModel: viewModel,
+                onCollapse: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isEmailExpanded = false
+                    }
+                }
+            )
+        } else {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isEmailExpanded = true
+                }
+            } label: {
+                Text("Continuar com e-mail")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+            }
+            .buttonStyle(.plain)
         }
     }
 }

@@ -1,70 +1,43 @@
 import SwiftUI
 
-struct OnboardingValuePropositionCardView: View {
+struct OnboardingPaginationDotsView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    private let slide: OnboardingSlide
-    private let isSelected: Bool
-    private let action: () -> Void
+    private let count: Int
+    private let currentIndex: Int
+    private let onSelectIndex: (Int) -> Void
 
     // MARK: - Init
-    init(
-        slide: OnboardingSlide,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) {
-        self.slide = slide
-        self.isSelected = isSelected
-        self.action = action
+    init(count: Int, currentIndex: Int, onSelectIndex: @escaping (Int) -> Void) {
+        self.count = count
+        self.currentIndex = currentIndex
+        self.onSelectIndex = onSelectIndex
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
-                iconBadge
-                textContent
-                Spacer(minLength: 0)
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(0..<count, id: \.self) { idx in
+                Button {
+                    onSelectIndex(idx)
+                } label: {
+                    Circle()
+                        .fill(idx == currentIndex ? theme.tint : MassMatesPalette.line)
+                        .frame(width: 8, height: 8)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Página \(idx + 1) de \(count)")
             }
-            .padding(MassMatesSpacing.sm)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay(cardBorder)
         }
-        .buttonStyle(.plain)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Passos da introdução")
     }
 
     // MARK: - Subviews / Private Helpers
-    private var iconBadge: some View {
-        Image(systemName: slide.systemImage)
-            .font(MassMatesFont.headline)
-            .foregroundStyle(theme.tint)
-            .frame(width: 40, height: 40)
-            .background(theme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-    }
-
-    private var textContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(slide.title)
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(slide.bodyText)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var cardBorder: some View {
-        RoundedRectangle(cornerRadius: MassMatesRadius.card)
-            .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
-    }
 }
 
 struct OnboardingSacredHeroFrameView: View {
     // MARK: - Dependencies & State
-    @Environment(\.liturgicalTheme) private var theme
     private let activeSymbol: String
     private let badgeTitle: String
     private let onSwipeLeft: () -> Void
@@ -85,86 +58,90 @@ struct OnboardingSacredHeroFrameView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ZStack(alignment: .bottom) {
-            sacredMotifCanvas
-            ambientSeasonBadge
-                .padding(.bottom, MassMatesSpacing.sm)
+        ZStack {
+            Image(systemName: resolvedSymbol)
+                .font(.system(size: 38, weight: .light))
+                .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: 340, minHeight: 248, maxHeight: 248)
-        .background(theme.tintSoft)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.sheet))
-        .overlay(
-            RoundedRectangle(cornerRadius: MassMatesRadius.sheet)
-                .stroke(MassMatesPalette.line, lineWidth: 1)
-        )
-        .gesture(
-            DragGesture(minimumDistance: 24)
-                .onEnded { value in
-                    handleSwipe(translationWidth: value.translation.width)
-                }
-        )
+        .frame(width: 64, height: 64)
+        .contentShape(Rectangle())
+        .gesture(swipeGesture)
+        .accessibilityLabel(badgeTitle)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var sacredMotifCanvas: some View {
-        ZStack {
-            Circle()
-                .fill(theme.tintSoft)
-                .frame(width: 148, height: 148)
-            VStack(spacing: MassMatesSpacing.sm) {
-                Image(systemName: "cross.fill")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
-                HStack(spacing: MassMatesSpacing.md) {
-                    Image(systemName: "cup.and.saucer.fill")
-                    Image(systemName: activeSymbol)
-                    Image(systemName: "book.pages.fill")
+    private var resolvedSymbol: String {
+        if activeSymbol == "calendar" { return "flame" }
+        return activeSymbol.isEmpty ? "flame" : activeSymbol
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                if value.translation.width < -24 {
+                    onSwipeLeft()
+                } else if value.translation.width > 24 {
+                    onSwipeRight()
                 }
-                .font(MassMatesFont.numeral)
-                .foregroundStyle(theme.tint)
-                Image(systemName: "circle.grid.cross.fill")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(MassMatesPalette.surface)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+    }
+}
+
+struct OnboardingValuePropositionCardView: View {
+    // MARK: - Dependencies & State
+    @Environment(\.liturgicalTheme) private var theme
+    private let slide: OnboardingSlide
+    private let isSelected: Bool
+    private let action: () -> Void
+
+    // MARK: - Init
+    init(slide: OnboardingSlide, isSelected: Bool, action: @escaping () -> Void) {
+        self.slide = slide
+        self.isSelected = isSelected
+        self.action = action
     }
 
-    private var ambientSeasonBadge: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Circle()
-                .fill(theme.tint)
-                .frame(width: 8, height: 8)
-            Text(badgeTitle)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
+    // MARK: - Body / Public API
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: MassMatesSpacing.sm) {
+                Image(systemName: slide.systemImage)
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                    .frame(width: 40, height: 40)
+                    .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                    Text(slide.title)
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(slide.bodyText)
+                        .font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(MassMatesSpacing.sm)
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                    .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+            )
         }
-        .padding(.horizontal, MassMatesSpacing.sm)
-        .padding(.vertical, MassMatesSpacing.xxs)
-        .background(MassMatesPalette.surface.opacity(0.94))
-        .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        .overlay(
-            Capsule().stroke(MassMatesPalette.line, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 
-    private func handleSwipe(translationWidth: CGFloat) {
-        if translationWidth < -24 {
-            onSwipeLeft()
-        } else if translationWidth > 24 {
-            onSwipeRight()
-        }
-    }
+    // MARK: - Subviews / Private Helpers
 }
 
 #Preview("Onboarding Slide Components — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         let slide = LocalOnboardingService().welcomeSlides()[0]
-        VStack(spacing: MassMatesSpacing.sm) {
+        VStack(spacing: MassMatesSpacing.md) {
             OnboardingSacredHeroFrameView(activeSymbol: slide.systemImage, onSwipeLeft: {}, onSwipeRight: {})
+            OnboardingPaginationDotsView(count: 3, currentIndex: 0, onSelectIndex: { _ in })
             OnboardingValuePropositionCardView(slide: slide, isSelected: true, action: {})
         }
     }

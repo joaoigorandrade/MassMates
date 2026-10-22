@@ -15,69 +15,96 @@ struct DailyGospelSubHeaderView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: 0) {
-            subHeaderBar
+            topBar
             if viewModel.isAudioPlayerVisible {
                 audioPlayerBanner
             }
+            readingNavigationTabs
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
         }
+        .background(MassMatesPalette.bg)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var subHeaderBar: some View {
+    private var topBar: some View {
         HStack {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Fechar")
+
             Spacer()
-            VStack(spacing: 4) {
-                Text("Liturgia Diária")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Capsule()
-                    .fill(theme.tint)
-                    .frame(width: 28, height: 2)
-            }
-            Spacer()
+
             trailingControls
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.vertical, MassMatesSpacing.xs)
-        .background(MassMatesPalette.surface)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-        }
+        .padding(.vertical, MassMatesSpacing.xxs)
     }
 
     private var trailingControls: some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
+        HStack(spacing: MassMatesSpacing.xs) {
             Button {
                 viewModel.cycleFontSizePreset()
             } label: {
-                Text("AA")
-                    .font(MassMatesFont.caption)
+                Text("Aa")
+                    .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Ajustar tamanho da fonte")
+
             Button {
                 viewModel.toggleAudioPlayerBanner()
             } label: {
-                Image(systemName: "speaker.wave.2.fill")
+                Image(systemName: viewModel.isAudioPlaying ? "waveform" : "speaker.wave.2")
                     .font(MassMatesFont.callout)
-                    .foregroundStyle(theme.tint)
-                    .frame(width: 40, height: 40)
-                    .background(theme.tintSoft)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                    .foregroundStyle(viewModel.isAudioPlayerVisible ? theme.tint : MassMatesPalette.textSecondary)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Ouvir leitura")
+            .accessibilityLabel("Áudio da Palavra")
         }
+    }
+
+    private var readingNavigationTabs: some View {
+        HStack(spacing: MassMatesSpacing.lg) {
+            ForEach(DailyReadingSection.allCases) { section in
+                navigationTabItem(for: section)
+            }
+        }
+        .padding(.top, MassMatesSpacing.xs)
+        .padding(.bottom, MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func navigationTabItem(for section: DailyReadingSection) -> some View {
+        let isSelected = viewModel.selectedSection == section
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewModel.selectedSection = section
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Text(section.rawValue)
+                    .font(MassMatesFont.callout)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
+                    .padding(.bottom, 2)
+                Rectangle()
+                    .fill(isSelected ? theme.tint : Color.clear)
+                    .frame(height: 2)
+                    .clipShape(.rect(cornerRadius: 1))
+            }
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
     }
 
     private var audioPlayerBanner: some View {
@@ -102,15 +129,13 @@ struct DailyGospelSubHeaderView: View {
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
             Spacer()
-            Text("0:42 / 3:15")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
             Button {
                 viewModel.toggleAudioPlayerBanner()
             } label: {
                 Image(systemName: "xmark")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textTertiary)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
         }
@@ -118,7 +143,7 @@ struct DailyGospelSubHeaderView: View {
         .background(MassMatesPalette.surfaceMuted)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .padding(.top, MassMatesSpacing.sm)
+        .padding(.bottom, MassMatesSpacing.xs)
     }
 }
 

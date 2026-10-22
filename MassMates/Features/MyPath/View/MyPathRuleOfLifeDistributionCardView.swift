@@ -9,30 +9,47 @@ struct MyPathRuleOfLifeDistributionCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Text("Práticas da Regra de Vida")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text("Outubro")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(theme.tint)
-                }
-                practiceProgressRow(icon: "circle.grid.cross", title: "Santo Terço", percent: 92)
-                practiceProgressRow(icon: "book.closed", title: "Lectio Divina & Evangelho", percent: 88)
-                practiceProgressRow(icon: "leaf", title: "Oração Mental (15 min)", percent: 75)
-                practiceProgressRow(icon: "moon.stars", title: "Exame de Consciência", percent: 81)
-            }
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            headerRow
+            contentCard
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private func practiceProgressRow(icon: String, title: String, percent: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private var headerRow: some View {
+        HStack {
+            Text("REGRA DE VIDA")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .tracking(0.5)
+            Spacer()
+            Text("Outubro")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private var contentCard: some View {
+        VStack(spacing: MassMatesSpacing.md) {
+            practiceRow(title: "Santo Terço", percent: 92)
+            practiceRow(title: "Lectio Divina & Evangelho", percent: 88)
+            practiceRow(title: "Oração Mental (15 min)", percent: 75)
+            practiceRow(title: "Exame de Consciência", percent: 81)
+        }
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: MassMatesRadius.card)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+        )
+    }
+
+    private func practiceRow(title: String, percent: Int) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             HStack {
-                Label(title, systemImage: icon)
+                Text(title)
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()

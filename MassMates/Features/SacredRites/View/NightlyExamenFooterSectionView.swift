@@ -13,42 +13,32 @@ struct NightlyExamenFooterSectionView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            step5HopeAndPurposeCard
+            Text("“Qual a virtude ou atitude que desejo cultivar com especial zelo ao despertar?”")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
+
+            virtuesGridSection
             complineBlessingCard
+
             if viewModel.isExamenConcluded {
                 completionFeedbackBanner
+                diarySaveActionRow
             }
-            footerActionButtons
-            privacyReassuranceFooter
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var step5HopeAndPurposeCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                step5Header
-                Text("“Qual a virtude ou atitude que desejo cultivar com especial zelo ao despertar?”")
-                    .font(MassMatesFont.customScripture(size: 15, italic: true))
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: MassMatesSpacing.xs) {
-                    ForEach(viewModel.virtueOptions) { virtueTile($0) }
-                }
-            }
-        }
-    }
-
-    private var step5Header: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Text("5")
+    private var virtuesGridSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+            Text("PROPÓSITO PARA AMANHÃ")
                 .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(width: 28, height: 28)
-                .background(theme.tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Esperança & Propósito").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Entregar a noite a Deus e despertar pronto para servir.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: MassMatesSpacing.xs) {
+                ForEach(viewModel.virtueOptions) { virtue in
+                    virtueTile(virtue)
+                }
             }
         }
     }
@@ -60,18 +50,29 @@ struct NightlyExamenFooterSectionView: View {
         } label: {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
                 HStack {
-                    Text(virtue.title).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(virtue.title)
+                        .font(MassMatesFont.callout)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
                     Spacer()
                     if isSelected {
-                        Image(systemName: "checkmark").font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                        Image(systemName: "checkmark")
+                            .font(MassMatesFont.caption)
+                            .foregroundStyle(theme.tint)
                     }
                 }
-                Text(virtue.subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                Text(virtue.subtitle)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
             }
             .padding(MassMatesSpacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surface)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(
+                RoundedRectangle(cornerRadius: MassMatesRadius.button)
+                    .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -81,10 +82,13 @@ struct NightlyExamenFooterSectionView: View {
             Text("BÊNÇÃO DAS COMPLETAS")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+
             Text("“O Senhor todo-poderoso nos conceda uma noite tranquila e um fim perfeito.”")
                 .font(MassMatesFont.scriptureEmphasis)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .multilineTextAlignment(.center)
+                .lineSpacing(4)
+
             Text("Amém.")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(theme.tint)
@@ -101,6 +105,7 @@ struct NightlyExamenFooterSectionView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Exame recolhido com paz")
                     .font(MassMatesFont.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Text("14º dia seguido nutrindo o hábito do recolhimento noturno.")
                     .font(MassMatesFont.caption)
@@ -113,29 +118,22 @@ struct NightlyExamenFooterSectionView: View {
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
     }
 
-    private var footerActionButtons: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            MassMatesPrimaryButton(
-                title: viewModel.concludeButtonTitle,
-                systemImage: viewModel.concludeButtonSystemImage
-            ) {
-                viewModel.concludeExamen()
+    private var diarySaveActionRow: some View {
+        Button {
+            viewModel.saveToPrivateJournal()
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: viewModel.isSavedToLocalJournal ? "checkmark.circle.fill" : "book.closed")
+                Text(viewModel.saveJournalButtonTitle)
             }
-            MassMatesSecondaryButton(title: viewModel.saveJournalButtonTitle) {
-                viewModel.saveToPrivateJournal()
-            }
+            .font(MassMatesFont.callout)
+            .foregroundStyle(viewModel.isSavedToLocalJournal ? MassMatesPalette.success : theme.tint)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .background(MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
-    }
-
-    private var privacyReassuranceFooter: some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
-            Image(systemName: "lock.fill")
-                .font(MassMatesFont.caption)
-            Text("Nenhum dado deste exame sai deste aparelho. Fique em paz.")
-                .font(MassMatesFont.caption)
-        }
-        .foregroundStyle(MassMatesPalette.textTertiary)
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
     }
 }
 

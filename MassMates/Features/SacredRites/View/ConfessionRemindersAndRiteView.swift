@@ -13,60 +13,93 @@ struct ConfessionRemindersAndRiteView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            priestRemindersCard
+            priestRemindersSection
             penitentLiturgicalRiteSection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var priestRemindersCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                priestRemindersHeader
-                ForEach(viewModel.privateNotes) { note in
-                    priestNoteRow(note)
-                }
-                customNoteInputRow
-                Text("Dica: diga o pecado em espécie e número, com sobriedade e sem autojustificações.")
+    private var priestRemindersSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            remindersHeader
+            customNoteInputRow
+            if !viewModel.privateNotes.isEmpty {
+                notesListView
+            }
+            Text("Dica: declare o pecado em espécie e número, com sobriedade e sem autojustificações.")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 2)
+        }
+    }
+
+    private var remindersHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Lembretes para o Sacerdote")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Itens salvos somente neste aparelho")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+            }
+            Spacer()
+            if !viewModel.privateNotes.isEmpty {
+                Button {
+                    viewModel.clearAllNotes()
+                } label: {
+                    Text("Limpar")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.danger)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    private var priestRemindersHeader: some View {
-        HStack {
-            Image(systemName: "key.fill")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(width: 28, height: 28)
-                .background(theme.tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Lembretes para o Sacerdote").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Itens criptografados na memória segura").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
+    private var customNoteInputRow: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            TextField("Adicionar outra falta confidencial...", text: $viewModel.customSinInput)
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .frame(height: 44)
+                .background(MassMatesPalette.surface)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button).stroke(MassMatesPalette.line, lineWidth: 1))
+                .onSubmit { viewModel.addCustomSinNote() }
             Button {
-                viewModel.openConfessionalMode()
+                viewModel.addCustomSinNote()
             } label: {
-                Label("Modo Fila", systemImage: "circle.lefthalf.filled")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .padding(.horizontal, MassMatesSpacing.xs)
-                    .padding(.vertical, MassMatesSpacing.xxs)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                Image(systemName: "plus")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.surface)
+                    .frame(width: 44, height: 44)
+                    .background(MassMatesPalette.textPrimary)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             }
             .buttonStyle(.plain)
         }
     }
 
-    private func priestNoteRow(_ note: ConfessionPrivateNote) -> some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(theme.tint)
+    private var notesListView: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(viewModel.privateNotes.enumerated()), id: \.element.id) { index, note in
+                if index > 0 { Divider().overlay(MassMatesPalette.line) }
+                noteRow(note)
+            }
+        }
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
+    }
+
+    private func noteRow(_ note: ConfessionPrivateNote) -> some View {
+        HStack(alignment: .center, spacing: MassMatesSpacing.xs) {
+            Text("•")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textSecondary)
             Text(note.text)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textPrimary)
@@ -77,60 +110,28 @@ struct ConfessionRemindersAndRiteView: View {
                 Image(systemName: "xmark")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textTertiary)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
         }
-        .padding(MassMatesSpacing.xs)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private var customNoteInputRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            TextField("Adicionar outra falta confidencial...", text: $viewModel.customSinInput)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .padding(MassMatesSpacing.xs)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                .onSubmit { viewModel.addCustomSinNote() }
-            Button {
-                viewModel.addCustomSinNote()
-            } label: {
-                Image(systemName: "plus")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.onTint)
-                    .frame(width: 36, height: 36)
-                    .background(theme.tint)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-            .buttonStyle(.plain)
-        }
+        .padding(.horizontal, MassMatesSpacing.sm)
+        .padding(.vertical, MassMatesSpacing.xs)
     }
 
     private var penitentLiturgicalRiteSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Text("Roteiro Litúrgico do Penitente")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Text("Guia Prático")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-            MassMatesCard {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                    ForEach(viewModel.penitentRiteSteps) { step in
-                        penitentStepBox(step)
-                    }
-                    Text("Padre: \"Louvai ao Senhor porque Ele é bom.\"\nVocê: \"Porque a Sua misericórdia dura para sempre.\"")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
+            Text("Roteiro Litúrgico do Penitente")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            VStack(spacing: 0) {
+                ForEach(Array(viewModel.penitentRiteSteps.enumerated()), id: \.element.id) { index, step in
+                    if index > 0 { Divider().overlay(MassMatesPalette.line) }
+                    penitentStepBox(step)
                 }
             }
+            .background(MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
         }
     }
 
@@ -139,10 +140,13 @@ struct ConfessionRemindersAndRiteView: View {
             HStack {
                 Text(step.title.uppercased())
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(theme.tint)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
                 Spacer()
                 if let trailingNote = step.trailingNote {
-                    Text(trailingNote).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    Text(trailingNote)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textTertiary)
                 }
             }
             if let lead = step.leadText {
@@ -151,14 +155,13 @@ struct ConfessionRemindersAndRiteView: View {
             Text(step.quoteText)
                 .font(MassMatesFont.customScripture(size: 15, italic: true))
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(3)
             if let closing = step.closingResponse {
                 Text(closing).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
             }
         }
         .padding(MassMatesSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(step.isHighlighted ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
     }
 }
 

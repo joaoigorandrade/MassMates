@@ -39,6 +39,24 @@ final class HolyMassGuideViewModel {
         selectedSection.defaultPosture
     }
 
+    var currentSectionIndex: Int {
+        HolyMassRiteSection.allCases.firstIndex(of: selectedSection) ?? 0
+    }
+
+    var progressRatio: Double {
+        let count = Double(HolyMassRiteSection.allCases.count)
+        guard count > 0 else { return 0 }
+        return Double(currentSectionIndex + 1) / count
+    }
+
+    var canGoToPreviousSection: Bool {
+        currentSectionIndex > 0
+    }
+
+    var canGoToNextSection: Bool {
+        currentSectionIndex < HolyMassRiteSection.allCases.count - 1
+    }
+
     var registerMassButtonTitle: String {
         isMassCheckedIn ? "Missa Registrada!" : "Registrar Presença na Santa Missa"
     }
@@ -49,6 +67,16 @@ final class HolyMassGuideViewModel {
 
     func selectSection(_ section: HolyMassRiteSection) {
         selectedSection = section
+    }
+
+    func goToPreviousSection() {
+        guard canGoToPreviousSection else { return }
+        selectedSection = HolyMassRiteSection.allCases[currentSectionIndex - 1]
+    }
+
+    func goToNextSection() {
+        guard canGoToNextSection else { return }
+        selectedSection = HolyMassRiteSection.allCases[currentSectionIndex + 1]
     }
 
     func toggleSilentMode() {

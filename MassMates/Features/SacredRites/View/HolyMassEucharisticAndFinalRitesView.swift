@@ -9,126 +9,130 @@ struct HolyMassEucharisticAndFinalRitesView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            offertoryCard
-            sanctusCard
-            consecrationCard
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            offertorySection
+            hairlineDivider
+            sanctusSection
+            hairlineDivider
+            consecrationSection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var offertoryCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Apresentação das Oferendas")
-                    Spacer()
-                    postureBadge(.seated, isHighlighted: false)
-                }
-                ForEach(HolyMassRitesCatalog.offertoryTurns) { turn in
-                    offertoryTurnBox(turn)
-                }
+    private var offertorySection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Apresentação das Oferendas", posture: .seated)
+            ForEach(HolyMassRitesCatalog.offertoryTurns) { turn in
+                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
             }
         }
     }
 
-    private func offertoryTurnBox(_ turn: MassDialogueTurn) -> some View {
+    private var sanctusSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Santo", posture: .kneeling)
+            dialogueTurnView(
+                speaker: "Sacerdote",
+                text: "Santo, Santo, Santo, Senhor Deus do universo. O céu e a terra proclamam a vossa glória. Hosana nas alturas!",
+                isAssembly: false
+            )
+            dialogueTurnView(
+                speaker: "Assembleia",
+                text: "Bendito o que vem em nome do Senhor. Hosana nas alturas!",
+                isAssembly: true
+            )
+            hairlineDivider
+            latinSanctusBlock
+        }
+    }
+
+    private var latinSanctusBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(turn.speaker.uppercased())
+            Text("LATIM")
                 .font(MassMatesFont.caption)
-                .foregroundStyle(turn.isAssembly ? theme.tint : MassMatesPalette.textSecondary)
-            Text(turn.text)
-                .font(turn.isAssembly ? MassMatesFont.scriptureEmphasis : MassMatesFont.scripture)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-        }
-        .padding(MassMatesSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(turn.isAssembly ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private var sanctusCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    Text("O Santo (Sanctus)").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                    Spacer()
-                    Text("Louvor Celeste").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                }
-                Text("«Santo, Santo, Santo, Senhor, Deus do universo!\nO céu e a terra estão cheios da vossa glória.\nHosana nas alturas!\nBendito o que vem em nome do Senhor!\nHosana nas alturas!»")
-                    .font(MassMatesFont.scripture)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .padding(MassMatesSpacing.sm)
-                    .frame(maxWidth: .infinity)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                Text("«Sanctus, Sanctus, Sanctus Dominus Deus Sabaoth. Pleni sunt caeli et terra gloria tua. Hosanna in excelsis. Benedictus qui venit in nomine Domini. Hosanna in excelsis.»")
-                    .font(MassMatesFont.customScripture(size: 13, italic: true))
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-            }
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text("Sanctus, Sanctus, Sanctus Dóminus Deus Sábaoth. Pleni sunt cæli et terra glória tua. Hosánna in excélsis. Benedíctus qui venit in nómine Dómini. Hosánna in excélsis.")
+                .font(MassMatesFont.customScripture(size: 17, italic: true))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineSpacing(5)
         }
     }
 
-    private var consecrationCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                HStack {
-                    cardTitleBar("Consagração Eucarística")
-                    Spacer()
-                    postureBadge(.kneeling, isHighlighted: true)
-                }
-                consecrationWordsBox
-                HStack(spacing: MassMatesSpacing.xs) {
-                    Image(systemName: "heart.fill")
-                    Text("«Meu Senhor e meu Deus!»").font(MassMatesFont.scriptureEmphasis)
-                }
-                .foregroundStyle(theme.tint)
-                .padding(MassMatesSpacing.sm)
-                .frame(maxWidth: .infinity)
-                .background(theme.tintSoft)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
+    private var consecrationSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Consagração Eucarística", posture: .kneeling)
+            consecrationWordsBlock
+            acclamationMyLordAndMyGod
         }
     }
 
-    private var consecrationWordsBox: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
+    private var consecrationWordsBlock: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
             Text("MOMENTO SOLENE DE ADORAÇÃO SILENCIOSA")
                 .font(MassMatesFont.caption)
+                .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Text("«TOMAI, TODOS, E COMEI: ISTO É O MEU CORPO, QUE SERÁ ENTREGUE POR VÓS.»")
-                .font(MassMatesFont.scriptureEmphasis)
+                .font(Font.system(size: 18, weight: .semibold, design: .serif))
                 .foregroundStyle(MassMatesPalette.textPrimary)
-                .multilineTextAlignment(.center)
+                .lineSpacing(6)
             Rectangle().fill(MassMatesPalette.line).frame(height: 1)
             Text("«TOMAI, TODOS, E BEBEI: ESTE É O CÁLICE DO MEU SANGUE, O SANGUE DA NOVA E ETERNA ALIANÇA... FAZEI ISTO EM MEMÓRIA DE MIM.»")
-                .font(MassMatesFont.scriptureEmphasis)
+                .font(Font.system(size: 18, weight: .semibold, design: .serif))
                 .foregroundStyle(MassMatesPalette.textPrimary)
-                .multilineTextAlignment(.center)
+                .lineSpacing(6)
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
     }
 
-    private func postureBadge(_ posture: LiturgicalPosture, isHighlighted: Bool) -> some View {
-        Label(posture.rawValue, systemImage: posture.systemImage)
-            .font(MassMatesFont.caption)
-            .foregroundStyle(isHighlighted ? theme.tint : MassMatesPalette.textSecondary)
-            .padding(.horizontal, MassMatesSpacing.xs)
-            .padding(.vertical, 2)
-            .background(isHighlighted ? theme.tintSoft : MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+    private var acclamationMyLordAndMyGod: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("ACLAMAÇÃO • TODOS")
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(theme.tint)
+            Text("«Meu Senhor e meu Deus!»")
+                .font(Font.system(size: 19, weight: .semibold, design: .serif))
+                .foregroundStyle(theme.tint)
+        }
     }
 
-    private func cardTitleBar(_ title: String) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            RoundedRectangle(cornerRadius: 3).fill(theme.tint).frame(width: 6, height: 16)
-            Text(title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
+                .font(MassMatesFont.caption)
+                .tracking(0.5)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text(text)
+                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineSpacing(6)
         }
+    }
+
+    private func sectionHeader(title: String, posture: LiturgicalPosture? = nil) -> some View {
+        HStack {
+            Text(title)
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            if let posture {
+                Label(posture.rawValue, systemImage: posture.systemImage)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.horizontal, MassMatesSpacing.xs)
+                    .padding(.vertical, 2)
+                    .background(MassMatesPalette.surfaceMuted)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+            }
+        }
+    }
+
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+            .padding(.vertical, MassMatesSpacing.xs)
     }
 }
 

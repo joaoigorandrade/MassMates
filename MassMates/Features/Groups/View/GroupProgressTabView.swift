@@ -26,75 +26,92 @@ struct GroupProgressTabView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
+            collectiveGoalSection
             GuardianAngelCardView(
                 state: guardianAngelState,
                 onOptIn: onOptInGuardianAngel,
                 onSendPrayerNudge: onSendGuardianAngelNudge,
                 onRevealCycle: onRevealGuardianAngelCycle
             )
-            MassMatesCard {
-                VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                    collectiveTreasureHeader
-                    collectiveProgressBlock
-                    Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-                    scoringModeSection
-                }
-            }
+            memberConstancySection
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var collectiveTreasureHeader: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("TESOURO COLETIVO").font(MassMatesFont.caption).foregroundStyle(theme.tint)
-                Text(summary.collectiveGoalTitle)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-            }
-            Spacer()
-            Image(systemName: "rosette")
-                .foregroundStyle(theme.tint)
-                .frame(width: 36, height: 36)
-                .background(theme.tintSoft)
-                .clipShape(Circle())
-        }
-    }
-
-    private var collectiveProgressBlock: some View {
-        let remaining = max(summary.collectiveGoalTarget - summary.collectiveGoalCurrent, 0)
-        return VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+    private var collectiveGoalSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             HStack(alignment: .firstTextBaseline) {
-                Text("\(summary.collectiveGoalCurrent)").font(MassMatesFont.numeral).foregroundStyle(theme.tint)
-                Text("/ \(summary.collectiveGoalTarget)").font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textSecondary)
+                Text("Meta coletiva")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
                 Spacer()
-                Text("\(Int(summary.collectiveProgressRatio * 100))% atingido")
+                Text("\(Int(summary.collectiveProgressRatio * 100))%")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
-            MassMatesProgressBar(progress: summary.collectiveProgressRatio)
-            Label("Faltam \(remaining) para consagrar nosso compromisso comunitário.", systemImage: "person.2.wave.2")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text("\(summary.collectiveGoalCurrent) / \(summary.collectiveGoalTarget) terços")
+                .font(MassMatesFont.numeral)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(MassMatesPalette.line)
+                        .frame(height: 6)
+                    Capsule()
+                        .fill(theme.tint)
+                        .frame(width: proxy.size.width * summary.collectiveProgressRatio, height: 6)
+                }
+            }
+            .frame(height: 6)
         }
     }
 
-    private var scoringModeSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                Label("Dias Fiéis na Caminhada", systemImage: "leaf")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Spacer()
-                Text(scoringBadgeText).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            if summary.scoringMode == .customPoints {
-                customPointsLegendRow
-            }
+    private var memberConstancySection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(scoringBadgeText)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .padding(.bottom, MassMatesSpacing.xs)
             ForEach(summary.orderedEntries) { entry in
-                memberScoreRow(entry)
+                memberRow(entry)
             }
+        }
+    }
+
+    private func memberRow(_ entry: GroupMemberScoreEntry) -> some View {
+        HStack(spacing: MassMatesSpacing.sm) {
+            Text(entry.memberInitials)
+                .font(Font.system(size: 13, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 32, height: 32)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(MassMatesPalette.line, lineWidth: 1))
+            Text(entry.memberName)
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Text(scoreText(for: entry))
+                .font(Font.system(size: 17, weight: .medium, design: .rounded))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+        .frame(minHeight: MassMatesLayout.minRowHeight)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(MassMatesPalette.line)
+                .frame(height: 1)
+        }
+    }
+
+    private func scoreText(for entry: GroupMemberScoreEntry) -> String {
+        switch summary.scoringMode {
+        case .faithfulDays:
+            "\(entry.faithfulDaysCount) dias"
+        case .collectiveTreasure:
+            "\(entry.collectiveContributionsCount) terços"
+        case .customPoints:
+            "\(entry.customPointsTotal) pts"
         }
     }
 
@@ -104,49 +121,6 @@ struct GroupProgressTabView: View {
         case .collectiveTreasure: "Comunhão sem ranking"
         case .customPoints: "Pontuação por prática"
         }
-    }
-
-    private var customPointsLegendRow: some View {
-        Text("Santa Missa 30 pts • Adoração/Jejum 25 pts • Terço/Oração 20 pts • Evangelho 10 pts")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            .padding(MassMatesSpacing.xs)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(MassMatesPalette.surfaceMuted)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-    }
-
-    private func memberScoreRow(_ entry: GroupMemberScoreEntry) -> some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            Text(entry.memberInitials)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(entry.isCurrentUser ? theme.onTint : theme.tint)
-                .frame(width: 34, height: 34)
-                .background(entry.isCurrentUser ? theme.tint : theme.tintSoft)
-                .clipShape(Circle())
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.memberName)
-                    .font(MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text(entry.hasRecordedPracticeToday ? "Mais um dia em oração" : "Em caminhada fraterna")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
-            HStack(spacing: 4) {
-                Image(systemName: "sun.max.fill")
-                    .font(MassMatesFont.caption)
-                Text(entry.formattedScoreLabel(for: summary.scoringMode))
-                    .font(MassMatesFont.caption)
-                    .fontWeight(.semibold)
-            }
-            .foregroundStyle(theme.tint)
-            .padding(.horizontal, MassMatesSpacing.xs)
-            .padding(.vertical, 4)
-            .background(theme.tintSoft)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        }
-        .frame(minHeight: MassMatesLayout.minTapTarget)
     }
 }
 
@@ -163,5 +137,6 @@ struct GroupProgressTabView: View {
             onSendGuardianAngelNudge: {},
             onRevealGuardianAngelCycle: {}
         )
+        .padding()
     }
 }

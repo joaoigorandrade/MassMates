@@ -14,154 +14,142 @@ struct NightlyExamenModalView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                headerToolbar
-                nightContextSection
-                invocationalScriptureFrame
-                ignatianProgressSection
-                NightlyExamenStepCardsView(viewModel: viewModel)
-                NightlyExamenReviewAndClosingView(viewModel: viewModel)
-                NightlyExamenFooterSectionView(viewModel: viewModel)
+        VStack(spacing: 0) {
+            headerBar
+            ScrollView {
+                VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+                    stepHeaderSection
+                    activeStepContent
+                }
+                .padding(.horizontal, MassMatesLayout.readingMargin)
+                .padding(.top, MassMatesSpacing.sm)
+                .padding(.bottom, MassMatesSpacing.xl)
+                .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
-            .padding(MassMatesLayout.readingMargin)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            bottomStickyFooter
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    private var headerToolbar: some View {
+    private var headerBar: some View {
         HStack {
-            Button {
+            leadingNavigationButton
+            Spacer()
+            stepProgressDots
+            if viewModel.currentStepIndex > 1 {
+                dismissButton
+            }
+        }
+        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .padding(.top, MassMatesSpacing.sm)
+        .padding(.bottom, MassMatesSpacing.xs)
+    }
+
+    private var leadingNavigationButton: some View {
+        Button {
+            if viewModel.currentStepIndex > 1 {
+                viewModel.goToPreviousStep()
+            } else {
                 navigator?.dismiss()
+            }
+        } label: {
+            Image(systemName: viewModel.currentStepIndex > 1 ? "chevron.left" : "xmark")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .frame(width: 36, height: 36)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.circle)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var dismissButton: some View {
+        Button {
+            navigator?.dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(width: 32, height: 32)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.circle)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var stepProgressDots: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(1...5, id: \.self) { step in
+                Button {
+                    viewModel.goToStep(step)
+                } label: {
+                    Circle()
+                        .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
+                        .frame(width: 8, height: 8)
+                        .padding(MassMatesSpacing.xxs)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var stepHeaderSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text(viewModel.stepCaption)
+                .font(MassMatesFont.caption)
+                .tracking(1.2)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+
+            Text(viewModel.stepTitle)
+                .font(MassMatesFont.displayMobile)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+        }
+    }
+
+    @ViewBuilder
+    private var activeStepContent: some View {
+        switch viewModel.currentStepIndex {
+        case 1, 2:
+            NightlyExamenStepCardsView(viewModel: viewModel)
+        case 3, 4:
+            NightlyExamenReviewAndClosingView(viewModel: viewModel)
+        default:
+            NightlyExamenFooterSectionView(viewModel: viewModel)
+        }
+    }
+
+    private var bottomStickyFooter: some View {
+        VStack(spacing: MassMatesSpacing.sm) {
+            Button {
+                viewModel.goToNextStep()
             } label: {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: "chevron.left")
-                    Text("Concluir")
+                HStack(spacing: MassMatesSpacing.xs) {
+                    Text(viewModel.currentStepButtonTitle)
+                    Image(systemName: viewModel.currentStepButtonSystemImage)
                 }
                 .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
-            Spacer()
-            VStack(spacing: 2) {
-                Text("Exame Da Noite")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: "lock.fill").foregroundStyle(theme.tint)
-                    Text("Sigilo Sagrado Local").foregroundStyle(MassMatesPalette.textTertiary)
-                }
-                .font(MassMatesFont.caption)
-            }
-            Spacer()
-            Image(systemName: "person.fill")
-                .font(MassMatesFont.caption)
                 .foregroundStyle(theme.onTint)
-                .frame(width: 32, height: 32)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
                 .background(theme.tint)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-        }
-    }
-
-    private var nightContextSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            HStack {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: "moon.fill").foregroundStyle(theme.tint)
-                    Text("COMPLETAS • SÁBADO, 12 DE OUTUBRO").foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                .font(MassMatesFont.caption)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .padding(.vertical, MassMatesSpacing.xxs)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-                Spacer()
-                Text(theme.season.defaultSeasonName)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-            }
-            sacredSealConscienceCard
-            durationAndAmbientAudioRow
-        }
-    }
-
-    private var sacredSealConscienceCard: some View {
-        MassMatesCard {
-            HStack(alignment: .top, spacing: MassMatesSpacing.xs) {
-                Image(systemName: "checkmark.shield.fill")
-                    .foregroundStyle(theme.tint)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Sigilo Inviolável da Consciência")
-                        .font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("Suas orações e faltas são examinadas estritamente diante de Deus. Dados 100% locais, confidenciais e criptografados no aparelho.")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-            }
-        }
-    }
-
-    private var durationAndAmbientAudioRow: some View {
-        HStack {
-            Label("7 min de recolhimento", systemImage: "hourglass")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Spacer()
-            Button {
-                viewModel.toggleAmbientAudio()
-            } label: {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Image(systemName: viewModel.ambientAudioSystemImage)
-                        .foregroundStyle(viewModel.isAmbientMusicPlaying ? MassMatesPalette.success : theme.tint)
-                    Text(viewModel.ambientAudioLabel)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
-                }
-                .font(MassMatesFont.caption)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .padding(.vertical, MassMatesSpacing.xs)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             }
             .buttonStyle(.plain)
-        }
-    }
 
-    private var invocationalScriptureFrame: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            Image(systemName: "moon.stars.fill")
-                .foregroundStyle(theme.tint)
-            Text("“Em paz me deito e logo adormeço, porque só vós, Senhor, me fazeis viver seguro.”")
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .multilineTextAlignment(.center)
-            Text("SALMO 4, 9")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-        .padding(MassMatesSpacing.lg)
-        .frame(maxWidth: .infinity)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-    }
-
-    private var ignatianProgressSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            HStack {
-                Text("Itinerário de Santo Inácio")
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Image(systemName: "lock.fill")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                Spacer()
-                Text(viewModel.stepsIndicatorText)
+                Text("Somente neste dispositivo · 100% confidencial")
                     .font(MassMatesFont.caption)
-                    .foregroundStyle(viewModel.isExamenConcluded ? MassMatesPalette.success : theme.tint)
             }
-            MassMatesProgressBar(progress: viewModel.progressFraction)
+            .foregroundStyle(MassMatesPalette.textSecondary)
         }
+        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .padding(.top, MassMatesSpacing.xs)
+        .padding(.bottom, MassMatesSpacing.md)
+        .background(MassMatesPalette.bg)
     }
 }
 

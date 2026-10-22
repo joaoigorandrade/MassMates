@@ -22,8 +22,6 @@ struct RuleOfLifeSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
             sectionHeader
-            MassMatesProgressBar(progress: progress.ruleCompletionRatio)
-                .padding(.bottom, MassMatesSpacing.xxs)
             checklistStack
         }
         .sensoryFeedback(.impact(weight: .light), trigger: progress.completedCount)
@@ -32,17 +30,13 @@ struct RuleOfLifeSectionView: View {
     // MARK: - Subviews / Private Helpers
     private var sectionHeader: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Regra de Vida")
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Constância nas pequenas virtudes")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
+            Text("Regra de Vida")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
             presetMenuBadge
         }
+        .padding(.bottom, MassMatesSpacing.xxs)
     }
 
     private var presetMenuBadge: some View {
@@ -59,16 +53,38 @@ struct RuleOfLifeSectionView: View {
                 }
             }
         } label: {
-            Text("\(progress.completedCount) de \(progress.totalCount) concluídas")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
+            HStack(spacing: MassMatesSpacing.xs) {
+                Text("\(progress.completedCount) de \(progress.totalCount)")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                progressRing
+            }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Regra de vida: \(progress.completedCount) de \(progress.totalCount) concluídas")
+    }
+
+    private var progressRing: some View {
+        ZStack {
+            Circle()
+                .stroke(MassMatesPalette.line, lineWidth: 2.5)
+            Circle()
+                .trim(from: 0, to: progress.ruleCompletionRatio)
+                .stroke(
+                    theme.tint,
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 20, height: 20)
     }
 
     private var checklistStack: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
+        VStack(spacing: 0) {
+            hairlineDivider
             ForEach(progress.items) { item in
                 practiceRow(item)
+                hairlineDivider
             }
         }
     }
@@ -77,60 +93,54 @@ struct RuleOfLifeSectionView: View {
         Button {
             onTogglePractice(item.practice)
         } label: {
-            HStack(spacing: MassMatesSpacing.sm) {
-                leadingStatusCircle(for: item)
-                VStack(alignment: .leading, spacing: 2) {
-                    practiceTitleRow(item)
-                    Text(item.practice.subtitle)
+            HStack {
+                Text(practiceTitle(for: item.practice))
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                if item.practice.isStrictlyPrivate {
+                    Image(systemName: "lock.fill")
                         .font(MassMatesFont.caption)
-                        .foregroundStyle(
-                            item.isCompleted ? MassMatesPalette.textTertiary : MassMatesPalette.textSecondary
-                        )
-                        .lineLimit(1)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
                 }
-                Spacer(minLength: MassMatesSpacing.xs)
-                Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(item.isCompleted ? theme.tint : MassMatesPalette.line)
+                Spacer()
+                checkmarkCircle(isCompleted: item.isCompleted)
             }
-            .padding(MassMatesSpacing.sm)
             .frame(minHeight: MassMatesLayout.minRowHeight)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay {
-                RoundedRectangle(cornerRadius: MassMatesRadius.card)
-                    .stroke(MassMatesPalette.line, lineWidth: 1)
-            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(practiceTitle(for: item.practice)), \(item.isCompleted ? "concluído" : "não concluído")")
+        .accessibilityAddTraits(item.isCompleted ? [.isSelected] : [])
     }
 
-    private func leadingStatusCircle(for item: RuleOfLifeItem) -> some View {
-        ZStack {
+    @ViewBuilder
+    private func checkmarkCircle(isCompleted: Bool) -> some View {
+        if isCompleted {
+            ZStack {
+                Circle()
+                    .fill(theme.tint)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(theme.onTint)
+            }
+            .frame(width: 20, height: 20)
+        } else {
             Circle()
-                .fill(item.isCompleted ? theme.tint : MassMatesPalette.surfaceMuted)
-                .frame(width: 28, height: 28)
-            Image(systemName: item.isCompleted ? "checkmark" : item.practice.systemImage)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(item.isCompleted ? theme.onTint : MassMatesPalette.textTertiary)
+                .stroke(MassMatesPalette.line, lineWidth: 1)
+                .frame(width: 20, height: 20)
         }
     }
 
-    private func practiceTitleRow(_ item: RuleOfLifeItem) -> some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
-            Text(item.practice.title)
-                .font(MassMatesFont.headline)
-                .strikethrough(item.isCompleted, color: MassMatesPalette.textSecondary)
-                .foregroundStyle(
-                    item.isCompleted ? MassMatesPalette.textSecondary : MassMatesPalette.textPrimary
-                )
-                .lineLimit(1)
-            if item.practice.isStrictlyPrivate {
-                Image(systemName: "lock.fill")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .accessibilityLabel("Privado no dispositivo")
-            }
+    private var hairlineDivider: some View {
+        Rectangle()
+            .fill(MassMatesPalette.line)
+            .frame(height: 1)
+    }
+
+    private func practiceTitle(for practice: SpiritualPractice) -> String {
+        switch practice {
+        case .dailyGospel: "Evangelho do Dia"
+        default: practice.title
         }
     }
 }

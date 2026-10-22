@@ -29,123 +29,96 @@ struct OnboardingSlidesStepView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.lg) {
-            brandHeader
-            OnboardingSacredHeroFrameView(
-                activeSymbol: activeSlide.systemImage,
-                badgeTitle: activeSlide.badgeTitle,
-                onSwipeLeft: onAdvance,
-                onSwipeRight: selectPreviousSlide
-            )
-            narrativeHeader
-            valuePropositionStack
-            slideIndicators
-            bottomActionsSection
-            footnoteAssurance
+        VStack(spacing: 0) {
+            topSection
+            Spacer(minLength: MassMatesSpacing.xl)
+            bottomSection
         }
+        .frame(maxWidth: .infinity, minHeight: 520)
+        .contentShape(Rectangle())
+        .gesture(swipeGesture)
+        .animation(.easeInOut(duration: 0.25), value: currentIndex)
     }
 
     // MARK: - Subviews / Private Helpers
     private var activeSlide: OnboardingSlide {
         guard slides.indices.contains(currentIndex) else {
-            return slides[0]
+            return slides.first ?? OnboardingSlide(
+                id: "default",
+                badgeTitle: "",
+                title: "Constância espiritual em comunidade",
+                bodyText: "Uma comunidade serena para cultivar a vida de oração diária e caminhar em comunhão.",
+                systemImage: "flame"
+            )
         }
         return slides[currentIndex]
     }
 
-    private var brandHeader: some View {
-        HStack {
-            HStack(spacing: MassMatesSpacing.xxs) {
-                Image(systemName: "leaf.fill")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
-                Text("MassMates")
-                    .font(MassMatesFont.caption)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-            }
-            Spacer()
-            Button(action: onSkip) {
-                Text("Pular")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .padding(.horizontal, MassMatesSpacing.sm)
-                    .padding(.vertical, MassMatesSpacing.xxs)
-                    .frame(minHeight: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
+    private var topSection: some View {
+        VStack(spacing: MassMatesSpacing.xl) {
+            OnboardingSacredHeroFrameView(
+                activeSymbol: activeSlide.systemImage,
+                onSwipeLeft: onAdvance,
+                onSwipeRight: selectPreviousSlide
+            )
+            typographyContent
         }
+        .padding(.top, MassMatesSpacing.xl)
     }
 
-    private var narrativeHeader: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            Text("Constância espiritual em fraternidade")
+    private var typographyContent: some View {
+        VStack(spacing: MassMatesSpacing.sm) {
+            Text(activeSlide.title)
                 .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .multilineTextAlignment(.center)
-            Text("Uma comunidade serena para cultivar a vida de oração diária, partilhar graças e caminhar em comunhão.")
-                .font(MassMatesFont.callout)
+                .tracking(-0.3)
+            Text(activeSlide.bodyText)
+                .font(MassMatesFont.body)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
         }
-        .frame(maxWidth: 320)
+        .padding(.horizontal, MassMatesSpacing.xxs)
     }
 
-    private var valuePropositionStack: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
-            ForEach(Array(slides.enumerated()), id: \.element.id) { idx, slide in
-                OnboardingValuePropositionCardView(
-                    slide: slide,
-                    isSelected: idx == currentIndex,
-                    action: { onSelectIndex(idx) }
-                )
-            }
+    private var bottomSection: some View {
+        VStack(spacing: MassMatesSpacing.xl) {
+            OnboardingPaginationDotsView(
+                count: slides.count,
+                currentIndex: currentIndex,
+                onSelectIndex: onSelectIndex
+            )
+            actionsSection
         }
+        .padding(.bottom, MassMatesSpacing.md)
     }
 
-    private var slideIndicators: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            ForEach(Array(slides.enumerated()), id: \.element.id) { idx, _ in
-                Button {
-                    onSelectIndex(idx)
-                } label: {
-                    Capsule()
-                        .fill(idx == currentIndex ? theme.tint : MassMatesPalette.line)
-                        .frame(width: idx == currentIndex ? 28 : 8, height: 8)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Slide \(idx + 1) de \(slides.count)")
-            }
-        }
-    }
-
-    private var bottomActionsSection: some View {
+    private var actionsSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(
-                title: "Começar Minha Caminhada",
-                systemImage: "arrow.right",
+                title: "Continuar",
                 action: onAdvance
             )
             Button(action: onSkip) {
-                Text("Já possuo uma conta • Entrar")
+                Text("Pular")
                     .font(MassMatesFont.headline)
-                    .foregroundStyle(theme.tint)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
         }
     }
 
-    private var footnoteAssurance: some View {
-        HStack(spacing: MassMatesSpacing.xxs) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-            Text("Textos litúrgicos oficiais e espaço sem distrações.")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-        }
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                if value.translation.width < -24 {
+                    onAdvance()
+                } else if value.translation.width > 24 {
+                    selectPreviousSlide()
+                }
+            }
     }
 
     private func selectPreviousSlide() {
