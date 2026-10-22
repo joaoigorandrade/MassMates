@@ -1,12 +1,9 @@
-Current Focus: 1:1 Stitch MCP Design Parity Verification & Polish complete across all 16 screens.
+Current Focus: Minimalist Stitch redesign of all 16 screens (plan.md-aligned); SwiftUI code not yet updated.
 Completed:
-- Downloaded and analyzed full Stitch HTML for all 16 screens from project 4744816768065646201.
-- Executed parallel 5-cluster review using specialized subagents across all 16 screens.
-- Screen 02-04 (Onboarding & Auth): Dynamic slide badge binding, church.fill top bar & parish icons, sparkles emblem, New York serif brand typography, dead code removal.
-- Screen 05-07 (Today & Prayer): Checklist trailing checkmark styling, inline Gospel key verse highlight, Rosary active bead soft liturgical halo, mental prayer chime tintSoft background, custom duration tune button.
-- Screen 08-10 (Fraternities & Groups): New York display headline for continuous fraternities, distinct percentage & count Rosary progress, cross.fill patron saint showcase, magnifying glass on Outro chip, person.2.fill capacity pill.
-- Screen 11-14 (Check-In & My Path): "Oração Mental" chip mapping, church.fill for holyMass, "Perfil & Histórico Espiritual" title, diary filter badges with counts, 176pt photo frame with gradient, close button on pericope modal, green indicator dot on intimate dialogue.
-- Screen 15-17 (Sacred Rites): Semantic color evaluation pills (success/warning/purple), Ten Commandments category showing all 10 commandments, solid #121212 confessional mode background, priest/assembly dialogue styling, bilingual Latin Sanctus and Agnus Dei text.
-- Verified 100% test pass rate with zero warnings; all files conform to strict SRP (< 180 lines).
-Next Step: Prepare final release build or user acceptance testing.
-Blockers/Quirks: None.
+- Stitch project 4744816768065646201: new minimalist screens 02–17 (titles suffixed "Minimalista" / "Modal Limpa"); originals preserved.
+- Today 05: plain checklist + progress ring, entry rows, single "Patrocinado" banner.
+- Groups 08/09/10: list rows, picker rows, Anjo da Guarda single card, 4-slot tab bar.
+- Sacred screens 06/07/13/14/15/16/17: no cards, no tints, serif reading layout.
+- Check-in 11: chips + destination checklist, clean sheet.
+Next Step: Port minimalist designs into SwiftUI, starting with Features/Today views, then Groups; drop "Mais" slot in MassMatesTabBarView.
+Blockers/Quirks: New designs use a 4-slot tab bar vs current 5-slot code implementation.
