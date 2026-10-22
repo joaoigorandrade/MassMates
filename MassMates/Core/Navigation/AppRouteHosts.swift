@@ -87,14 +87,14 @@ struct CreateJoinGroupRouteHostView: View {
     }
     // MARK: - Body / Public API
     var body: some View {
-        let service = communityService ?? LocalCommunityGroupsService()
+        let service: any CommunityBackend = communityService ?? LocalCommunityGroupsService()
         CreateJoinGroupModalView(
             viewModel: CreateJoinGroupViewModel(
                 initialTab: initialTab,
                 prefilledInviteCode: prefilledInviteCode,
                 listingService: service,
                 mutatingService: service,
-                onGroupActivated: { _ in groupsHomeViewModel?.loadGroups() }
+                onGroupActivated: { _ in Task { await groupsHomeViewModel?.loadGroups() } }
             )
         )
         .environment(\.liturgicalTheme, Theme(season: season))
@@ -106,6 +106,9 @@ struct CreateJoinGroupRouteHostView: View {
 struct GroupDetailRouteHostView: View {
     // MARK: - Dependencies & State
     @Environment(\.sharedCommunityService) private var communityService
+    @Environment(\.sharedRealtimeService) private var realtimeService
+    @Environment(\.sharedLiveSyncService) private var liveSyncService
+    @Environment(\.sharedStorageClient) private var storageClient
     private let group: CommunityGroup
     private let season: LiturgicalColor
     // MARK: - Init
@@ -115,14 +118,19 @@ struct GroupDetailRouteHostView: View {
     }
     // MARK: - Body / Public API
     var body: some View {
-        let service = communityService ?? LocalCommunityGroupsService()
+        let service: any CommunityBackend = communityService ?? LocalCommunityGroupsService()
         GroupDetailView(
             viewModel: GroupDetailViewModel(
                 group: group,
                 feedService: service,
                 scoringService: service,
                 guardianAngelService: service,
-                prayerWallService: service
+                prayerWallService: service,
+                chatService: service,
+                moderationService: service,
+                realtimeService: realtimeService,
+                liveSyncService: liveSyncService,
+                storage: storageClient
             )
         )
         .environment(\.liturgicalTheme, Theme(season: season))
@@ -146,7 +154,7 @@ struct NewCheckInRouteHostView: View {
     }
     // MARK: - Body / Public API
     var body: some View {
-        let resolvedCommunity = communityService ?? LocalCommunityGroupsService()
+        let resolvedCommunity: any CommunityBackend = communityService ?? LocalCommunityGroupsService()
         let resolvedEngine = checkInEngine ?? LocalCheckInEngineService(
             groupsListing: resolvedCommunity,
             feedService: resolvedCommunity,
@@ -157,7 +165,7 @@ struct NewCheckInRouteHostView: View {
                 preselectedPractice: preselectedPractice,
                 checkInService: resolvedEngine,
                 groupsListing: resolvedCommunity,
-                onCheckInCompleted: { _ in groupsHomeViewModel?.loadGroups() }
+                onCheckInCompleted: { _ in Task { await groupsHomeViewModel?.loadGroups() } }
             ),
             activeStreakDays: todayViewModel?.currentStreakDays ?? 8
         )

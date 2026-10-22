@@ -16,6 +16,11 @@ struct CreateGroupRulesAndLimitsView: View {
             Divider().overlay(MassMatesPalette.line)
             typeRow
             Divider().overlay(MassMatesPalette.line)
+            if viewModel.draft.type == .challenge {
+                CreateGroupChallengeWindowView(viewModel: viewModel)
+                    .padding(.vertical, MassMatesSpacing.xs)
+                Divider().overlay(MassMatesPalette.line)
+            }
             scoringModeRow
             Divider().overlay(MassMatesPalette.line)
             sharingRequirementRow
@@ -28,7 +33,7 @@ struct CreateGroupRulesAndLimitsView: View {
         Menu {
             ForEach(CommunityGroupType.allCases) { type in
                 Button {
-                    viewModel.draft.type = type
+                    viewModel.selectType(type)
                 } label: {
                     if viewModel.draft.type == type {
                         Label(type.title, systemImage: "checkmark")

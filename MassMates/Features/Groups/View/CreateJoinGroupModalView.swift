@@ -29,6 +29,9 @@ struct CreateJoinGroupModalView: View {
             .padding(.bottom, MassMatesSpacing.xl)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .task {
+            await viewModel.load()
+        }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -117,7 +120,7 @@ struct CreateJoinGroupModalView: View {
                 .foregroundStyle(MassMatesPalette.danger)
             if !viewModel.slotCapacity.hasRewardedSlotUnlocked {
                 Button {
-                    viewModel.unlockRewardedSlot()
+                    Task { await viewModel.unlockRewardedSlot() }
                 } label: {
                     Text("Liberar +1 vaga por 30 dias")
                         .font(MassMatesFont.caption)

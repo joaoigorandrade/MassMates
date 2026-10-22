@@ -26,7 +26,7 @@ struct ConfessionalModeOverlayView: View {
                 title: "Absolvição Recebida (Destruir Notas)",
                 systemImage: "checkmark.seal.fill"
             ) {
-                viewModel.completeSacramentAndDestroyNotes()
+                Task { await viewModel.completeSacramentAndDestroyNotes() }
             }
         }
         .padding(MassMatesLayout.readingMargin)

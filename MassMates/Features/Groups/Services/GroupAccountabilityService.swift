@@ -2,43 +2,37 @@ import Foundation
 
 @MainActor
 protocol GroupScoringManaging {
-    func scoringSummary(for groupId: String) -> GroupScoringSummary
+    func scoringSummary(for groupId: String) async throws -> GroupScoringSummary
     @discardableResult
-    func recordPracticeScore(_ practice: SpiritualPractice, in groupId: String) -> GroupScoringSummary
+    func recordPracticeScore(_ practice: SpiritualPractice, in groupId: String) async throws -> GroupScoringSummary
 }
 
 @MainActor
 protocol GuardianAngelManaging {
-    func guardianAngelState(for groupId: String) -> GuardianAngelState
+    func guardianAngelState(for groupId: String) async throws -> GuardianAngelState
     @discardableResult
-    func optInToGuardianAngel(in groupId: String, revealCycle: Bool) -> GuardianAngelState
+    func optInToGuardianAngel(in groupId: String, revealCycle: Bool) async throws -> GuardianAngelState
     @discardableResult
-    func sendGuardianAngelPrayerNudge(in groupId: String) -> GuardianAngelState
+    func sendGuardianAngelPrayerNudge(in groupId: String) async throws -> GuardianAngelState
 }
 
-@MainActor
-protocol PrayerWallManaging {
-    func prayerIntentions(for groupId: String) -> [PrayerIntention]
-    @discardableResult
-    func createPrayerIntention(in groupId: String, text: String) throws(CommunityGroupError) -> [PrayerIntention]
-    @discardableResult
-    func togglePrayedForIntention(_ intentionId: String, in groupId: String) -> [PrayerIntention]
-}
-
-extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManaging, PrayerWallManaging {
-    func scoringSummary(for groupId: String) -> GroupScoringSummary {
+extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManaging {
+    func scoringSummary(for groupId: String) async throws -> GroupScoringSummary {
         if let existing = scoringByGroupId[groupId] {
             return existing
         }
-        let targetGroup = group(forId: groupId) ?? CommunitySampleData.parishFraternity
+        let targetGroup = (try? await group(forId: groupId)) ?? CommunitySampleData.parishFraternity
         let initial = CommunitySampleData.initialScoringSummary(for: targetGroup)
         scoringByGroupId[groupId] = initial
         return initial
     }
 
     @discardableResult
-    func recordPracticeScore(_ practice: SpiritualPractice, in groupId: String) -> GroupScoringSummary {
-        let current = scoringSummary(for: groupId)
+    func recordPracticeScore(
+        _ practice: SpiritualPractice,
+        in groupId: String
+    ) async throws -> GroupScoringSummary {
+        let current = try await scoringSummary(for: groupId)
         guard !practice.isStrictlyPrivate else { return current }
         let updatedEntries = current.entries.map { entry -> GroupMemberScoreEntry in
             guard entry.isCurrentUser else { return entry }
@@ -68,19 +62,22 @@ extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManagi
         return updated
     }
 
-    func guardianAngelState(for groupId: String) -> GuardianAngelState {
+    func guardianAngelState(for groupId: String) async throws -> GuardianAngelState {
         if let existing = guardianAngelByGroupId[groupId] {
             return existing
         }
-        let targetGroup = group(forId: groupId) ?? CommunitySampleData.parishFraternity
+        let targetGroup = (try? await group(forId: groupId)) ?? CommunitySampleData.parishFraternity
         let initial = CommunitySampleData.initialGuardianAngelState(for: targetGroup)
         guardianAngelByGroupId[groupId] = initial
         return initial
     }
 
     @discardableResult
-    func optInToGuardianAngel(in groupId: String, revealCycle: Bool = false) -> GuardianAngelState {
-        let current = guardianAngelState(for: groupId)
+    func optInToGuardianAngel(
+        in groupId: String,
+        revealCycle: Bool = false
+    ) async throws -> GuardianAngelState {
+        let current = try await guardianAngelState(for: groupId)
         let updated = GuardianAngelState(
             groupId: current.groupId,
             cycleTitle: current.cycleTitle,
@@ -99,8 +96,8 @@ extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManagi
     }
 
     @discardableResult
-    func sendGuardianAngelPrayerNudge(in groupId: String) -> GuardianAngelState {
-        let current = guardianAngelState(for: groupId)
+    func sendGuardianAngelPrayerNudge(in groupId: String) async throws -> GuardianAngelState {
+        let current = try await guardianAngelState(for: groupId)
         guard current.isOptedIn else { return current }
         let increment = current.hasPrayedForProtectedSoulToday ? 0 : 1
         let updated = GuardianAngelState(
@@ -118,59 +115,5 @@ extension LocalCommunityGroupsService: GroupScoringManaging, GuardianAngelManagi
         )
         guardianAngelByGroupId[groupId] = updated
         return updated
-    }
-
-    func prayerIntentions(for groupId: String) -> [PrayerIntention] {
-        let all = prayerIntentionsByGroupId[groupId] ?? CommunitySampleData.initialPrayerIntentions(for: groupId)
-        prayerIntentionsByGroupId[groupId] = all
-        return all.filter { !blockedUsers.contains($0.authorName) }
-    }
-
-    @discardableResult
-    func createPrayerIntention(in groupId: String, text: String) throws(CommunityGroupError) -> [PrayerIntention] {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { throw .emptyPrayerIntention }
-        var intentions = prayerIntentions(for: groupId)
-        let newIntention = PrayerIntention(
-            id: "\(groupId)-int-\(intentions.count + 1)",
-            groupId: groupId,
-            authorName: "Você",
-            authorInitials: "VC",
-            intentionText: trimmed,
-            relativeTimeLabel: "agora",
-            prayedCount: 0,
-            hasCurrentUserPrayed: false,
-            lastComfortNotificationText: nil
-        )
-        intentions.insert(newIntention, at: 0)
-        prayerIntentionsByGroupId[groupId] = intentions
-        return intentions
-    }
-
-    @discardableResult
-    func togglePrayedForIntention(_ intentionId: String, in groupId: String) -> [PrayerIntention] {
-        var intentions = prayerIntentions(for: groupId)
-        guard let idx = intentions.firstIndex(where: { $0.id == intentionId }) else {
-            return intentions
-        }
-        let target = intentions[idx]
-        let nowPrayed = !target.hasCurrentUserPrayed
-        let updatedCount = nowPrayed ? target.prayedCount + 1 : max(0, target.prayedCount - 1)
-        let comfort = nowPrayed
-            ? "Notificação fraterna enviada para \(target.authorName): “Rezei por você hoje.”"
-            : nil
-        intentions[idx] = PrayerIntention(
-            id: target.id,
-            groupId: target.groupId,
-            authorName: target.authorName,
-            authorInitials: target.authorInitials,
-            intentionText: target.intentionText,
-            relativeTimeLabel: target.relativeTimeLabel,
-            prayedCount: updatedCount,
-            hasCurrentUserPrayed: nowPrayed,
-            lastComfortNotificationText: comfort
-        )
-        prayerIntentionsByGroupId[groupId] = intentions
-        return intentions
     }
 }

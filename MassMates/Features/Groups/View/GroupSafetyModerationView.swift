@@ -41,11 +41,13 @@ struct GroupSafetyModerationView: View {
                 Text("Administração do Grupo • \(theme.season.defaultSeasonName)")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Código atual: \(viewModel.currentInviteCode)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                MassMatesSecondaryButton(title: "Redefinir Código de 6 Dígitos", systemImage: "arrow.triangle.2.circlepath") {
-                    viewModel.resetInviteCode()
+                if viewModel.canShareInvite {
+                    Text("Código atual: \(viewModel.currentInviteCode)")
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                    MassMatesSecondaryButton(title: "Redefinir Código de 6 Dígitos", systemImage: "arrow.triangle.2.circlepath") {
+                        Task { await viewModel.resetInviteCode() }
+                    }
                 }
                 ForEach(viewModel.members.filter { !$0.isCurrentUser }) { member in
                     memberModerationRow(member)
@@ -61,13 +63,13 @@ struct GroupSafetyModerationView: View {
                 .foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
             Button("Remover") {
-                viewModel.removeMember(member.id)
+                Task { await viewModel.removeMember(member.id) }
             }
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.danger)
             .frame(minHeight: MassMatesLayout.minTapTarget)
             Button("Bloquear") {
-                viewModel.blockUser(member.name)
+                Task { await viewModel.blockUser(member) }
             }
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.warning)
@@ -114,13 +116,13 @@ struct GroupSafetyModerationView: View {
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Spacer()
             Button("Denunciar") {
-                viewModel.reportContent(targetId: post.id, summary: "\(post.authorName): \(post.practice.title)")
+                Task { await viewModel.reportContent(targetId: post.id, summary: "\(post.authorName): \(post.practice.title)") }
             }
             .font(MassMatesFont.caption)
             .foregroundStyle(theme.tint)
             .frame(minHeight: MassMatesLayout.minTapTarget)
             Button("Excluir") {
-                viewModel.deleteFeedPost(post.id)
+                Task { await viewModel.deleteFeedPost(post.id) }
             }
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.danger)

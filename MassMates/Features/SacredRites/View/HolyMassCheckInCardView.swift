@@ -132,7 +132,7 @@ struct HolyMassCheckInCardView: View {
                 .padding(MassMatesSpacing.sm)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            Button { viewModel.saveDiaryNote() } label: {
+            Button { Task { await viewModel.saveDiaryNote() } } label: {
                 Label("Salvar no Diário", systemImage: "square.and.arrow.down")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(theme.onTint)

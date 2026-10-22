@@ -83,9 +83,53 @@ struct CommunityGroup: Identifiable, Sendable, Equatable, Hashable, Codable {
     let isOfficialSeasonalChallenge: Bool
     let sponsorName: String?
     let sponsorCoupon: String?
+    /// The first day of a **dated challenge**. `nil` for a fraternity.
+    var startsOn: Date? = nil
+    /// The last day of a **dated challenge**. `nil` for a fraternity.
+    var endsOn: Date? = nil
+    /// The caller is the **admin** of the group. Only an admin ever receives
+    /// an `invite_code` from the server.
+    var isCurrentUserAdmin: Bool = false
 
     var inviteLinkURL: URL? {
         URL(string: "massmates://join/\(inviteCode)")
+    }
+
+    /// The same group without its invite code — what a plain member sees.
+    func withInviteCode(_ code: String) -> CommunityGroup {
+        CommunityGroup(
+            id: id,
+            name: name,
+            parishOrCommunity: parishOrCommunity,
+            inviteCode: code,
+            type: type,
+            scoringMode: scoringMode,
+            sharingRequirement: sharingRequirement,
+            memberCount: memberCount,
+            collectiveGoalProgress: collectiveGoalProgress,
+            collectiveGoalLabel: collectiveGoalLabel,
+            isOfficialSeasonalChallenge: isOfficialSeasonalChallenge,
+            sponsorName: sponsorName,
+            sponsorCoupon: sponsorCoupon,
+            startsOn: startsOn,
+            endsOn: endsOn,
+            isCurrentUserAdmin: isCurrentUserAdmin
+        )
+    }
+
+    /// The challenge window, when the group is a dated challenge.
+    var challengeWindowLabel: String? {
+        guard type == .challenge, let startsOn, let endsOn else { return nil }
+        return "\(Self.shortDate(startsOn)) → \(Self.shortDate(endsOn))"
+    }
+
+    private static func shortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.timeZone = .current
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: date)
     }
 }
 
@@ -114,41 +158,6 @@ enum FeedReactionType: String, CaseIterable, Identifiable, Sendable, Equatable, 
         switch self {
         case .amen: "hands.sparkles"
         case .unitedInPrayer: "heart"
-        }
-    }
-}
-
-struct GroupFeedComment: Identifiable, Sendable, Equatable, Hashable, Codable {
-    let id: String
-    let authorName: String
-    let text: String
-    let relativeTimeLabel: String
-}
-
-struct GroupFeedPost: Identifiable, Sendable, Equatable, Hashable, Codable {
-    let id: String
-    let groupId: String
-    let authorName: String
-    let authorInitials: String
-    let practice: SpiritualPractice
-    let fruitOfPrayer: String?
-    let photoCaption: String?
-    let relativeTimeLabel: String
-    let amenCount: Int
-    let isAmenSelected: Bool
-    let unitedCount: Int
-    let isUnitedSelected: Bool
-    let comments: [GroupFeedComment]
-}
-
-enum GroupFeedItem: Identifiable, Sendable, Equatable, Hashable {
-    case post(GroupFeedPost)
-    case sponsoredAd(id: String, sponsorName: String, headline: String, bodyText: String, couponCode: String?)
-
-    var id: String {
-        switch self {
-        case .post(let post): "post-\(post.id)"
-        case .sponsoredAd(let id, _, _, _, _): "ad-\(id)"
         }
     }
 }

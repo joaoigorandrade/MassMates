@@ -105,7 +105,7 @@ struct FeaturedChallengesSectionView: View {
 #Preview("Featured Challenges — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         FeaturedChallengesSectionView(
-            challenges: LocalCommunityGroupsService().featuredChallenges(),
+            challenges: LocalCommunityGroupsService.sampleFeaturedChallenges(),
             onJoinChallenge: { _ in },
             onOpenGroup: { _ in }
         )

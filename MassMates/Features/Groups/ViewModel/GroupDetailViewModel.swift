@@ -6,25 +6,42 @@ import Observation
 final class GroupDetailViewModel {
     // MARK: - Dependencies & State
     let group: CommunityGroup
-    private let feedService: any GroupFeedManaging
-    private let scoringService: any GroupScoringManaging
-    private let guardianAngelService: any GuardianAngelManaging
-    private let prayerWallService: any PrayerWallManaging
-    private let chatService: any GroupChatManaging
-    private let moderationService: any GroupModerationManaging
+    let feedService: any GroupFeedManaging
+    let scoringService: any GroupScoringManaging
+    let guardianAngelService: any GuardianAngelManaging
+    let prayerWallService: any PrayerWallManaging
+    let chatService: any GroupChatManaging
+    let moderationService: any GroupModerationManaging
+    let realtimeService: (any CommunityRealtimeStreaming)?
+    let liveSyncService: (any CommunityLiveSyncing)?
 
     var selectedSubTab: GroupDetailSubTab = .progress
-    private(set) var currentInviteCode: String
-    private(set) var feedItems: [GroupFeedItem] = []
-    private(set) var scoringSummary: GroupScoringSummary
-    private(set) var guardianAngelState: GuardianAngelState
-    private(set) var prayerIntentions: [PrayerIntention] = []
-    private(set) var pinnedNotice: GroupPinnedNotice
-    private(set) var chatMessages: [GroupChatMessage] = []
-    private(set) var members: [GroupMemberSummary] = []
-    private(set) var moderationReports: [ModerationReportEntry] = []
-    private(set) var blockedUserNames: Set<String> = []
-    private(set) var moderationFeedbackMessage: String?
+    var currentInviteCode: String
+    var feedItems: [GroupFeedItem] = []
+    var scoringSummary: GroupScoringSummary
+    var guardianAngelState: GuardianAngelState
+    var prayerIntentions: [PrayerIntention] = []
+    var pinnedNotice: GroupPinnedNotice
+    var chatMessages: [GroupChatMessage] = []
+    var members: [GroupMemberSummary] = []
+    var moderationReports: [ModerationReportEntry] = []
+    var blockedUserNames: Set<String> = []
+    var moderationFeedbackMessage: String?
+    var livePulse: GroupLiveSyncPulse?
+
+    /// The invite code is a **capability**: only the group admin ever has one.
+    var canShareInvite: Bool {
+        !currentInviteCode.isEmpty
+    }
+
+    var inviteShareLabel: String? {
+        canShareInvite ? "Convite: \(currentInviteCode)" : nil
+    }
+
+    var commentsByPostId: [String: [GroupFeedComment]] = [:]
+    var commentErrorsByPostId: [String: String] = [:]
+    var signedPhotoURLsByPath: [String: URL] = [:]
+    let storage: SupabaseStorageClient?
 
     var isShowingModerationPanel: Bool = false
     var isEditingPinnedNotice: Bool = false
@@ -35,7 +52,7 @@ final class GroupDetailViewModel {
     var quickPostPractice: SpiritualPractice = .rosary
     var quickPostFruit: String = ""
     var newPrayerIntentionDraft: String = ""
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Init
     init(
@@ -45,7 +62,10 @@ final class GroupDetailViewModel {
         guardianAngelService: (any GuardianAngelManaging)? = nil,
         prayerWallService: (any PrayerWallManaging)? = nil,
         chatService: (any GroupChatManaging)? = nil,
-        moderationService: (any GroupModerationManaging)? = nil
+        moderationService: (any GroupModerationManaging)? = nil,
+        realtimeService: (any CommunityRealtimeStreaming)? = nil,
+        liveSyncService: (any CommunityLiveSyncing)? = nil,
+        storage: SupabaseStorageClient? = nil
     ) {
         let fallback = feedService as? LocalCommunityGroupsService ?? LocalCommunityGroupsService()
         self.group = group
@@ -56,118 +76,58 @@ final class GroupDetailViewModel {
         self.prayerWallService = prayerWallService ?? fallback
         self.chatService = chatService ?? fallback
         self.moderationService = moderationService ?? fallback
-        self.scoringSummary = (scoringService ?? fallback).scoringSummary(for: group.id)
-        self.guardianAngelState = (guardianAngelService ?? fallback).guardianAngelState(for: group.id)
-        self.pinnedNotice = (chatService ?? fallback).pinnedNotice(for: group.id)
+        self.realtimeService = realtimeService
+        self.liveSyncService = liveSyncService
+        self.storage = storage
+        self.scoringSummary = CommunitySampleData.initialScoringSummary(for: group)
+        self.guardianAngelState = CommunitySampleData.initialGuardianAngelState(for: group)
+        self.pinnedNotice = CommunitySampleData.initialPinnedNotice(for: group.id)
         self.pinnedNoticeDraft = self.pinnedNotice.noticeText
-        refreshAll()
     }
 
     // MARK: - Body / Public API
-    func refreshAll() {
-        refreshFeed()
-        scoringSummary = scoringService.scoringSummary(for: group.id)
-        guardianAngelState = guardianAngelService.guardianAngelState(for: group.id)
-        prayerIntentions = prayerWallService.prayerIntentions(for: group.id)
-        pinnedNotice = chatService.pinnedNotice(for: group.id)
-        chatMessages = chatService.chatMessages(for: group.id)
-        members = moderationService.groupMembers(for: group.id)
-        moderationReports = moderationService.moderationReports(for: group.id)
-        blockedUserNames = moderationService.blockedUserNames()
+    func load() async {
+        await refreshAll()
+        await refreshLivePulse()
     }
 
-    func refreshFeed() {
-        feedItems = feedService.feedItemsWithSponsoredAds(for: group.id)
+    func refreshAll() async {
+        await refreshFeed()
+        scoringSummary = (try? await scoringService.scoringSummary(for: group.id)) ?? scoringSummary
+        guardianAngelState = (try? await guardianAngelService.guardianAngelState(for: group.id)) ?? guardianAngelState
+        prayerIntentions = (try? await prayerWallService.prayerIntentions(for: group.id)) ?? prayerIntentions
+        pinnedNotice = (try? await chatService.pinnedNotice(for: group.id)) ?? pinnedNotice
+        chatMessages = (try? await chatService.chatMessages(for: group.id)) ?? chatMessages
+        members = (try? await moderationService.groupMembers(for: group.id)) ?? members
+        moderationReports = (try? await moderationService.moderationReports(for: group.id)) ?? moderationReports
+        blockedUserNames = (try? await moderationService.blockedUserNames()) ?? blockedUserNames
     }
 
-    func toggleReaction(_ reaction: FeedReactionType, for postId: String) {
-        _ = feedService.toggleReaction(reaction, postId: postId, in: group.id)
-        refreshFeed()
+    func refreshFeed() async {
+        feedItems = (try? await feedService.feedItemsWithSponsoredAds(for: group.id)) ?? feedItems
+        await loadWitnessPhotoURLs()
     }
 
-    func submitComment(for postId: String) {
-        let draft = draftCommentByPostId[postId] ?? ""
-        _ = feedService.addComment(draft, postId: postId, in: group.id)
-        draftCommentByPostId[postId] = ""
-        refreshFeed()
+    func toggleReaction(_ reaction: FeedReactionType, for postId: String) async {
+        _ = try? await feedService.toggleReaction(reaction, postId: postId, in: group.id)
+        await refreshFeed()
     }
 
-    func submitQuickWitness() {
+    func submitQuickWitness() async {
         errorMessage = nil
         do {
             let fruit = quickPostFruit.isEmpty ? nil : quickPostFruit
-            _ = try feedService.createPost(in: group.id, practice: quickPostPractice, fruitOfPrayer: fruit, photoCaption: nil)
+            _ = try await feedService.createPost(
+                in: group.id,
+                practice: quickPostPractice,
+                fruitOfPrayer: fruit,
+                photoCaption: nil
+            )
             quickPostFruit = ""
-            refreshAll()
+            await refreshAll()
         } catch {
             errorMessage = error.userMessage
         }
-    }
-
-    func optInGuardianAngel() {
-        guardianAngelState = guardianAngelService.optInToGuardianAngel(in: group.id, revealCycle: false)
-    }
-
-    func sendGuardianAngelPrayerNudge() {
-        guardianAngelState = guardianAngelService.sendGuardianAngelPrayerNudge(in: group.id)
-    }
-
-    func revealGuardianAngelCycle() {
-        guardianAngelState = guardianAngelService.optInToGuardianAngel(in: group.id, revealCycle: true)
-    }
-    func togglePrayedForIntention(_ intentionId: String) {
-        prayerIntentions = prayerWallService.togglePrayedForIntention(intentionId, in: group.id)
-    }
-    func submitPrayerIntention() {
-        errorMessage = nil
-        do {
-            prayerIntentions = try prayerWallService.createPrayerIntention(in: group.id, text: newPrayerIntentionDraft)
-            newPrayerIntentionDraft = ""
-        } catch { errorMessage = error.userMessage }
-    }
-
-    func sendChatMessage() {
-        errorMessage = nil
-        do {
-            chatMessages = try chatService.sendChatMessage(in: group.id, text: chatMessageDraft)
-            chatMessageDraft = ""
-        } catch { errorMessage = error.userMessage }
-    }
-
-    func savePinnedNotice() {
-        errorMessage = nil
-        do {
-            pinnedNotice = try chatService.updatePinnedNotice(in: group.id, noticeText: pinnedNoticeDraft)
-            isEditingPinnedNotice = false
-        } catch { errorMessage = error.userMessage }
-    }
-
-    func resetInviteCode() {
-        currentInviteCode = moderationService.resetGroupInviteCode(for: group.id)
-        moderationFeedbackMessage = "Novo código de convite gerado: \(currentInviteCode)"
-    }
-
-    func removeMember(_ memberId: String) {
-        members = moderationService.removeMember(memberId: memberId, from: group.id)
-        moderationFeedbackMessage = "Membro removido da fraternidade."
-    }
-
-    func deleteFeedPost(_ postId: String) {
-        moderationService.deleteFeedPost(postId: postId, in: group.id)
-        moderationFeedbackMessage = "Publicação removida pelo líder."
-        refreshFeed()
-    }
-
-    func reportContent(targetId: String, summary: String, reason: ContentReportReason? = nil) {
-        let activeReason = reason ?? selectedReportReason
-        moderationReports = moderationService.reportContent(targetId: targetId, summary: summary, reason: activeReason, in: group.id)
-        moderationFeedbackMessage = "Denúncia registrada (\(activeReason.title))."
-    }
-
-    func blockUser(_ userName: String) {
-        moderationService.blockUser(userName: userName)
-        moderationFeedbackMessage = "Usuário \(userName) bloqueado."
-        refreshAll()
     }
 
     // MARK: - Subviews / Private Helpers

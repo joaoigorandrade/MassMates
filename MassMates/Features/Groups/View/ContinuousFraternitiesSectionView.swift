@@ -110,6 +110,12 @@ struct ContinuousFraternitiesSectionView: View {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .lineLimit(1)
+            if let window = group.challengeWindowLabel {
+                Text(window)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .lineLimit(1)
+            }
         }
     }
 
@@ -145,7 +151,7 @@ struct ContinuousFraternitiesSectionView: View {
                 CommunitySampleData.parishFraternity,
                 CommunitySampleData.directoryGroups[0]
             ],
-            capacity: LocalCommunityGroupsService().slotCapacity(),
+            capacity: LocalCommunityGroupsService.sampleSlotCapacity(),
             onSelectGroup: { _ in }
         )
     }

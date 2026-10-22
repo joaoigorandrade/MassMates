@@ -69,6 +69,7 @@ enum CheckInValidationError: Error, Sendable, Equatable {
     case noGroupSelected
     case writtenFruitRequired(groupName: String)
     case photoWitnessRequired(groupName: String)
+    case network(String)
 
     var userMessage: String {
         switch self {
@@ -78,6 +79,8 @@ enum CheckInValidationError: Error, Sendable, Equatable {
             "O grupo “\(groupName)” pede uma breve reflexão no Fruto da Oração."
         case .photoWitnessRequired(let groupName):
             "O grupo “\(groupName)” pede uma legenda de partilha fotográfica."
+        case .network(let message):
+            message
         }
     }
 }

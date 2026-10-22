@@ -107,7 +107,7 @@ final class NightlyExamenViewModel {
     }
     func concludeExamen() { isExamenConcluded = true }
 
-    func saveToPrivateJournal(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) {
+    func saveToPrivateJournal(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) async {
         let targetEngine = overrideEngine ?? self.checkInEngine
         let reflection = composeExamenReflection()
         let penance = privateConfessionNote.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -118,7 +118,7 @@ final class NightlyExamenViewModel {
                 confessorOrPenanceNotes: penance,
                 destinationMode: .privateDiaryOnly
             )
-            try? _ = targetEngine.submitCheckIn(draft, at: Date())
+            _ = try? await targetEngine.submitCheckIn(draft, at: Date())
         }
         onSaveJournalReflection?(reflection)
         isSavedToLocalJournal = true

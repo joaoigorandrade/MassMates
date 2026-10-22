@@ -5,7 +5,7 @@ import Testing
 @MainActor
 struct GamificationAccountabilityPhase3Tests {
     @Test("Confession safeguard locks destination to Private Diary, forbids group feeds, and blocks post-check-in ads")
-    func confessionSafeguardLocksDestinationAndForbidsFeeds() throws {
+    func confessionSafeguardLocksDestinationAndForbidsFeeds() async throws {
         let communityService = LocalCommunityGroupsService()
         var completedPractices: [SpiritualPractice] = []
         let checkInEngine = LocalCheckInEngineService(
@@ -18,6 +18,7 @@ struct GamificationAccountabilityPhase3Tests {
             checkInService: checkInEngine,
             groupsListing: communityService
         )
+        await viewModel.load()
 
         #expect(!viewModel.isDestinationLockedToPrivateDiary)
         viewModel.selectPractice(.confession)
@@ -29,7 +30,7 @@ struct GamificationAccountabilityPhase3Tests {
         #expect(viewModel.selectedGroupIds.isEmpty)
         viewModel.fruitOfPrayer = "Exame de consciência sincero"
         viewModel.confessorOrPenanceNotes = "Rezar o Salmo 50"
-        viewModel.submit(at: Date(timeIntervalSince1970: 1_700_000_000))
+        await viewModel.submit(at: Date(timeIntervalSince1970: 1_700_000_000))
 
         let result = try #require(viewModel.submissionResult)
         #expect(result.practice == .confession)
@@ -38,11 +39,12 @@ struct GamificationAccountabilityPhase3Tests {
         #expect(!result.shouldShowPostCheckInSponsoredCard)
         #expect(completedPractices == [.confession])
         #expect(checkInEngine.privateDiaryEntries().first?.confessorOrPenanceNotes == "Rezar o Salmo 50")
-        #expect(!communityService.feedPosts(for: "frat-sao-jose").contains(where: { $0.practice == .confession }))
+        let posts = try await communityService.feedPosts(for: "frat-sao-jose")
+        #expect(!posts.contains(where: { $0.practice == .confession }))
     }
 
     @Test("Check-In Engine validates group sharingRequirement and caps post-check-in ad to 1 per 24h")
-    func checkInEngineSharingRequirementAnd24hAdCap() throws {
+    func checkInEngineSharingRequirementAnd24hAdCap() async throws {
         let communityService = LocalCommunityGroupsService()
         let checkInEngine = LocalCheckInEngineService(
             groupsListing: communityService,
@@ -53,15 +55,16 @@ struct GamificationAccountabilityPhase3Tests {
             checkInService: checkInEngine,
             groupsListing: communityService
         )
+        await viewModel.load()
 
         viewModel.fruitOfPrayer = ""
-        viewModel.submit(at: Date(timeIntervalSince1970: 1_700_000_000))
+        await viewModel.submit(at: Date(timeIntervalSince1970: 1_700_000_000))
         #expect(viewModel.submissionResult == nil)
         #expect(viewModel.errorMessage != nil)
 
         let firstTime = Date(timeIntervalSince1970: 1_700_000_000)
         viewModel.fruitOfPrayer = "Oferecido pela paz das famílias."
-        viewModel.submit(at: firstTime)
+        await viewModel.submit(at: firstTime)
         let firstResult = try #require(viewModel.submissionResult)
         #expect(firstResult.sharedGroupIds == ["frat-sao-jose"])
         #expect(firstResult.shouldShowPostCheckInSponsoredCard)
@@ -72,15 +75,15 @@ struct GamificationAccountabilityPhase3Tests {
             destinationMode: .selectedGroups,
             selectedGroupIds: ["frat-sao-jose"]
         )
-        let secondResult = try checkInEngine.submitCheckIn(secondDraft, at: firstTime.addingTimeInterval(7_200))
+        let secondResult = try await checkInEngine.submitCheckIn(secondDraft, at: firstTime.addingTimeInterval(7_200))
         #expect(!secondResult.shouldShowPostCheckInSponsoredCard)
 
-        let thirdResult = try checkInEngine.submitCheckIn(secondDraft, at: firstTime.addingTimeInterval(90_000))
+        let thirdResult = try await checkInEngine.submitCheckIn(secondDraft, at: firstTime.addingTimeInterval(90_000))
         #expect(thirdResult.shouldShowPostCheckInSponsoredCard)
     }
 
     @Test("3 Group Scoring Modes update Faithful Days, Collective Treasure, and Custom Points accurately")
-    func threeGroupScoringModesBehavior() throws {
+    func threeGroupScoringModesBehavior() async throws {
         let service = LocalCommunityGroupsService(
             initialGroups: [
                 CommunitySampleData.parishFraternity,
@@ -90,34 +93,34 @@ struct GamificationAccountabilityPhase3Tests {
             maxBasePersonalSlots: 3
         )
 
-        let initialFaithful = service.scoringSummary(for: "frat-sao-jose")
+        let initialFaithful = try await service.scoringSummary(for: "frat-sao-jose")
         let initialUserDays = try #require(initialFaithful.currentUserEntry).faithfulDaysCount
-        let afterFirstPractice = service.recordPracticeScore(.rosary, in: "frat-sao-jose")
+        let afterFirstPractice = try await service.recordPracticeScore(.rosary, in: "frat-sao-jose")
         let afterFirstDays = try #require(afterFirstPractice.currentUserEntry).faithfulDaysCount
         #expect(afterFirstDays == initialUserDays + 1)
 
-        let afterSecondPractice = service.recordPracticeScore(.holyMass, in: "frat-sao-jose")
+        let afterSecondPractice = try await service.recordPracticeScore(.holyMass, in: "frat-sao-jose")
         let afterSecondDays = try #require(afterSecondPractice.currentUserEntry).faithfulDaysCount
         #expect(afterSecondDays == afterFirstDays)
         #expect(afterSecondPractice.collectiveGoalCurrent == initialFaithful.collectiveGoalCurrent + 2)
 
-        let initialTreasure = service.scoringSummary(for: "chal-sao-miguel")
+        let initialTreasure = try await service.scoringSummary(for: "chal-sao-miguel")
         let initialOrder = initialTreasure.orderedEntries.map(\.id)
-        let updatedTreasure = service.recordPracticeScore(.mentalPrayer, in: "chal-sao-miguel")
+        let updatedTreasure = try await service.recordPracticeScore(.mentalPrayer, in: "chal-sao-miguel")
         #expect(updatedTreasure.collectiveGoalCurrent == initialTreasure.collectiveGoalCurrent + 1)
         #expect(updatedTreasure.orderedEntries.map(\.id) == initialOrder)
 
-        let initialCustom = service.scoringSummary(for: "frat-santa-teresinha")
+        let initialCustom = try await service.scoringSummary(for: "frat-santa-teresinha")
         let initialPoints = try #require(initialCustom.currentUserEntry).customPointsTotal
-        _ = service.recordPracticeScore(.holyMass, in: "frat-santa-teresinha")
-        let afterRosary = service.recordPracticeScore(.rosary, in: "frat-santa-teresinha")
+        _ = try await service.recordPracticeScore(.holyMass, in: "frat-santa-teresinha")
+        let afterRosary = try await service.recordPracticeScore(.rosary, in: "frat-santa-teresinha")
         let finalPoints = try #require(afterRosary.currentUserEntry).customPointsTotal
         #expect(afterRosary.scoringMode == .customPoints)
         #expect(finalPoints == initialPoints + 30 + 20)
     }
 
     @Test("Secret Guardian Angel pairing supports opt-in, daily anonymous prayer nudge, and cycle reveal")
-    func secretGuardianAngelFlow() {
+    func secretGuardianAngelFlow() async {
         let service = LocalCommunityGroupsService(initialGroups: [CommunitySampleData.youthChallenge])
         let viewModel = GroupDetailViewModel(
             group: CommunitySampleData.youthChallenge,
@@ -126,24 +129,25 @@ struct GamificationAccountabilityPhase3Tests {
             guardianAngelService: service,
             prayerWallService: service
         )
+        await viewModel.load()
 
         #expect(!viewModel.guardianAngelState.isOptedIn)
-        viewModel.optInGuardianAngel()
+        await viewModel.optInGuardianAngel()
         #expect(viewModel.guardianAngelState.isOptedIn)
 
         let beforeCount = viewModel.guardianAngelState.prayersSentInCycle
-        viewModel.sendGuardianAngelPrayerNudge()
+        await viewModel.sendGuardianAngelPrayerNudge()
         #expect(viewModel.guardianAngelState.hasPrayedForProtectedSoulToday)
         #expect(viewModel.guardianAngelState.prayersSentInCycle == beforeCount + 1)
         #expect(viewModel.guardianAngelState.anonymousNudgeStatusText == "Seu Anjo da Guarda rezou por você hoje.")
 
-        viewModel.revealGuardianAngelCycle()
+        await viewModel.revealGuardianAngelCycle()
         #expect(viewModel.guardianAngelState.isCycleRevealed)
         #expect(viewModel.guardianAngelState.anonymousNudgeStatusText?.contains("Mateus Silva") == true)
     }
 
     @Test("Prayer Wall creates intentions and increments 'Rezei por você' counter with comfort notification")
-    func prayerWallCreateAndTogglePrayed() throws {
+    func prayerWallCreateAndTogglePrayed() async throws {
         let service = LocalCommunityGroupsService()
         let viewModel = GroupDetailViewModel(
             group: CommunitySampleData.parishFraternity,
@@ -152,14 +156,15 @@ struct GamificationAccountabilityPhase3Tests {
             guardianAngelService: service,
             prayerWallService: service
         )
+        await viewModel.load()
 
         let initialCount = viewModel.prayerIntentions.count
         viewModel.newPrayerIntentionDraft = "Pelos enfermos da nossa comunidade paroquial."
-        viewModel.submitPrayerIntention()
+        await viewModel.submitPrayerIntention()
         #expect(viewModel.prayerIntentions.count == initialCount + 1)
 
         let created = try #require(viewModel.prayerIntentions.first)
-        viewModel.togglePrayedForIntention(created.id)
+        await viewModel.togglePrayedForIntention(created.id)
         let matching = viewModel.prayerIntentions.first(where: { $0.id == created.id })
         let updated = try #require(matching)
         #expect(updated.prayedCount == 1)

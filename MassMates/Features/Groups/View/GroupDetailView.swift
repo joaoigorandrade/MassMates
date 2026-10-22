@@ -6,7 +6,7 @@ struct GroupDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
-    @Bindable private var viewModel: GroupDetailViewModel
+    @Bindable var viewModel: GroupDetailViewModel
 
     // MARK: - Init
     init(viewModel: GroupDetailViewModel) {
@@ -38,6 +38,10 @@ struct GroupDetailView: View {
         .background(MassMatesPalette.bg.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .task {
+            await viewModel.load()
+            await viewModel.startRealtime()
+        }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -57,11 +61,15 @@ struct GroupDetailView: View {
             Text("MassMates").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
             Menu {
-                Text("Convite: \(viewModel.currentInviteCode)")
+                if let inviteLabel = viewModel.inviteShareLabel {
+                    Text(inviteLabel)
+                }
                 Button("Moderação & Segurança", systemImage: "shield.lefthalf.filled") {
                     viewModel.isShowingModerationPanel.toggle()
                 }
-                Button("Redefinir Código de Convite", systemImage: "arrow.clockwise") { viewModel.resetInviteCode() }
+                if viewModel.canShareInvite {
+                    Button("Redefinir Código de Convite", systemImage: "arrow.clockwise") { Task { await viewModel.resetInviteCode() } }
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(MassMatesFont.headline)
@@ -83,23 +91,25 @@ struct GroupDetailView: View {
         case .progress:
             GroupProgressTabView(
                 summary: viewModel.scoringSummary, guardianAngelState: viewModel.guardianAngelState,
-                onOptInGuardianAngel: viewModel.optInGuardianAngel,
-                onSendGuardianAngelNudge: viewModel.sendGuardianAngelPrayerNudge,
-                onRevealGuardianAngelCycle: viewModel.revealGuardianAngelCycle
+                onOptInGuardianAngel: { Task { await viewModel.optInGuardianAngel() } },
+                onSendGuardianAngelNudge: { Task { await viewModel.sendGuardianAngelPrayerNudge() } },
+                onRevealGuardianAngelCycle: { Task { await viewModel.revealGuardianAngelCycle() } }
             )
             recentCommunionSection
         case .intentions:
             GroupPrayerWallTabView(
                 newIntentionDraft: $viewModel.newPrayerIntentionDraft, intentions: viewModel.prayerIntentions,
-                errorMessage: viewModel.errorMessage, onSubmitIntention: viewModel.submitPrayerIntention,
-                onTogglePrayed: viewModel.togglePrayedForIntention
+                errorMessage: viewModel.errorMessage,
+                onSubmitIntention: { Task { await viewModel.submitPrayerIntention() } },
+                onTogglePrayed: { intentionId in Task { await viewModel.togglePrayedForIntention(intentionId) } }
             )
         case .chat:
             GroupChatTabView(
                 pinnedNotice: viewModel.pinnedNotice, messages: viewModel.chatMessages,
                 isEditingNotice: $viewModel.isEditingPinnedNotice, noticeDraft: $viewModel.pinnedNoticeDraft,
                 messageDraft: $viewModel.chatMessageDraft, errorMessage: viewModel.errorMessage,
-                onSaveNotice: viewModel.savePinnedNotice, onSendMessage: viewModel.sendChatMessage
+                onSaveNotice: { Task { await viewModel.savePinnedNotice() } },
+                onSendMessage: { Task { await viewModel.sendChatMessage() } }
             )
         }
     }
@@ -135,35 +145,11 @@ struct GroupDetailView: View {
                 if let error = viewModel.errorMessage {
                     Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
                 }
-                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane", action: viewModel.submitQuickWitness)
+                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane") { Task { await viewModel.submitQuickWitness() } }
             }
         }
     }
 
-    private var feedSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            Text("Feed da Comunidade").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-            ForEach(viewModel.feedItems) { item in feedItemView(for: item) }
-        }
-    }
-
-    @ViewBuilder
-    private func feedItemView(for item: GroupFeedItem, showsComments: Bool = true) -> some View {
-        switch item {
-        case .post(let post):
-            GroupFeedPostCardView(
-                post: post, commentDraft: commentBinding(for: post.id), showsComments: showsComments,
-                onReaction: { reaction in viewModel.toggleReaction(reaction, for: post.id) },
-                onSubmitComment: { viewModel.submitComment(for: post.id) }
-            )
-        case .sponsoredAd(_, let sponsorName, let headline, let bodyText, let couponCode):
-            SponsoredNativeCardView(sponsorName: sponsorName, headline: headline, bodyText: bodyText, couponCode: couponCode)
-        }
-    }
-
-    private func commentBinding(for postId: String) -> Binding<String> {
-        Binding(get: { viewModel.draftCommentByPostId[postId] ?? "" }, set: { viewModel.draftCommentByPostId[postId] = $0 })
-    }
 }
 
 #Preview("Group Detail — 5 Seasons (Light / Dark / AX3)") {

@@ -5,6 +5,35 @@ struct GroupsHomeSnapshot: Sendable, Equatable {
     let joinedGroups: [CommunityGroup]
     let featuredChallenges: [FeaturedChallenge]
     let slotCapacity: GroupSlotCapacity
+
+    /// The joined groups that are **not** a featured seasonal challenge — the
+    /// "Fraternidades" section.
+    var personalGroups: [CommunityGroup] {
+        joinedGroups.filter { !$0.isOfficialSeasonalChallenge }
+    }
+
+    /// The joined groups the server flags as a **featured** seasonal
+    /// challenge — the "Desafio em destaque" section.
+    var featuredGroups: [CommunityGroup] {
+        joinedGroups.filter(\.isOfficialSeasonalChallenge)
+    }
+
+    /// The featured section lists the joined featured challenges first, then
+    /// the ones the user can still join.
+    var featuredChallengesList: [FeaturedChallenge] {
+        let joined = featuredGroups.map { group in
+            FeaturedChallenge(
+                group: group,
+                durationLabel: group.challengeWindowLabel ?? "Em andamento",
+                subtitle: group.collectiveGoalLabel,
+                isJoined: true
+            )
+        }
+        let discovery = featuredChallenges.filter { challenge in
+            joined.contains { $0.group.id == challenge.group.id } == false
+        }
+        return joined + discovery
+    }
 }
 
 enum GroupsHomeViewState: Sendable, Equatable {
@@ -39,25 +68,30 @@ final class GroupsHomeViewModel {
     }
 
     // MARK: - Body / Public API
-    func loadGroups() {
-        refreshSnapshot()
-    }
-
-    func joinFeaturedChallenge(_ challengeId: String) {
+    func loadGroups() async {
+        viewState = .loading
         do {
-            let joined = try mutatingService.joinFeaturedChallenge(challengeId)
-            feedbackMessage = "Você ingressou em \(joined.name)."
-            refreshSnapshot()
+            viewState = .loaded(try await makeSnapshot())
         } catch {
-            feedbackMessage = error.userMessage
-            refreshSnapshot()
+            viewState = .error(CommunityGroupError.map(error))
         }
     }
 
-    func unlockBonusPersonalSlot() {
-        _ = mutatingService.unlockRewardedGroupSlot()
+    func joinFeaturedChallenge(_ challengeId: String) async {
+        do {
+            let joined = try await mutatingService.joinFeaturedChallenge(challengeId)
+            feedbackMessage = "Você ingressou em \(joined.name)."
+            await loadGroups()
+        } catch {
+            feedbackMessage = CommunityGroupError.map(error).userMessage
+            await loadGroups()
+        }
+    }
+
+    func unlockBonusPersonalSlot() async {
+        _ = try? await mutatingService.unlockRewardedGroupSlot()
         feedbackMessage = "+1 vaga pessoal liberada por 30 dias."
-        refreshSnapshot()
+        await loadGroups()
     }
 
     func clearFeedback() {
@@ -65,12 +99,11 @@ final class GroupsHomeViewModel {
     }
 
     // MARK: - Subviews / Private Helpers
-    private func refreshSnapshot() {
-        let snapshot = GroupsHomeSnapshot(
-            joinedGroups: listingService.joinedGroups(),
-            featuredChallenges: listingService.featuredChallenges(),
-            slotCapacity: listingService.slotCapacity()
+    private func makeSnapshot() async throws -> GroupsHomeSnapshot {
+        GroupsHomeSnapshot(
+            joinedGroups: try await listingService.joinedGroups(),
+            featuredChallenges: try await listingService.featuredChallenges(),
+            slotCapacity: try await listingService.slotCapacity()
         )
-        viewState = .loaded(snapshot)
     }
 }

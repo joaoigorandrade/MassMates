@@ -31,23 +31,27 @@ final class NewCheckInViewModel {
         groupsListing: any CommunityGroupsListing = LocalCommunityGroupsService(),
         onCheckInCompleted: @escaping @MainActor (CheckInSubmissionResult) -> Void = { _ in }
     ) {
-        let resolvedCheckIn = checkInService ?? LocalCheckInEngineService(groupsListing: groupsListing)
-        let joined = groupsListing.joinedGroups()
-        let initialIds = preselectedPractice.isStrictlyPrivate ? Set<String>() : Set(joined.map(\.id))
-        let initialMode: CheckInDestinationMode = (preselectedPractice.isStrictlyPrivate || joined.isEmpty)
-            ? .privateDiaryOnly
-            : .selectedGroups
-
-        self.checkInService = resolvedCheckIn
+        self.checkInService = checkInService ?? LocalCheckInEngineService(groupsListing: groupsListing)
         self.groupsListing = groupsListing
         self.onCheckInCompleted = onCheckInCompleted
-        self.availableGroups = joined
         self.selectedPractice = preselectedPractice
-        self.destinationMode = initialMode
-        self.selectedGroupIds = initialIds
+        self.destinationMode = preselectedPractice.isStrictlyPrivate ? .privateDiaryOnly : .selectedGroups
+        self.selectedGroupIds = []
     }
 
     // MARK: - Body / Public API
+    func load() async {
+        let joined = (try? await groupsListing.joinedGroups()) ?? []
+        availableGroups = joined
+        if selectedPractice.isStrictlyPrivate {
+            destinationMode = .privateDiaryOnly
+            selectedGroupIds.removeAll()
+        } else if selectedGroupIds.isEmpty {
+            selectedGroupIds = Set(joined.map(\.id))
+            destinationMode = joined.isEmpty ? .privateDiaryOnly : .selectedGroups
+        }
+    }
+
     func selectPractice(_ practice: SpiritualPractice) {
         selectedPractice = practice
         errorMessage = nil
@@ -81,7 +85,7 @@ final class NewCheckInViewModel {
         errorMessage = nil
     }
 
-    func submit(at timestamp: Date = Date()) {
+    func submit(at timestamp: Date = Date()) async {
         errorMessage = nil
         let draft = CheckInSubmissionDraft(
             practice: selectedPractice,
@@ -93,7 +97,7 @@ final class NewCheckInViewModel {
             photoData: selectedPhotoData
         )
         do {
-            let result = try checkInService.submitCheckIn(draft, at: timestamp)
+            let result = try await checkInService.submitCheckIn(draft, at: timestamp)
             submissionResult = result
             onCheckInCompleted(result)
         } catch {

@@ -147,9 +147,10 @@ extension CommunitySampleData {
     }
 
     static func initialMembers(for groupId: String) -> [GroupMemberSummary] {
-        [
+        let isAdmin = CommunitySampleData.isCurrentUserAdmin(groupId: groupId)
+        return [
             GroupMemberSummary(id: "\(groupId)-mem-leader", name: "Pe. Lucas Mendes", initials: "LM", roleLabel: "Líder", isCurrentUser: false),
-            GroupMemberSummary(id: "\(groupId)-mem-you", name: "Você", initials: "VC", roleLabel: "Líder", isCurrentUser: true),
+            GroupMemberSummary(id: "\(groupId)-mem-you", name: "Você", initials: "VC", roleLabel: isAdmin ? "Líder" : "Membro", isCurrentUser: true),
             GroupMemberSummary(id: "\(groupId)-mem-clara", name: "Clara Ribeiro", initials: "CR", roleLabel: "Membro", isCurrentUser: false),
             GroupMemberSummary(id: "\(groupId)-mem-mateus", name: "Mateus Almeida", initials: "MA", roleLabel: "Membro", isCurrentUser: false),
             GroupMemberSummary(id: "\(groupId)-mem-helena", name: "Helena Costa", initials: "HC", roleLabel: "Membro", isCurrentUser: false)

@@ -73,7 +73,7 @@ struct SacredRitesStitchScreensTests {
     }
 
     @Test("Confession Prep adds custom notes, clears notes, and registers sacrament")
-    func confessionPrepCustomNotesAndSacramentRegistration() {
+    func confessionPrepCustomNotesAndSacramentRegistration() async {
         let vm = ConfessionPrepViewModel()
 
         vm.customSinInput = "Minha falta íntima"
@@ -86,7 +86,7 @@ struct SacredRitesStitchScreensTests {
         vm.closeConfessionalMode()
         #expect(!vm.isConfessionalModePresented)
 
-        vm.completeSacramentAndDestroyNotes()
+        await vm.completeSacramentAndDestroyNotes()
         #expect(vm.privateNotes.isEmpty)
         #expect(vm.checkedExamItemIDs.isEmpty)
         #expect(vm.lastConfessionBadgeText.contains("hoje"))
@@ -112,7 +112,7 @@ struct SacredRitesStitchScreensTests {
     }
 
     @Test("Holy Mass Guide check-in and homily diary note saving")
-    func holyMassGuideCheckInAndDiary() {
+    func holyMassGuideCheckInAndDiary() async {
         let vm = HolyMassGuideViewModel()
 
         #expect(!vm.isMassCheckedIn)
@@ -124,7 +124,7 @@ struct SacredRitesStitchScreensTests {
         #expect(!vm.isSilentModeActive)
 
         vm.homilyNoteText = "Propósito de orar pelos aflitos"
-        vm.saveDiaryNote()
+        await vm.saveDiaryNote()
         #expect(vm.homilyNoteText.isEmpty)
         #expect(vm.diarySavedMessage != nil)
     }
@@ -132,11 +132,11 @@ struct SacredRitesStitchScreensTests {
     // MARK: - CheckInEngine & SpiritualDiary Integration Tests
 
     @Test("Holy Mass Guide saves homily note to CheckInEngine and SpiritualDiary")
-    func holyMassGuideSavesToDiary() {
+    func holyMassGuideSavesToDiary() async {
         let engine = LocalCheckInEngineService()
         let vm = HolyMassGuideViewModel(checkInEngine: engine)
         vm.homilyNoteText = "Coração manso e humilde"
-        vm.saveDiaryNote()
+        await vm.saveDiaryNote()
         let entries = engine.privateDiaryEntries()
         #expect(entries.count == 1)
         #expect(entries.first?.practice == .holyMass)
@@ -144,10 +144,10 @@ struct SacredRitesStitchScreensTests {
     }
 
     @Test("Confession Prep completion submits private check-in to SpiritualDiary")
-    func confessionPrepSavesToDiary() {
+    func confessionPrepSavesToDiary() async {
         let engine = LocalCheckInEngineService()
         let vm = ConfessionPrepViewModel(checkInEngine: engine)
-        vm.completeSacramentAndDestroyNotes(penanceNotes: "Rezar o Terço da Misericórdia")
+        await vm.completeSacramentAndDestroyNotes(penanceNotes: "Rezar o Terço da Misericórdia")
         let entries = engine.privateDiaryEntries()
         #expect(entries.count == 1)
         #expect(entries.first?.practice == .confession)
@@ -155,11 +155,11 @@ struct SacredRitesStitchScreensTests {
     }
 
     @Test("Nightly Examen saves reflection to CheckInEngine and SpiritualDiary")
-    func nightlyExamenSavesToDiary() {
+    func nightlyExamenSavesToDiary() async {
         let engine = LocalCheckInEngineService()
         let vm = NightlyExamenViewModel(checkInEngine: engine)
         vm.gratitudeJournalText = "Paz na família"
-        vm.saveToPrivateJournal()
+        await vm.saveToPrivateJournal()
         let entries = engine.privateDiaryEntries()
         #expect(entries.count == 1)
         #expect(entries.first?.practice == .confession)

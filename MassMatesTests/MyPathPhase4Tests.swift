@@ -5,7 +5,7 @@ import Testing
 @MainActor
 struct MyPathPhase4Tests {
     @Test("Consistency Heatmap and Streak Mercy enforce 1x/month cap and repair 1 missed day")
-    func consistencyHeatmapAndStreakMercyMonthlyCap() {
+    func consistencyHeatmapAndStreakMercyMonthlyCap() async {
         let service = LocalMyPathService()
         let viewModel = MyPathViewModel(milestonesService: service, widgetService: service)
 
@@ -15,7 +15,7 @@ struct MyPathPhase4Tests {
         #expect(viewModel.milestones.canClaimStreakMercyThisMonth)
 
         let claimDate = Date(timeIntervalSince1970: 1_760_000_000)
-        let firstClaim = viewModel.claimStreakMercy(at: claimDate)
+        let firstClaim = await viewModel.claimStreakMercy(at: claimDate)
         #expect(firstClaim)
         #expect(viewModel.completedDaysInHeatmap == initialCompleted + 1)
         #expect(viewModel.milestones.activeStreakDays == initialStreak + 1)
@@ -23,11 +23,11 @@ struct MyPathPhase4Tests {
         let hasRepairedDay = viewModel.heatmapDays.contains(where: \.isRepairedByStreakMercy)
         #expect(hasRepairedDay)
 
-        let secondClaimSameMonth = viewModel.claimStreakMercy(at: claimDate.addingTimeInterval(7 * 86_400))
+        let secondClaimSameMonth = await viewModel.claimStreakMercy(at: claimDate.addingTimeInterval(7 * 86_400))
         #expect(!secondClaimSameMonth)
         #expect(viewModel.completedDaysInHeatmap == initialCompleted + 1)
 
-        let claimNextMonth = viewModel.claimStreakMercy(at: claimDate.addingTimeInterval(31 * 86_400))
+        let claimNextMonth = await viewModel.claimStreakMercy(at: claimDate.addingTimeInterval(31 * 86_400))
         #expect(claimNextMonth)
         #expect(viewModel.completedDaysInHeatmap == initialCompleted + 2)
     }

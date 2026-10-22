@@ -5,6 +5,7 @@ struct MyPathTabRootHostView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.sharedMyPathService) private var myPathService
+    @Environment(\.sharedRewardedAdCoordinator) private var rewardedAdCoordinator
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
 
     // MARK: - Init
@@ -17,6 +18,7 @@ struct MyPathTabRootHostView: View {
             viewModel: MyPathViewModel(
                 milestonesService: resolvedService,
                 widgetService: resolvedService,
+                rewardedAdCoordinator: rewardedAdCoordinator,
                 season: theme.season
             ),
             onOpenDiary: {

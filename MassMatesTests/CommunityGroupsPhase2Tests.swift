@@ -18,32 +18,35 @@ struct CommunityGroupsPhase2Tests {
     }
 
     @Test("Group slot limits enforce 2 personal groups + 1 free official seasonal challenge + rewarded unlock")
-    func groupSlotLimitsAndFeaturedChallenge() throws {
+    func groupSlotLimitsAndFeaturedChallenge() async throws {
         let service = LocalCommunityGroupsService()
-        #expect(service.slotCapacity().personalGroupCount == 1)
-        #expect(service.slotCapacity().canJoinPersonalGroup)
+        let initialCapacity = try await service.slotCapacity()
+        #expect(initialCapacity.personalGroupCount == 1)
+        #expect(initialCapacity.canJoinPersonalGroup)
 
-        let secondPersonal = try service.joinGroup(byInviteInput: "ST1925")
+        let secondPersonal = try await service.joinGroup(byInviteInput: "ST1925")
         #expect(secondPersonal.inviteCode == "ST1925")
-        #expect(service.slotCapacity().personalGroupCount == 2)
-        #expect(!service.slotCapacity().canJoinPersonalGroup)
+        let afterSecond = try await service.slotCapacity()
+        #expect(afterSecond.personalGroupCount == 2)
+        #expect(!afterSecond.canJoinPersonalGroup)
 
-        #expect(throws: CommunityGroupError.personalSlotLimitReached) {
-            try service.joinGroup(byInviteInput: "VJ4012")
+        await #expect(throws: CommunityGroupError.personalSlotLimitReached) {
+            try await service.joinGroup(byInviteInput: "VJ4012")
         }
 
-        let officialFeatured = try service.joinFeaturedChallenge("chal-aparecida")
+        let officialFeatured = try await service.joinFeaturedChallenge("chal-aparecida")
         #expect(officialFeatured.isOfficialSeasonalChallenge)
-        #expect(service.slotCapacity().hasJoinedFeaturedChallenge)
+        let afterFeatured = try await service.slotCapacity()
+        #expect(afterFeatured.hasJoinedFeaturedChallenge)
 
-        let unlocked = service.unlockRewardedGroupSlot()
+        let unlocked = try await service.unlockRewardedGroupSlot()
         #expect(unlocked.canJoinPersonalGroup)
-        let thirdPersonal = try service.joinGroup(byInviteInput: "VJ4012")
+        let thirdPersonal = try await service.joinGroup(byInviteInput: "VJ4012")
         #expect(thirdPersonal.inviteCode == "VJ4012")
     }
 
     @Test("Group creation generates 6-digit code and validates non-empty name")
-    func groupCreationFlow() throws {
+    func groupCreationFlow() async throws {
         let service = LocalCommunityGroupsService()
         let vm = CreateJoinGroupViewModel(
             initialTab: .createNew,
@@ -51,7 +54,7 @@ struct CommunityGroupsPhase2Tests {
             mutatingService: service
         )
 
-        #expect(vm.submitCreateGroup() == nil)
+        #expect(await vm.submitCreateGroup() == nil)
         #expect(vm.errorMessage == CommunityGroupError.emptyGroupName.userMessage)
 
         vm.draft = GroupCreationDraft(
@@ -61,16 +64,17 @@ struct CommunityGroupsPhase2Tests {
             scoringMode: .faithfulDays,
             sharingRequirement: .openHonor
         )
-        let created = try #require(vm.submitCreateGroup())
+        let created = try #require(await vm.submitCreateGroup())
         #expect(created.inviteCode.count == 6)
         #expect(created.inviteLinkURL?.absoluteString == "massmates://join/\(created.inviteCode)")
     }
 
     @Test("Group feed toggles Amen and United in Prayer reactions, appends comments, interleaves native ad every 6 posts, and blocks Confession")
-    func groupFeedAndReactionsFlow() throws {
+    func groupFeedAndReactionsFlow() async throws {
         let service = LocalCommunityGroupsService()
         let group = CommunitySampleData.parishFraternity
         let vm = GroupDetailViewModel(group: group, feedService: service)
+        await vm.load()
 
         let initialAds = vm.feedItems.filter {
             if case .sponsoredAd = $0 { return true }
@@ -83,22 +87,22 @@ struct CommunityGroupsPhase2Tests {
             Issue.record("Expected 7th feed item (after 6 posts) to be a sponsored native ad card")
         }
 
-        let firstPost = try #require(service.feedPosts(for: group.id).first)
+        let firstPost = try #require(await service.feedPosts(for: group.id).first)
         let initialAmen = firstPost.amenCount
         let initialSelected = firstPost.isAmenSelected
 
-        vm.toggleReaction(.amen, for: firstPost.id)
-        let toggledPost = try #require(service.feedPosts(for: group.id).first)
+        await vm.toggleReaction(.amen, for: firstPost.id)
+        let toggledPost = try #require(await service.feedPosts(for: group.id).first)
         #expect(toggledPost.isAmenSelected == !initialSelected)
         #expect(toggledPost.amenCount == (initialSelected ? initialAmen - 1 : initialAmen + 1))
 
         vm.draftCommentByPostId[firstPost.id] = "Unidos sempre na oração!"
-        vm.submitComment(for: firstPost.id)
-        let commentedPost = try #require(service.feedPosts(for: group.id).first)
-        #expect(commentedPost.comments.last?.text == "Unidos sempre na oração!")
+        await vm.submitComment(for: firstPost.id)
+        let commentedPost = try #require(await service.feedPosts(for: group.id).first)
+        #expect(commentedPost.comments.last?.body == "Unidos sempre na oração!")
 
-        #expect(throws: CommunityGroupError.confessionSharingForbidden) {
-            try service.createPost(
+        await #expect(throws: CommunityGroupError.confessionSharingForbidden) {
+            try await service.createPost(
                 in: group.id,
                 practice: .confession,
                 fruitOfPrayer: "Privado",

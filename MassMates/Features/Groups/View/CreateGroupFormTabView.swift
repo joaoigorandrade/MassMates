@@ -60,8 +60,10 @@ struct CreateGroupFormTabView: View {
     private var createActionButton: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(title: "Criar grupo") {
-                if viewModel.submitCreateGroup() != nil {
-                    onCreated()
+                Task {
+                    if await viewModel.submitCreateGroup() != nil {
+                        onCreated()
+                    }
                 }
             }
             Text("Você poderá convidar irmãos logo após a criação.")

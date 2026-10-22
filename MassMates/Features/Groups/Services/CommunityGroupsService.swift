@@ -2,24 +2,27 @@ import Foundation
 
 @MainActor
 protocol CommunityGroupsListing {
-    func joinedGroups() -> [CommunityGroup]
-    func featuredChallenges() -> [FeaturedChallenge]
-    func slotCapacity() -> GroupSlotCapacity
-    func group(forId id: String) -> CommunityGroup?
-    func previewGroup(forInviteInput rawInput: String) throws(CommunityGroupError) -> CommunityGroup
+    func joinedGroups() async throws -> [CommunityGroup]
+    func featuredChallenges() async throws -> [FeaturedChallenge]
+    func slotCapacity() async throws -> GroupSlotCapacity
+    func group(forId id: String) async throws -> CommunityGroup?
+    func previewGroup(forInviteInput rawInput: String) async throws(CommunityGroupError) -> CommunityGroup
 }
 
 @MainActor
 protocol CommunityGroupMutating {
     @discardableResult
-    func createGroup(_ draft: GroupCreationDraft) throws(CommunityGroupError) -> CommunityGroup
+    func createGroup(_ draft: GroupCreationDraft) async throws(CommunityGroupError) -> CommunityGroup
     @discardableResult
-    func joinGroup(byInviteInput rawInput: String) throws(CommunityGroupError) -> CommunityGroup
+    func joinGroup(byInviteInput rawInput: String) async throws(CommunityGroupError) -> CommunityGroup
     @discardableResult
-    func joinFeaturedChallenge(_ challengeId: String) throws(CommunityGroupError) -> CommunityGroup
-    func unlockRewardedGroupSlot() -> GroupSlotCapacity
+    func joinFeaturedChallenge(_ challengeId: String) async throws(CommunityGroupError) -> CommunityGroup
+    func unlockRewardedGroupSlot() async throws -> GroupSlotCapacity
 }
 
+/// The in-memory double used by the unit tests and by the offline fallback of
+/// the composition root. It is **not** the production implementation — the
+/// production one is `SupabaseCommunityService`.
 @MainActor
 final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupMutating {
     // MARK: - Dependencies & State
@@ -34,6 +37,7 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     var membersByGroupId: [String: [GroupMemberSummary]] = [:]
     var reportsByGroupId: [String: [ModerationReportEntry]] = [:]
     var blockedUsers: Set<String> = []
+    var blockedUserIds: Set<String> = []
     let maxBasePersonalSlots: Int
     var hasUnlockedBonusSlot: Bool
     var generatedCounter: Int = 100
@@ -57,11 +61,14 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     }
 
     // MARK: - Body / Public API
-    func joinedGroups() -> [CommunityGroup] {
-        activeGroups
+    func joinedGroups() async throws -> [CommunityGroup] {
+        // The server only hands an invite code to the **admin** of a group.
+        activeGroups.map { group in
+            group.isCurrentUserAdmin ? group : group.withInviteCode("")
+        }
     }
 
-    func featuredChallenges() -> [FeaturedChallenge] {
+    func featuredChallenges() async throws -> [FeaturedChallenge] {
         let joinedIds = Set(activeGroups.map(\.id))
         return catalogGroups.filter(\.isOfficialSeasonalChallenge).map { group in
             FeaturedChallenge(
@@ -73,22 +80,15 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
         }
     }
 
-    func slotCapacity() -> GroupSlotCapacity {
-        let personalCount = activeGroups.filter { !$0.isOfficialSeasonalChallenge }.count
-        let hasFeatured = activeGroups.contains(where: \.isOfficialSeasonalChallenge)
-        return GroupSlotCapacity(
-            personalGroupCount: personalCount,
-            maxBasePersonalGroups: maxBasePersonalSlots,
-            hasRewardedSlotUnlocked: hasUnlockedBonusSlot,
-            hasJoinedFeaturedChallenge: hasFeatured
-        )
+    func slotCapacity() async throws -> GroupSlotCapacity {
+        computeSlotCapacity()
     }
 
-    func group(forId id: String) -> CommunityGroup? {
+    func group(forId id: String) async throws -> CommunityGroup? {
         activeGroups.first { $0.id == id } ?? catalogGroups.first { $0.id == id }
     }
 
-    func previewGroup(forInviteInput rawInput: String) throws(CommunityGroupError) -> CommunityGroup {
+    func previewGroup(forInviteInput rawInput: String) async throws(CommunityGroupError) -> CommunityGroup {
         guard let normalized = InviteCodeParser.normalize(rawInput) else { throw .invalidInviteCode }
         let allGroups = activeGroups + catalogGroups
         guard let match = allGroups.first(where: { $0.inviteCode == normalized }) else { throw .groupNotFound }
@@ -96,37 +96,19 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     }
 
     @discardableResult
-    func createGroup(_ draft: GroupCreationDraft) throws(CommunityGroupError) -> CommunityGroup {
+    func createGroup(_ draft: GroupCreationDraft) async throws(CommunityGroupError) -> CommunityGroup {
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { throw .emptyGroupName }
-        guard slotCapacity().canJoinPersonalGroup else { throw .personalSlotLimitReached }
-
-        generatedCounter += 1
-        let code = String(format: "MM%04d", generatedCounter)
-        let parish = draft.parishOrCommunity.trimmingCharacters(in: .whitespacesAndNewlines)
-        let newGroup = CommunityGroup(
-            id: "custom-\(generatedCounter)",
-            name: trimmedName,
-            parishOrCommunity: parish.isEmpty ? "Comunidade Fraterna" : parish,
-            inviteCode: code,
-            type: draft.type,
-            scoringMode: draft.scoringMode,
-            sharingRequirement: draft.sharingRequirement,
-            memberCount: 1,
-            collectiveGoalProgress: 0.1,
-            collectiveGoalLabel: draft.collectiveGoalLabel,
-            isOfficialSeasonalChallenge: false,
-            sponsorName: nil,
-            sponsorCoupon: nil
-        )
+        guard computeSlotCapacity().canJoinPersonalGroup else { throw .personalSlotLimitReached }
+        let newGroup = makeGroup(from: draft, name: trimmedName)
         activeGroups.insert(newGroup, at: 0)
         postsByGroupId[newGroup.id] = CommunitySampleData.initialPosts(for: newGroup.id)
         return newGroup
     }
 
     @discardableResult
-    func joinGroup(byInviteInput rawInput: String) throws(CommunityGroupError) -> CommunityGroup {
-        let target = try previewGroup(forInviteInput: rawInput)
+    func joinGroup(byInviteInput rawInput: String) async throws(CommunityGroupError) -> CommunityGroup {
+        let target = try await previewGroup(forInviteInput: rawInput)
         if activeGroups.contains(where: { $0.id == target.id }) {
             return target
         }
@@ -136,7 +118,7 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
     }
 
     @discardableResult
-    func joinFeaturedChallenge(_ challengeId: String) throws(CommunityGroupError) -> CommunityGroup {
+    func joinFeaturedChallenge(_ challengeId: String) async throws(CommunityGroupError) -> CommunityGroup {
         guard let target = catalogGroups.first(where: { $0.id == challengeId }) else {
             throw .groupNotFound
         }
@@ -148,18 +130,9 @@ final class LocalCommunityGroupsService: CommunityGroupsListing, CommunityGroupM
         return target
     }
 
-    func unlockRewardedGroupSlot() -> GroupSlotCapacity {
+    func unlockRewardedGroupSlot() async throws -> GroupSlotCapacity {
         hasUnlockedBonusSlot = true
-        return slotCapacity()
+        return computeSlotCapacity()
     }
 
-    // MARK: - Subviews / Private Helpers
-    private func validateCapacity(for group: CommunityGroup) throws(CommunityGroupError) {
-        let capacity = slotCapacity()
-        if group.isOfficialSeasonalChallenge {
-            guard capacity.canJoinFeaturedChallenge else { throw .featuredSlotAlreadyUsed }
-        } else {
-            guard capacity.canJoinPersonalGroup else { throw .personalSlotLimitReached }
-        }
-    }
 }

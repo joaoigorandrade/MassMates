@@ -14,6 +14,9 @@ enum AppRoute: ModalRoute, URLRoutable {
     case nightlyExamen(season: LiturgicalColor)
     case confessionPreparation(season: LiturgicalColor)
     case holyMassGuide(season: LiturgicalColor)
+    /// The redirect GoTrue sends the magic link to. The route completes the
+    /// sign-in and lands the user back inside the app.
+    case authenticationCallback(payload: AuthCallbackPayload, season: LiturgicalColor)
 
     var presentationStyle: ModalPresentation {
         .sheet
@@ -51,10 +54,15 @@ enum AppRoute: ModalRoute, URLRoutable {
             SacredRiteRouteHostView(kind: .confessionPreparation, season: season)
         case .holyMassGuide(let season):
             SacredRiteRouteHostView(kind: .holyMassGuide, season: season)
+        case .authenticationCallback(let payload, let season):
+            AuthenticationCallbackRouteHostView(payload: payload, season: season)
         }
     }
 
     static func route(from url: URL) -> AppRoute? {
+        if let payload = AuthCallbackPayload(url: url) {
+            return .authenticationCallback(payload: payload, season: .green)
+        }
         guard let code = InviteCodeParser.extractFromURL(url) else {
             return nil
         }
@@ -117,8 +125,16 @@ extension EnvironmentValues {
     @Entry var onCompleteSpiritualPractice: @MainActor (SpiritualPractice) -> Void = { _ in }
     @Entry var sharedTodayViewModel: TodayDashboardViewModel? = nil
     @Entry var sharedGroupsHomeViewModel: GroupsHomeViewModel? = nil
-    @Entry var sharedCommunityService: LocalCommunityGroupsService? = nil
-    @Entry var sharedCheckInEngine: LocalCheckInEngineService? = nil
+    @Entry var sharedCommunityService: (any CommunityBackend)? = nil
+    @Entry var sharedCheckInEngine: (any CheckInSubmitting)? = nil
     @Entry var sharedMyPathService: LocalMyPathService? = nil
     @Entry var sharedOnboardingService: LocalOnboardingService? = nil
+    @Entry var sharedLiveSyncService: (any CommunityLiveSyncing)? = nil
+    @Entry var sharedRewardedAdCoordinator: RewardedAdCoordinator? = nil
+    @Entry var sharedRealtimeService: (any CommunityRealtimeStreaming)? = nil
+    @Entry var sharedAuthCallbackHandler: SupabaseAuthCallbackHandler? = nil
+    @Entry var sharedStorageClient: SupabaseStorageClient? = nil
+    /// Non-nil when the app runs on the in-memory fallback (no backend
+    /// configuration, or no session). The UI shows it as an offline banner.
+    @Entry var backendStatusText: String? = nil
 }

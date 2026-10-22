@@ -66,7 +66,7 @@ struct FlowAuditAndFixesTests {
     }
 
     @Test("Flow 5: Check-in draft preserves photoData alongside reflection and caption")
-    func checkInPhotoDataPropagation() throws {
+    func checkInPhotoDataPropagation() async throws {
         let vm = NewCheckInViewModel(preselectedPractice: .rosary)
         let sampleData = "altar-photo-sample".data(using: .utf8)
         vm.selectedPhotoData = sampleData
@@ -74,7 +74,7 @@ struct FlowAuditAndFixesTests {
         vm.fruitOfPrayer = "Graça de oração recebida em paz"
         vm.selectDestinationMode(.privateDiaryOnly)
 
-        vm.submit()
+        await vm.submit()
         let result = try #require(vm.submissionResult)
         #expect(result.practice == .rosary)
         #expect(result.savedToPrivateDiary)
@@ -101,22 +101,22 @@ struct FlowAuditAndFixesTests {
     }
 
     @Test("Sacred Rites: Homily, Confession and Examen persist directly into diary engine")
-    func sacredRitesPersistenceToDiary() {
+    func sacredRitesPersistenceToDiary() async {
         let checkInService = LocalCheckInEngineService()
         let massVM = HolyMassGuideViewModel(checkInEngine: checkInService)
         massVM.homilyNoteText = "O Senhor é o meu pastor e nada me faltará."
-        massVM.saveDiaryNote()
+        await massVM.saveDiaryNote()
         #expect(massVM.diarySavedMessage?.contains("Diário Espiritual") == true)
 
         let confessionVM = ConfessionPrepViewModel(checkInEngine: checkInService)
         confessionVM.confessorOrPenanceNotes = "3 Ave-Marias"
-        confessionVM.completeSacramentAndDestroyNotes()
+        await confessionVM.completeSacramentAndDestroyNotes()
         #expect(confessionVM.privateNotes.isEmpty)
         #expect(confessionVM.statusBannerText?.contains("Deo Grátis") == true)
 
         let examenVM = NightlyExamenViewModel(checkInEngine: checkInService)
         examenVM.privateConfessionNote = "Paciência nas contrariedades"
-        examenVM.saveToPrivateJournal()
+        await examenVM.saveToPrivateJournal()
         #expect(examenVM.isSavedToLocalJournal)
     }
 

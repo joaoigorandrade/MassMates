@@ -1,12 +1,21 @@
 import Foundation
 
 struct GroupCreationDraft: Sendable, Equatable {
+    /// The default length of a dated challenge: the product's flagship
+    /// "40 Days" challenge.
+    static let defaultChallengeLengthInDays = 40
+    static let maximumChallengeLengthInDays = 365
+
     var name: String
     var parishOrCommunity: String
     var type: CommunityGroupType
     var scoringMode: GroupScoringMode
     var sharingRequirement: GroupSharingRequirement
     var collectiveGoalLabel: String
+    /// The first day of a **dated challenge**. `nil` for a fraternity.
+    var startsOn: Date?
+    /// The last day of a **dated challenge**. `nil` for a fraternity.
+    var endsOn: Date?
 
     init(
         name: String = "",
@@ -14,7 +23,9 @@ struct GroupCreationDraft: Sendable, Equatable {
         type: CommunityGroupType = .fraternity,
         scoringMode: GroupScoringMode = .faithfulDays,
         sharingRequirement: GroupSharingRequirement = .openHonor,
-        collectiveGoalLabel: String = "500 Terços neste mês"
+        collectiveGoalLabel: String = "500 Terços neste mês",
+        startsOn: Date? = nil,
+        endsOn: Date? = nil
     ) {
         self.name = name
         self.parishOrCommunity = parishOrCommunity
@@ -22,6 +33,15 @@ struct GroupCreationDraft: Sendable, Equatable {
         self.scoringMode = scoringMode
         self.sharingRequirement = sharingRequirement
         self.collectiveGoalLabel = collectiveGoalLabel
+        self.startsOn = type == .challenge ? (startsOn ?? Date()) : nil
+        self.endsOn = type == .challenge
+            ? (endsOn ?? GroupCreationDraft.defaultEndDate(from: startsOn ?? Date()))
+            : nil
+    }
+
+    /// The default window of a dated challenge: today → today + 40 days.
+    static func defaultEndDate(from start: Date) -> Date {
+        Calendar.current.date(byAdding: .day, value: defaultChallengeLengthInDays, to: start) ?? start
     }
 }
 
@@ -58,6 +78,11 @@ enum CommunityGroupError: Error, Sendable, Equatable {
     case personalSlotLimitReached
     case featuredSlotAlreadyUsed
     case confessionSharingForbidden
+    case network(String)
+    case notAuthorized
+    case lastAdminCannotLeave
+    case contentNotAvailable
+    case invalidChallengeDates(String)
 
     var userMessage: String {
         switch self {
@@ -79,8 +104,19 @@ enum CommunityGroupError: Error, Sendable, Equatable {
             "Você já participa de um desafio sazonal oficial."
         case .confessionSharingForbidden:
             "A Confissão é estritamente privada e nunca vai para o feed."
+        case .network(let message):
+            message
+        case .notAuthorized:
+            "Você não tem permissão para esta ação."
+        case .lastAdminCannotLeave:
+            "O último líder precisa transferir a administração antes de sair."
+        case .contentNotAvailable:
+            "Este recurso ainda não está disponível no servidor."
+        case .invalidChallengeDates(let message):
+            message
         }
     }
+
 }
 
 typealias CommunityGroupsError = CommunityGroupError

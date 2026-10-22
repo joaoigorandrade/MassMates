@@ -6,10 +6,15 @@ protocol CheckInSubmitting {
     func submitCheckIn(
         _ draft: CheckInSubmissionDraft,
         at timestamp: Date
-    ) throws(CheckInValidationError) -> CheckInSubmissionResult
+    ) async throws(CheckInValidationError) -> CheckInSubmissionResult
+    /// The Spiritual Diary is **local only**: it never leaves the device, so
+    /// this read stays synchronous.
     func privateDiaryEntries() -> [PrivateDiaryCheckInEntry]
 }
 
+/// The in-memory double used by the unit tests and by the offline fallback of
+/// the composition root. The production implementation is
+/// `SupabaseCheckInService`.
 @MainActor
 final class LocalCheckInEngineService: CheckInSubmitting {
     // MARK: - Dependencies & State
@@ -39,16 +44,16 @@ final class LocalCheckInEngineService: CheckInSubmitting {
     func submitCheckIn(
         _ draft: CheckInSubmissionDraft,
         at timestamp: Date = Date()
-    ) throws(CheckInValidationError) -> CheckInSubmissionResult {
+    ) async throws(CheckInValidationError) -> CheckInSubmissionResult {
         if draft.practice.isStrictlyPrivate || draft.destinationMode == .privateDiaryOnly {
             return recordPrivateCheckIn(draft, at: timestamp)
         }
-        let targetGroups = try validatedTargetGroups(for: draft)
+        let targetGroups = try await validatedTargetGroups(for: draft)
         let fruit = trimmedOrNil(draft.fruitOfPrayer)
         let photo = trimmedOrNil(draft.photoCaption)
         for group in targetGroups {
             do {
-                _ = try feedService.createPost(
+                _ = try await feedService.createPost(
                     in: group.id,
                     practice: draft.practice,
                     fruitOfPrayer: fruit,
@@ -96,8 +101,9 @@ final class LocalCheckInEngineService: CheckInSubmitting {
 
     private func validatedTargetGroups(
         for draft: CheckInSubmissionDraft
-    ) throws(CheckInValidationError) -> [CommunityGroup] {
-        let joined = groupsListing.joinedGroups().filter { draft.selectedGroupIds.contains($0.id) }
+    ) async throws(CheckInValidationError) -> [CommunityGroup] {
+        let allGroups = (try? await groupsListing.joinedGroups()) ?? []
+        let joined = allGroups.filter { draft.selectedGroupIds.contains($0.id) }
         guard !joined.isEmpty else { throw .noGroupSelected }
         let fruit = trimmedOrNil(draft.fruitOfPrayer)
         let photo = trimmedOrNil(draft.photoCaption)

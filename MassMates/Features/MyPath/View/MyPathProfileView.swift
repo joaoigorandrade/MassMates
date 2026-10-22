@@ -31,7 +31,7 @@ struct MyPathProfileView: View {
                     days: viewModel.heatmapDays,
                     activeStreakDays: viewModel.milestones.activeStreakDays,
                     canClaimStreakMercy: viewModel.milestones.canClaimStreakMercyThisMonth,
-                    onClaimStreakMercy: { _ = viewModel.claimStreakMercy() }
+                    onClaimStreakMercy: { Task { _ = await viewModel.claimStreakMercy() } }
                 )
                 MyPathRuleOfLifeDistributionCardView()
                 milestonesSection

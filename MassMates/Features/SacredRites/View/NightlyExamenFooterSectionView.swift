@@ -120,7 +120,7 @@ struct NightlyExamenFooterSectionView: View {
 
     private var diarySaveActionRow: some View {
         Button {
-            viewModel.saveToPrivateJournal()
+            Task { await viewModel.saveToPrivateJournal() }
         } label: {
             HStack(spacing: MassMatesSpacing.xs) {
                 Image(systemName: viewModel.isSavedToLocalJournal ? "checkmark.circle.fill" : "book.closed")

@@ -76,7 +76,7 @@ struct GroupsCapacityCardView: View {
 #Preview("Groups Capacity Card — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         GroupsCapacityCardView(
-            capacity: LocalCommunityGroupsService().slotCapacity(),
+            capacity: LocalCommunityGroupsService.sampleSlotCapacity(),
             onUnlockSlot: {}
         )
         .padding()

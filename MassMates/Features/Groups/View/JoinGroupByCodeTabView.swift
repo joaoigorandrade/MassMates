@@ -91,14 +91,14 @@ struct JoinGroupByCodeTabView: View {
             viewModel.inviteCodeInput = String(value.prefix(6))
         }
         if InviteCodeParser.normalize(viewModel.inviteCodeInput) != nil {
-            viewModel.previewInviteCode()
+            Task { await viewModel.previewInviteCode() }
         }
     }
 
     private func pasteCodeFromClipboard() {
         let pasted = UIPasteboard.general.string ?? "ST1925"
         viewModel.inviteCodeInput = InviteCodeParser.normalize(pasted) ?? "ST1925"
-        viewModel.previewInviteCode()
+        Task { await viewModel.previewInviteCode() }
     }
 
     private func previewGroupRow(_ group: CommunityGroup) -> some View {
@@ -124,7 +124,7 @@ struct JoinGroupByCodeTabView: View {
     private var qrScannerButton: some View {
         Button {
             viewModel.inviteCodeInput = "ST1925"
-            viewModel.previewInviteCode()
+            Task { await viewModel.previewInviteCode() }
         } label: {
             Label("Escanear Código QR", systemImage: "qrcode.viewfinder")
                 .font(MassMatesFont.callout)
@@ -140,7 +140,9 @@ struct JoinGroupByCodeTabView: View {
         VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(title: "Entrar na Fraternidade") {
                 if viewModel.inviteCodeInput.isEmpty { viewModel.inviteCodeInput = "ST1925" }
-                if viewModel.confirmJoinGroup() != nil { onJoined() }
+                Task {
+                    if await viewModel.confirmJoinGroup() != nil { onJoined() }
+                }
             }
             Text("Ao entrar, você compartilha apenas hábitos de oração ativos e reflexões públicas.")
                 .font(MassMatesFont.caption)

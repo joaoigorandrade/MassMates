@@ -14,7 +14,10 @@ enum CommunitySampleData {
         collectiveGoalLabel: "370 de 500 Terços rezados neste mês",
         isOfficialSeasonalChallenge: false,
         sponsorName: nil,
-        sponsorCoupon: nil
+        sponsorCoupon: nil,
+        startsOn: nil,
+        endsOn: nil,
+        isCurrentUserAdmin: true
     )
 
     static let youthChallenge = CommunityGroup(
@@ -30,7 +33,10 @@ enum CommunitySampleData {
         collectiveGoalLabel: "186 de 300 horas de Oração Mental",
         isOfficialSeasonalChallenge: false,
         sponsorName: nil,
-        sponsorCoupon: nil
+        sponsorCoupon: nil,
+        startsOn: CommunitySampleData.challengeStart,
+        endsOn: CommunitySampleData.challengeStart.addingTimeInterval(40 * 86_400),
+        isCurrentUserAdmin: true
     )
 
     static let directoryGroups: [CommunityGroup] = [
@@ -47,7 +53,10 @@ enum CommunitySampleData {
             collectiveGoalLabel: "240 de 300 leituras orantes",
             isOfficialSeasonalChallenge: false,
             sponsorName: nil,
-            sponsorCoupon: nil
+            sponsorCoupon: nil,
+            startsOn: nil,
+            endsOn: nil,
+            isCurrentUserAdmin: false
         ),
         CommunityGroup(
             id: "chal-aparecida",
@@ -62,7 +71,10 @@ enum CommunitySampleData {
             collectiveGoalLabel: "4.400 de 5.000 dezenas em comunhão",
             isOfficialSeasonalChallenge: true,
             sponsorName: "Editora Ave-Maria",
-            sponsorCoupon: "AVEMARIA15"
+            sponsorCoupon: "AVEMARIA15",
+            startsOn: CommunitySampleData.challengeStart,
+            endsOn: CommunitySampleData.challengeStart.addingTimeInterval(9 * 86_400),
+            isCurrentUserAdmin: false
         ),
         CommunityGroup(
             id: "chal-quaresma-jovem",
@@ -77,7 +89,10 @@ enum CommunitySampleData {
             collectiveGoalLabel: "1.620 de 3.000 meditações do Evangelho",
             isOfficialSeasonalChallenge: true,
             sponsorName: "Edições CNBB",
-            sponsorCoupon: "LECTIO10"
+            sponsorCoupon: "LECTIO10",
+            startsOn: CommunitySampleData.challengeStart,
+            endsOn: CommunitySampleData.challengeStart.addingTimeInterval(40 * 86_400),
+            isCurrentUserAdmin: false
         )
     ]
 
@@ -106,17 +121,32 @@ enum CommunitySampleData {
                 isAmenSelected: index == 0,
                 unitedCount: item.7,
                 isUnitedSelected: false,
-                comments: index == 0
-                    ? [
-                        GroupFeedComment(
-                            id: "\(groupId)-c1",
-                            authorName: "Clara Ribeiro",
-                            text: "Amém! Unidos em oração pela nossa comunidade.",
-                            relativeTimeLabel: "há 10 min"
-                        )
-                    ]
-                    : []
+                comments: index == 0 ? [sampleComment(id: "\(groupId)-c1")] : [],
+                witnessPhotoPath: index == 2 ? "witness-photos/frat-sao-jose/user-1/sample.jpg" : nil
             )
         }
+    }
+
+    static func sampleComment(id: String) -> GroupFeedComment {
+        GroupFeedComment(
+            id: id,
+            authorId: "user-clara",
+            authorDisplayName: "Clara Ribeiro",
+            body: "Amém! Unidos em oração pela nossa comunidade.",
+            createdAt: Date().addingTimeInterval(-600),
+            isHidden: false
+        )
+    }
+
+    static func isCurrentUserAdmin(groupId: String) -> Bool {
+        allGroups.first { $0.id == groupId }?.isCurrentUserAdmin ?? false
+    }
+
+    static var allGroups: [CommunityGroup] {
+        [parishFraternity, youthChallenge] + directoryGroups
+    }
+
+    private static var challengeStart: Date {
+        Calendar.current.date(from: DateComponents(year: 2026, month: 2, day: 18)) ?? Date()
     }
 }

@@ -33,6 +33,14 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
+                    "SUPABASE_URL": "https://khovpljkitslmjmonuzu.supabase.co",
+                    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_K-dwtbcBgNqSAEJX4G8tVg_j_ozahqI",
+                    "CFBundleURLTypes": [
+                        [
+                            "CFBundleURLName": "joaoigor.MassMates",
+                            "CFBundleURLSchemes": ["massmates"],
+                        ]
+                    ],
                 ]
             ),
             sources: ["MassMates/**/*.swift"],

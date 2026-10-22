@@ -7,6 +7,7 @@ final class MyPathViewModel {
     // MARK: - Dependencies & State
     private let milestonesService: any ProfileMilestonesManaging
     private let widgetService: any WidgetQuickAccessManaging
+    private let rewardedAdCoordinator: RewardedAdCoordinator?
     private let onOpenDiaryCallback: @MainActor () -> Void
     private let onOpenSettingsCallback: @MainActor () -> Void
 
@@ -19,6 +20,7 @@ final class MyPathViewModel {
     init(
         milestonesService: any ProfileMilestonesManaging = LocalMyPathService(),
         widgetService: (any WidgetQuickAccessManaging)? = nil,
+        rewardedAdCoordinator: RewardedAdCoordinator? = nil,
         season: LiturgicalColor = .green,
         onOpenDiary: @escaping @MainActor () -> Void = {},
         onOpenSettings: @escaping @MainActor () -> Void = {}
@@ -28,6 +30,7 @@ final class MyPathViewModel {
             ?? LocalMyPathService()
         self.milestonesService = milestonesService
         self.widgetService = resolvedWidget
+        self.rewardedAdCoordinator = rewardedAdCoordinator
         self.onOpenDiaryCallback = onOpenDiary
         self.onOpenSettingsCallback = onOpenSettings
         self.heatmapDays = milestonesService.heatmapDays()
@@ -42,18 +45,29 @@ final class MyPathViewModel {
         widgetSnapshot = widgetService.currentWidgetSnapshot(season: season, ruleSummary: ruleSummary)
     }
 
+    /// Opens the rewarded video that carries the `massmates_txn` parameter and
+    /// applies the Streak Mercy. Without an ad network the local ledger is
+    /// used, exactly as before.
     @discardableResult
-    func claimStreakMercy(at date: Date = Date()) -> Bool {
-        let claimed = milestonesService.claimStreakMercyViaRewardedVideo(at: date)
+    func claimStreakMercy(at date: Date = Date()) async -> Bool {
+        var claimed = milestonesService.claimStreakMercyViaRewardedVideo(at: date)
+        if let rewardedAdCoordinator {
+            let granted = (try? await rewardedAdCoordinator.presentRewardedVideo(for: .streakMercy)) ?? false
+            claimed = granted || claimed
+            statusBannerMessage = granted
+                ? "Misericórdia da Constância aplicada com graça • 1 dia restaurado."
+                : "Misericórdia da Constância já utilizada neste ciclo de 30 dias."
+        } else {
+            statusBannerMessage = claimed
+                ? "Misericórdia da Constância aplicada com graça • 1 dia restaurado."
+                : "Misericórdia da Constância já utilizada neste ciclo de 30 dias."
+        }
         heatmapDays = milestonesService.heatmapDays()
         milestones = milestonesService.milestonesSummary()
         widgetSnapshot = widgetService.currentWidgetSnapshot(
             season: widgetSnapshot.liturgicalColor,
             ruleSummary: nil
         )
-        statusBannerMessage = claimed
-            ? "Misericórdia da Constância aplicada com graça • 1 dia restaurado."
-            : "Misericórdia da Constância já utilizada neste ciclo de 30 dias."
         return claimed
     }
 

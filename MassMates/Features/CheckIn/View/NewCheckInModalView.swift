@@ -30,6 +30,9 @@ struct NewCheckInModalView: View {
             .padding(.vertical, MassMatesSpacing.md)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .task {
+            await viewModel.load()
+        }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -138,7 +141,7 @@ struct NewCheckInModalView: View {
                     .foregroundStyle(MassMatesPalette.danger)
             }
             Button {
-                viewModel.submit()
+                Task { await viewModel.submit() }
             } label: {
                 Text("Registrar")
                     .font(MassMatesFont.headline)

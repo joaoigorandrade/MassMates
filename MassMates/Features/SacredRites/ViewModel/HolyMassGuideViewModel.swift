@@ -91,7 +91,7 @@ final class HolyMassGuideViewModel {
         isHomilyDiaryExpanded.toggle()
     }
 
-    func saveDiaryNote(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) {
+    func saveDiaryNote(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) async {
         let trimmed = homilyNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let targetEngine = overrideEngine ?? self.checkInEngine
@@ -102,7 +102,7 @@ final class HolyMassGuideViewModel {
                 destinationMode: .privateDiaryOnly
             )
             do {
-                _ = try targetEngine.submitCheckIn(draft, at: Date())
+                _ = try await targetEngine.submitCheckIn(draft, at: Date())
             } catch {
                 diarySavedMessage = error.userMessage
             }

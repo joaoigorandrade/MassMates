@@ -56,18 +56,22 @@ final class CreateJoinGroupViewModel {
         } else {
             self.mutatingService = LocalCommunityGroupsService()
         }
-        self.slotCapacity = listingService.slotCapacity()
+        self.slotCapacity = LocalCommunityGroupsService.sampleSlotCapacity()
         self.onGroupActivated = onGroupActivated
-        if !prefilledInviteCode.isEmpty {
-            previewInviteCode()
-        }
     }
 
     // MARK: - Body / Public API
-    func previewInviteCode() {
+    func load() async {
+        await refreshSlotCapacity()
+        if !inviteInput.isEmpty {
+            await previewInviteCode()
+        }
+    }
+
+    func previewInviteCode() async {
         errorMessage = nil
         do {
-            previewedGroup = try listingService.previewGroup(forInviteInput: inviteInput)
+            previewedGroup = try await listingService.previewGroup(forInviteInput: inviteInput)
         } catch {
             previewedGroup = nil
             errorMessage = error.userMessage
@@ -75,39 +79,54 @@ final class CreateJoinGroupViewModel {
     }
 
     @discardableResult
-    func confirmJoinGroup() -> CommunityGroup? {
+    func confirmJoinGroup() async -> CommunityGroup? {
         errorMessage = nil
         do {
-            let group = try mutatingService.joinGroup(byInviteInput: inviteInput)
-            slotCapacity = listingService.slotCapacity()
+            let group = try await mutatingService.joinGroup(byInviteInput: inviteInput)
+            await refreshSlotCapacity()
             onGroupActivated(group)
             return group
         } catch {
-            slotCapacity = listingService.slotCapacity()
+            await refreshSlotCapacity()
             errorMessage = error.userMessage
             return nil
         }
     }
 
     @discardableResult
-    func submitCreateGroup() -> CommunityGroup? {
+    func submitCreateGroup() async -> CommunityGroup? {
         errorMessage = nil
+        if let windowError = draft.challengeWindowErrorMessage {
+            errorMessage = windowError
+            return nil
+        }
         do {
-            let created = try mutatingService.createGroup(draft)
-            slotCapacity = listingService.slotCapacity()
+            let created = try await mutatingService.createGroup(draft)
+            await refreshSlotCapacity()
             onGroupActivated(created)
             return created
         } catch {
-            slotCapacity = listingService.slotCapacity()
+            await refreshSlotCapacity()
             errorMessage = error.userMessage
             return nil
         }
     }
 
-    func unlockRewardedSlot() {
-        slotCapacity = mutatingService.unlockRewardedGroupSlot()
+    /// Switches the group type. A **dated challenge** gets the default
+    /// window (today → today + 40 days); a fraternity carries no dates.
+    func selectType(_ type: CommunityGroupType) {
+        draft.type = type
+        draft.normalizeWindowForType()
+        errorMessage = nil
+    }
+
+    func unlockRewardedSlot() async {
+        slotCapacity = (try? await mutatingService.unlockRewardedGroupSlot()) ?? slotCapacity
         errorMessage = nil
     }
 
     // MARK: - Subviews / Private Helpers
+    private func refreshSlotCapacity() async {
+        slotCapacity = (try? await listingService.slotCapacity()) ?? slotCapacity
+    }
 }

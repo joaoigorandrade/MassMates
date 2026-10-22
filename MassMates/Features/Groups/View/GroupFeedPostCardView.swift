@@ -4,24 +4,45 @@ struct GroupFeedPostCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let post: GroupFeedPost
+    private let comments: [GroupFeedComment]
     private let showsComments: Bool
+    private let commentErrorMessage: String?
+    private let canModerateComments: Bool
+    private let showsCommentsHint: Bool
+    private let witnessPhotoURL: URL?
     @Binding private var commentDraft: String
     private let onReaction: (FeedReactionType) -> Void
     private let onSubmitComment: () -> Void
+    private let onDeleteComment: (GroupFeedComment) -> Void
+    private let onComposerFocus: () -> Void
 
     // MARK: - Init
     init(
         post: GroupFeedPost,
+        comments: [GroupFeedComment] = [],
         commentDraft: Binding<String>,
         showsComments: Bool = true,
+        commentErrorMessage: String? = nil,
+        canModerateComments: Bool = false,
+        showsCommentsHint: Bool = false,
+        witnessPhotoURL: URL? = nil,
         onReaction: @escaping (FeedReactionType) -> Void,
-        onSubmitComment: @escaping () -> Void
+        onSubmitComment: @escaping () -> Void,
+        onDeleteComment: @escaping (GroupFeedComment) -> Void = { _ in },
+        onComposerFocus: @escaping () -> Void = {}
     ) {
         self.post = post
         self._commentDraft = commentDraft
         self.showsComments = showsComments
+        self.commentErrorMessage = commentErrorMessage
+        self.canModerateComments = canModerateComments
+        self.showsCommentsHint = showsCommentsHint
+        self.witnessPhotoURL = witnessPhotoURL
         self.onReaction = onReaction
         self.onSubmitComment = onSubmitComment
+        self.onDeleteComment = onDeleteComment
+        self.onComposerFocus = onComposerFocus
+        self.comments = comments
     }
 
     // MARK: - Body / Public API
@@ -29,15 +50,23 @@ struct GroupFeedPostCardView: View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 authorHeader
-                if let caption = post.photoCaption, !caption.isEmpty {
-                    captionView(caption)
-                }
-                if let fruit = post.fruitOfPrayer, !fruit.isEmpty {
-                    reflectionQuote(fruit)
-                }
+                GroupFeedPostMediaView(
+                    caption: post.photoCaption,
+                    fruitOfPrayer: post.fruitOfPrayer,
+                    witnessPhotoURL: witnessPhotoURL
+                )
                 reactionRow
                 if showsComments {
-                    commentsSection
+                    GroupFeedCommentsView(
+                        comments: comments,
+                        commentDraft: $commentDraft,
+                        commentErrorMessage: commentErrorMessage,
+                        canModerateComments: canModerateComments,
+                        showsCommentsHint: showsCommentsHint,
+                        onSubmitComment: onSubmitComment,
+                        onDeleteComment: onDeleteComment,
+                        onComposerFocus: onComposerFocus
+                    )
                 }
             }
         }
@@ -84,20 +113,6 @@ struct GroupFeedPostCardView: View {
         .clipShape(Capsule())
     }
 
-    private func captionView(_ caption: String) -> some View {
-        Text(caption)
-            .font(MassMatesFont.callout)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-    }
-
-    private func reflectionQuote(_ fruit: String) -> some View {
-        Text("“\(fruit)”")
-            .font(MassMatesFont.scriptureEmphasis)
-            .foregroundStyle(MassMatesPalette.textPrimary)
-            .fixedSize(horizontal: false, vertical: true)
-            .lineSpacing(4)
-    }
-
     private var reactionRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             ReactionPillButton(
@@ -119,51 +134,13 @@ struct GroupFeedPostCardView: View {
             Spacer()
         }
     }
-
-    private var commentsSection: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            if !post.comments.isEmpty {
-                Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-                ForEach(post.comments) { comment in
-                    commentItem(comment)
-                }
-            }
-            commentInputRow
-        }
-    }
-
-    private func commentItem(_ comment: GroupFeedComment) -> some View {
-        HStack(alignment: .top, spacing: MassMatesSpacing.xxs) {
-            Text("\(comment.authorName):")
-                .font(MassMatesFont.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text(comment.text)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-        }
-    }
-
-    private var commentInputRow: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            TextField("Escrever apoio fraterno...", text: $commentDraft)
-                .font(MassMatesFont.callout)
-                .padding(.horizontal, MassMatesSpacing.sm)
-                .padding(.vertical, MassMatesSpacing.xs)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(Capsule())
-            Button("Enviar", action: onSubmitComment)
-                .font(MassMatesFont.caption)
-                .foregroundStyle(theme.tint)
-                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
-        }
-    }
 }
 
 #Preview("Group Feed Post Card — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         GroupFeedPostCardView(
             post: CommunitySampleData.initialPosts(for: "frat-sao-jose")[0],
+            comments: [CommunitySampleData.sampleComment(id: "c1")],
             commentDraft: .constant(""),
             onReaction: { _ in },
             onSubmitComment: {}

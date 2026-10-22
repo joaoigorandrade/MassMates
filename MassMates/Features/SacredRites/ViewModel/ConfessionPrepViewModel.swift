@@ -120,7 +120,7 @@ final class ConfessionPrepViewModel {
     func completeSacramentAndDestroyNotes(
         checkInEngine overrideEngine: (any CheckInSubmitting)? = nil,
         penanceNotes: String? = nil
-    ) {
+    ) async {
         let targetEngine = overrideEngine ?? self.checkInEngine
         let penance = (penanceNotes ?? confessorOrPenanceNotes).trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedPenance = penance.isEmpty ? "Absolvição sacramental recebida sob o sigilo da Igreja." : penance
@@ -132,7 +132,7 @@ final class ConfessionPrepViewModel {
                 destinationMode: .privateDiaryOnly
             )
             do {
-                _ = try targetEngine.submitCheckIn(draft, at: Date())
+                _ = try await targetEngine.submitCheckIn(draft, at: Date())
             } catch {
                 statusBannerText = error.userMessage
             }

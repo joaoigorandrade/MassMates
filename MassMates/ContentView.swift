@@ -4,27 +4,61 @@ import SwiftUI
 
 struct ContentView: View {
     // MARK: - Dependencies & State
-    @ObservedObject private var tabNavigator: TabNavigator<AppTab, AppRoute>
+    @ObservedObject var tabNavigator: TabNavigator<AppTab, AppRoute>
     @State private var todayViewModel: TodayDashboardViewModel
-    @State private var communityService: LocalCommunityGroupsService
+    @State private var communityService: any CommunityBackend
     @State private var groupsHomeViewModel: GroupsHomeViewModel
-    @State private var checkInEngine: LocalCheckInEngineService
+    @State private var checkInEngine: any CheckInSubmitting
     @State private var myPathService: LocalMyPathService
     @State private var onboardingService: LocalOnboardingService
     @State private var onboardingViewModel: OnboardingViewModel
+    @State private var liveSyncService: (any CommunityLiveSyncing)?
+    @State private var rewardedAdCoordinator: RewardedAdCoordinator?
+    @State private var realtimeService: (any CommunityRealtimeStreaming)?
+    @State private var authCallbackHandler: SupabaseAuthCallbackHandler?
+    @State private var storageClient: SupabaseStorageClient?
+    @State var backendStatusText: String?
     private let deepLinkHandler: DeepLinkHandler<AppRoute>
 
     // MARK: - Init
     init(
         tabNavigator: TabNavigator<AppTab, AppRoute> = TabNavigator(initialTab: .today),
         todayViewModel: TodayDashboardViewModel = TodayDashboardViewModel(),
-        communityService: LocalCommunityGroupsService = LocalCommunityGroupsService(),
+        communityService: (any CommunityBackend)? = nil,
+        checkInEngine: (any CheckInSubmitting)? = nil,
+        liveSyncService: (any CommunityLiveSyncing)? = nil,
         myPathService: LocalMyPathService = LocalMyPathService(),
         onboardingService: LocalOnboardingService = LocalOnboardingService()
     ) {
+        let composition = BackendComposition.make()
+        let resolvedCommunity = AppBackendResolution.community(
+            override: communityService,
+            composition: composition
+        )
+        let resolvedCheckIn = AppBackendResolution.checkIn(
+            override: checkInEngine,
+            composition: composition,
+            community: resolvedCommunity,
+            todayViewModel: todayViewModel
+        )
         _tabNavigator = ObservedObject(wrappedValue: tabNavigator)
         _todayViewModel = State(initialValue: todayViewModel)
-        _communityService = State(initialValue: communityService)
+        _communityService = State(initialValue: resolvedCommunity)
+        _checkInEngine = State(initialValue: resolvedCheckIn)
+        _liveSyncService = State(initialValue: liveSyncService ?? composition?.liveSyncService)
+        _rewardedAdCoordinator = State(initialValue: composition?.rewardedAdCoordinator)
+        _realtimeService = State(initialValue: composition?.communityService as? (any CommunityRealtimeStreaming))
+        _storageClient = State(initialValue: composition?.storage)
+        _authCallbackHandler = State(initialValue: composition.map { composition in
+            SupabaseAuthCallbackHandler(
+                authClient: composition.authClient,
+                sessionStore: composition.sessionStore
+            )
+        })
+        _backendStatusText = State(initialValue: AppBackendResolution.offlineStatus(
+            isSupabase: composition != nil,
+            hasOverride: communityService != nil
+        ))
         _myPathService = State(initialValue: myPathService)
         _onboardingService = State(initialValue: onboardingService)
         _onboardingViewModel = State(
@@ -38,17 +72,8 @@ struct ContentView: View {
         )
         _groupsHomeViewModel = State(
             initialValue: GroupsHomeViewModel(
-                listingService: communityService,
-                mutatingService: communityService
-            )
-        )
-        _checkInEngine = State(
-            initialValue: LocalCheckInEngineService(
-                groupsListing: communityService,
-                feedService: communityService,
-                onPracticeCompleted: { practice in
-                    todayViewModel.markPracticeCompleted(practice)
-                }
+                listingService: resolvedCommunity,
+                mutatingService: resolvedCommunity
             )
         )
         let handler = DeepLinkHandler<AppRoute>()
@@ -82,44 +107,22 @@ struct ContentView: View {
         .environment(\.sharedCheckInEngine, checkInEngine)
         .environment(\.sharedMyPathService, myPathService)
         .environment(\.sharedOnboardingService, onboardingService)
+        .environment(\.sharedLiveSyncService, liveSyncService)
+        .environment(\.sharedRewardedAdCoordinator, rewardedAdCoordinator)
+        .environment(\.sharedRealtimeService, realtimeService)
+        .environment(\.sharedAuthCallbackHandler, authCallbackHandler)
+        .environment(\.sharedStorageClient, storageClient)
+        .environment(\.backendStatusText, backendStatusText)
         .environment(\.onCompleteSpiritualPractice) { practice in
             todayViewModel.markPracticeCompleted(practice)
         }
         .onOpenURL { url in
-            handleInviteURL(url)
+            handleDeepLink(url)
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    private var mainTabInterface: some View {
-        ZStack(alignment: .bottom) {
-            tabContentView
-
-            MassMatesTabBarView(
-                tabNavigator: tabNavigator,
-                onCenterAction: {
-                    presentNewCheckInModal()
-                }
-            )
-        }
-    }
-    private var tabContentView: some View {
-        ZStack {
-            ForEach(Array(AppTab.allCases), id: \.self) { tab in
-                NavigationStackWrapper(navigator: tabNavigator.navigator(for: tab)) {
-                    tab.tabContent
-                        .safeAreaInset(edge: .bottom) {
-                            Color.clear.frame(height: 64)
-                        }
-                }
-                .environmentObject(tabNavigator.navigator(for: tab))
-                .opacity(tabNavigator.selectedTab == tab ? 1 : 0)
-                .allowsHitTesting(tabNavigator.selectedTab == tab)
-            }
-        }
-    }
-
-    private func presentNewCheckInModal() {
+    func presentNewCheckInModal() {
         let activeTab = tabNavigator.selectedTab
         tabNavigator.navigator(for: activeTab).present(
             .newCheckIn(
@@ -129,27 +132,15 @@ struct ContentView: View {
         )
     }
 
-    private func handleInviteURL(_ url: URL) {
+    private func handleDeepLink(_ url: URL) {
         guard let route = deepLinkHandler.handle(url: url) else { return }
+        if case .authenticationCallback = route {
+            tabNavigator.switchTab(to: .today)
+            tabNavigator.navigator(for: .today).present(route)
+            return
+        }
         tabNavigator.switchTab(to: .groups)
         tabNavigator.navigator(for: .groups).present(route)
     }
-}
 
-#Preview("Root Content — 5 Seasons (Light / Dark / AX3)") {
-    LiturgicalSeasonPreviewMatrix { season in
-        let vm = TodayDashboardViewModel()
-        let _ = vm.selectSeasonColor(season)
-        let onboarding = LocalOnboardingService(
-            initialProfile: OnboardingProfileConfiguration(
-                userName: "Fiel",
-                parishOrCity: "Catedral",
-                selectedPreset: .essentialDaily,
-                acknowledgedLocalDiaryWarning: true,
-                personalizedAdsConsented: false,
-                completedAt: Date()
-            )
-        )
-        ContentView(todayViewModel: vm, onboardingService: onboarding)
-    }
 }

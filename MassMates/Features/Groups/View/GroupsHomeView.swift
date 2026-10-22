@@ -30,7 +30,7 @@ struct GroupsHomeView: View {
         }
         .task {
             if case .idle = viewModel.viewState {
-                viewModel.loadGroups()
+                await viewModel.loadGroups()
             }
         }
     }
@@ -97,17 +97,17 @@ struct GroupsHomeView: View {
             if let feedback = viewModel.feedbackMessage {
                 feedbackBanner(text: feedback)
             }
-            ContinuousFraternitiesSectionView(groups: snapshot.joinedGroups, capacity: snapshot.slotCapacity) { group in
+            ContinuousFraternitiesSectionView(groups: snapshot.personalGroups, capacity: snapshot.slotCapacity) { group in
                 navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
             }
             FeaturedChallengesSectionView(
-                challenges: snapshot.featuredChallenges,
-                onJoinChallenge: { id in viewModel.joinFeaturedChallenge(id) },
+                challenges: snapshot.featuredChallengesList,
+                onJoinChallenge: { id in Task { await viewModel.joinFeaturedChallenge(id) } },
                 onOpenGroup: { group in navigator?.navigate(to: .groupDetail(group: group, season: theme.season)) }
             )
             highlightedSection
             if !snapshot.slotCapacity.hasRewardedSlotUnlocked {
-                GroupsCapacityCardView(capacity: snapshot.slotCapacity) { viewModel.unlockBonusPersonalSlot() }
+                GroupsCapacityCardView(capacity: snapshot.slotCapacity) { Task { await viewModel.unlockBonusPersonalSlot() } }
             }
             enterCodeButton
         }
@@ -153,7 +153,6 @@ struct GroupsHomeView: View {
 #Preview("Groups Home — 5 Seasons (Light / Dark / AX3)") {
     LiturgicalSeasonPreviewMatrix { _ in
         let vm = GroupsHomeViewModel()
-        let _ = vm.loadGroups()
         GroupsHomeView(viewModel: vm)
     }
 }
