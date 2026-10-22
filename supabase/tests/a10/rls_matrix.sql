@@ -347,6 +347,19 @@ insert into public.ssv_receipts (outcome, transaction_id) values ('granted', 'a1
 --    sel / upd / del are the number of rows each persona can reach.
 --    ins_stmt is NULL when no behavioural INSERT probe is defined for the
 --    table (the policy-level INSERT coverage is asserted in section D).
+--
+--    practice_points: the fixture row is a GLOBAL row (group_id IS NULL).
+--    Before migration 0905 the write policies had a `group_id IS NULL` branch
+--    that every authenticated user satisfied, so the global row was writable
+--    and deletable by ANY signed-in member -- a data-tampering hole that
+--    reached every `custom_points` group in the app. After the fix the global
+--    row is reachable by NOBODY through direct DML (upd/del = 0 for all five
+--    personas, including the group admin); it is writable only through the
+--    sanctioned, RLS-exempt `public.set_practice_points` RPC. READING the
+--    global default is still open to every signed-in user (sel unchanged),
+--    because a `custom_points` group must be able to resolve its values.
+--    The detailed behaviour is covered by
+--    supabase/tests/a10/practice_points_global_writes.sql.
 -- -----------------------------------------------------------------------------
 
 insert into a10_expect (tbl, sel, upd, del, ins_stmt, ins_cnt) values
@@ -382,7 +395,7 @@ insert into a10_expect (tbl, sel, upd, del, ins_stmt, ins_cnt) values
  ('public.moderation_actions',       '{0,0,0,1,0}', '{0,0,0,0,0}', '{0,0,0,0,0}', null, null),
  ('public.notification_outbox',      '{0,0,1,0,0}', '{0,0,0,0,0}', '{0,0,0,0,0}', null, null),
  ('public.pinned_notices',           '{0,0,1,1,1}', '{0,0,0,1,0}', '{0,0,0,1,0}', null, null),
- ('public.practice_points',          '{0,1,1,1,1}', '{0,1,1,1,1}', '{0,1,1,1,1}', null, null),
+ ('public.practice_points',          '{0,1,1,1,1}', '{0,0,0,0,0}', '{0,0,0,0,0}', null, null),
  ('public.prayer_intentions',        '{0,0,1,1,0}', '{0,0,1,0,0}', '{0,0,1,1,0}',
    $i$insert into public.prayer_intentions (group_id, user_id, body) values ('a1000000-0000-0000-0000-000000000101'::uuid, '%s'::uuid, 'a10 probe')$i$, '{0,0,1,1,1}'),
  ('public.profiles',                 '{0,1,4,4,4}', '{0,1,1,1,1}', '{0,0,0,0,0}', null, null),
