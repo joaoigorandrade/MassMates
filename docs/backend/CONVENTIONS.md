@@ -7,7 +7,7 @@ Read this file completely before writing any SQL. It is the contract for every b
 | Item | Value |
 |---|---|
 | Repo root | `/Users/joaoigor/Developer/MassMates` |
-| Supabase project ref | `khovpljkitslmjmonizu` |
+| Supabase project ref | `khovpljkitslmjmonuzu` |
 | Supabase MCP namespace | `supabase` (lowercase) |
 | Schema contract | `supabase/SCHEMA.md` (written by A1 — read it before coding) |
 | iOS app | `MassMates/` (Swift 6, `Navigation` + `Networking` packages only) |
@@ -33,10 +33,10 @@ Key tools and their exact signatures:
 tools["supabase"]["apply_migration"]({ name: string, query: string })
 tools["supabase"]["execute_sql"]({ query: string })
 tools["supabase"]["list_migrations"]()
-tools["supabase"]["list_tables"]({ schemas: string[] })
+tools["supabase"]["list_tables"]({ schemas: string[], verbose: boolean })  // verbose is REQUIRED
 tools["supabase"]["list_extensions"]()
 tools["supabase"]["get_advisors"]({ type: "security" | "performance" })
-tools["supabase"]["deploy_edge_function"]({ name, entrypoint_path, verify_jwt, files: [{name, content}] })
+tools["supabase"]["deploy_edge_function"]({ name, entrypoint_path, import_map_path?, verify_jwt, files: [{name, content}] })
 tools["supabase"]["list_edge_functions"]()
 tools["supabase"]["get_project_url"]()
 tools["supabase"]["get_publishable_keys"]()
@@ -151,7 +151,9 @@ The `name` passed to `apply_migration` must be the filename stem (snake_case, no
 - RPCs that mutate must be idempotent where the client may retry.
 - Edge Functions live in `supabase/functions/<slug>/index.ts` and are deployed with
   `tools["supabase"]["deploy_edge_function"]`. Always include a `deno.json` with
-  the import map when the function uses `npm:`/`jsr:` specifiers.
+  the import map when the function uses `npm:`/`jsr:` specifiers, and pass its path
+  as `import_map_path` (the deploy tool takes it, and it is how the import map
+  actually reaches the deployed function).
 - `verify_jwt`: keep `true` unless the function body does its own verification
   (AdMob SSV, signed webhooks). For those, set `verify_jwt: false` AND verify the
   provider signature inside the function.
@@ -165,20 +167,68 @@ The `name` passed to `apply_migration` must be the filename stem (snake_case, no
 
 ```sql
 begin;
-select plan(3);
-select has_table('public.check_ins', 'check_ins table exists');
+select plan(2);
+select has_table('public', 'check_ins', 'check_ins table exists');
 select ok(not public.is_blocked('00000000-0000-0000-0000-000000000000'::uuid,
                                '00000000-0000-0000-0000-000000000001'::uuid),
           'is_blocked works on empty set');
-select * from finish();
+with f as (select * from finish())
+select coalesce((select f.finish::text from f), 'ALL TESTS PASSED') as verdict;
 rollback;
 ```
 
-- **Read `supabase/tests/README.md` (written by A1) for the exact remote invocation
-  procedure.** Do not guess it.
+### Verified remote invocation procedure
+
+The Supabase CLI is not installed and there is no DB password, so a test file is
+run by sending its **entire body** as the `query` argument of `execute_sql`:
+
+```js
+const res = await tools["supabase"]["execute_sql"]({ query: <file contents> });
+return res;
+```
+
+Rules that are easy to get wrong (all verified against this project):
+
+- **`has_table` is SCHEMA-FIRST when given 3 arguments.** The 3-arg overload is
+  `has_table(schema, table, description)`. The 2-arg overload is
+  `has_table(table, description)` and resolves the table through `search_path`.
+  A dot-qualified string like `'public.check_ins'` is **not** valid — it is parsed
+  as a bare table name and the assertion fails. Use `('public', 'check_ins', ...)`.
+  Same schema-first rule for `has_column(schema, table, column, description)` and
+  `has_function(schema, function, description)`.
+- **`finish()` returns zero rows when every test passes.** The MCP tool returns the
+  last statement's result set, so a bare `select * from finish();` makes a fully
+  green run look like it produced a random earlier assertion's output. Always wrap
+  it in the `with f as (select * from finish()) select coalesce(...)` verdict
+  query above, which always returns exactly one row:
+  - `ALL TESTS PASSED` → green.
+  - `# Looks like you failed N test of M` → red; re-read the assertion.
 - `plan(n)` must exactly equal the number of assertions or `finish()` errors.
-- Always `begin; ... rollback;` so tests never leave data behind.
+- Always `begin; ... rollback;` so tests never leave data behind. The rollback
+  also discards a `create extension` performed inside the test, so the extension
+  must already be installed on the project (see below).
 - Tests must be runnable against the live project and must pass before you report done.
+
+### pgtap extension
+
+`pgtap` must be installed on the project before any test can run:
+
+```sql
+create extension if not exists pgtap with schema extensions;
+```
+
+The `postgres` role's default `search_path` is already `"$user", public, extensions`,
+so `plan()` / `has_table()` / `ok()` / `finish()` resolve without an explicit
+`set search_path`. A `set search_path = extensions, public;` line at the top of a
+test file is harmless but not required.
+
+This is a project-level change, not a per-test one. A1 installs it as part of the
+foundation migration (`0001_install_extensions.sql`); agents other than A1 must not
+create it. If a test fails with `function has_table(...) does not exist`, the
+extension is missing — report it to the orchestrator instead of creating it yourself.
+
+- `supabase/tests/README.md` (written by A1) may extend this section. It
+  supersedes this one when they disagree.
 
 ## 7. "Done" checklist for every agent
 
