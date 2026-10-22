@@ -85,8 +85,8 @@ struct ConfessionRemindersAndRiteView: View {
 
     private var notesListView: some View {
         VStack(spacing: 0) {
-            ForEach(Array(viewModel.privateNotes.enumerated()), id: \.element.id) { index, note in
-                if index > 0 { Divider().overlay(MassMatesPalette.line) }
+            ForEach(viewModel.privateNotes) { note in
+                if note.id != viewModel.privateNotes.first?.id { Divider().overlay(MassMatesPalette.line) }
                 noteRow(note)
             }
         }
@@ -124,8 +124,8 @@ struct ConfessionRemindersAndRiteView: View {
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             VStack(spacing: 0) {
-                ForEach(Array(viewModel.penitentRiteSteps.enumerated()), id: \.element.id) { index, step in
-                    if index > 0 { Divider().overlay(MassMatesPalette.line) }
+                ForEach(viewModel.penitentRiteSteps) { step in
+                    if step.id != viewModel.penitentRiteSteps.first?.id { Divider().overlay(MassMatesPalette.line) }
                     penitentStepBox(step)
                 }
             }

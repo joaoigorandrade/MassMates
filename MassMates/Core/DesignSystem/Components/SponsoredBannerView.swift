@@ -1,11 +1,9 @@
 import SwiftUI
 
-struct SponsoredBannerView: View {
-    // MARK: - Dependencies & State
+struct SponsoredBannerView: View, Equatable {
     private let sponsorTitle: String
     private let message: String
 
-    // MARK: - Init
     init(
         sponsorTitle: String = "Edições CNBB",
         message: String = "Liturgia Diária e subsídios para a oração em família."
@@ -14,7 +12,11 @@ struct SponsoredBannerView: View {
         self.message = message
     }
 
-    // MARK: - Body / Public API
+    nonisolated static func == (lhs: SponsoredBannerView, rhs: SponsoredBannerView) -> Bool {
+        lhs.sponsorTitle == rhs.sponsorTitle &&
+        lhs.message == rhs.message
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             headerRow
@@ -36,7 +38,6 @@ struct SponsoredBannerView: View {
         .accessibilityLabel("Patrocinado: \(sponsorTitle). \(message)")
     }
 
-    // MARK: - Subviews / Private Helpers
     private var headerRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             Text("Patrocinado")

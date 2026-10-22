@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ConsistencyHeatmapCardView: View {
+struct ConsistencyHeatmapCardView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let days: [ConsistencyHeatmapDay]
@@ -13,6 +13,11 @@ struct ConsistencyHeatmapCardView: View {
         [2, 4, 0, 4, 3, 0, 4], [4, 3, 4, 0, 1, 4, 2], [0, 2, 4, 4, 3, 4, 0],
         [4, 0, 1, 4, 4, 3, 4], [3, 4, 0, 2, 4, 4, 0], [4, 2, 4, 3, 0, 4, 4]
     ]
+    private static let defaultFaithfulDaysCount = 63
+
+    nonisolated static func == (lhs: ConsistencyHeatmapCardView, rhs: ConsistencyHeatmapCardView) -> Bool {
+        lhs.activeStreakDays == rhs.activeStreakDays && lhs.days == rhs.days
+    }
 
     // MARK: - Init
     init(
@@ -123,7 +128,7 @@ struct ConsistencyHeatmapCardView: View {
         if days.count >= 84 {
             return days.suffix(84).filter { $0.practiceCount > 0 || $0.isRepairedByStreakMercy }.count
         }
-        return Self.baselineWeeks.flatMap { $0 }.filter { $0 > 0 }.count
+        return Self.defaultFaithfulDaysCount
     }
 }
 

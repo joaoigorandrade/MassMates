@@ -92,7 +92,7 @@ struct RosaryCompanionView: View {
     private func beadView(index: Int, active: Int) -> some View {
         let isCompleted = index < active
         let isCurrent = index == active
-        return ZStack {
+        let base = ZStack {
             if isCurrent {
                 Circle().fill(theme.tint.opacity(0.16)).frame(width: 20, height: 20)
                 Circle().fill(theme.tint).frame(width: 13, height: 13)
@@ -105,12 +105,22 @@ struct RosaryCompanionView: View {
                     .overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
             }
         }
-        .phaseAnimator([1.0, 1.15]) { view, phase in
-            view.scaleEffect(isCurrent && !reduceMotion ? phase : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 1.2)
+        return animatedBead(base, isCurrent: isCurrent)
+            .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7), value: active)
+    }
+
+    @ViewBuilder
+    private func animatedBead(_ view: some View, isCurrent: Bool) -> some View {
+        if isCurrent && !reduceMotion {
+            view
+                .phaseAnimator([1.0, 1.15]) { content, phase in
+                    content.scaleEffect(phase)
+                } animation: { _ in
+                    .easeInOut(duration: 1.2)
+                }
+        } else {
+            view
         }
-        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7), value: active)
     }
 
     private var beadSubLabel: String {

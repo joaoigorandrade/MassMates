@@ -1,14 +1,12 @@
 import SwiftUI
 
-struct SponsoredNativeCardView: View {
-    // MARK: - Dependencies & State
+struct SponsoredNativeCardView: View, Equatable {
     private let sponsorName: String
     private let headline: String
     private let bodyText: String?
     private let couponCode: String?
     private let action: (() -> Void)?
 
-    // MARK: - Init
     init(
         sponsorName: String = "Edições CNBB",
         headline: String = "Edições CNBB — Bíblia Sagrada Edição Pastoral",
@@ -23,7 +21,13 @@ struct SponsoredNativeCardView: View {
         self.action = action
     }
 
-    // MARK: - Body / Public API
+    nonisolated static func == (lhs: SponsoredNativeCardView, rhs: SponsoredNativeCardView) -> Bool {
+        lhs.sponsorName == rhs.sponsorName &&
+        lhs.headline == rhs.headline &&
+        lhs.bodyText == rhs.bodyText &&
+        lhs.couponCode == rhs.couponCode
+    }
+
     var body: some View {
         Group {
             if let action {
@@ -39,7 +43,6 @@ struct SponsoredNativeCardView: View {
         .accessibilityLabel("Patrocinado: \(displayTitle)")
     }
 
-    // MARK: - Subviews / Private Helpers
     private var cardContent: some View {
         HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {

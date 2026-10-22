@@ -50,24 +50,12 @@ struct GroupProgressTabView: View {
                 Text("\(summary.collectiveGoalCurrent)").font(MassMatesFont.numeral).foregroundStyle(MassMatesPalette.textPrimary)
                 Text("/ \(summary.collectiveGoalTarget) \(unitLabel)").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
             }
-            progressBar
+            MassMatesProgressBar(progress: summary.collectiveProgressRatio)
         }
     }
 
     private var unitLabel: String {
         summary.collectiveGoalTitle.isEmpty ? "Terços" : summary.collectiveGoalTitle
-    }
-
-    private var progressBar: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule().fill(MassMatesPalette.line).frame(height: 6)
-                Capsule().fill(theme.tint)
-                    .frame(width: max(proxy.size.width * summary.collectiveProgressRatio, 0), height: 6)
-                    .animation(.snappy(duration: 0.4), value: summary.collectiveProgressRatio)
-            }
-        }
-        .frame(height: 6)
     }
 
     private var guardianAngelSummaryRow: some View {
@@ -120,8 +108,8 @@ struct GroupProgressTabView: View {
         }
     }
 
-    private var topMembers: [GroupMemberScoreEntry] {
-        Array(summary.orderedEntries.prefix(5))
+    private var topMembers: ArraySlice<GroupMemberScoreEntry> {
+        summary.orderedEntries.prefix(5)
     }
 
     private func memberRow(_ entry: GroupMemberScoreEntry) -> some View {

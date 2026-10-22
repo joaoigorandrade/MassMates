@@ -6,6 +6,7 @@ struct DiaryEntryImmersiveReaderView: View {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var currentEntry: PrivateDiaryCheckInEntry
+    @State private var cachedParagraphs: [String]
     private let allEntries: [PrivateDiaryCheckInEntry]
     private let hasAttachedPhoto: Bool
 
@@ -16,6 +17,7 @@ struct DiaryEntryImmersiveReaderView: View {
         hasAttachedPhoto: Bool = true
     ) {
         self._currentEntry = State(initialValue: entry)
+        self._cachedParagraphs = State(initialValue: Self.computeParagraphs(for: entry))
         self.allEntries = allEntries
         self.hasAttachedPhoto = hasAttachedPhoto
     }
@@ -47,22 +49,19 @@ struct DiaryEntryImmersiveReaderView: View {
         HStack {
             Button { dismiss() } label: {
                 Image(systemName: "chevron.left")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
             Spacer()
             ShareLink(item: exportText) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin)
-        .frame(height: MassMatesLayout.minRowHeight)
+        .padding(.horizontal, MassMatesLayout.readingMargin).frame(height: MassMatesLayout.minRowHeight)
     }
 
     private var metadataAndTitleSection: some View {
@@ -80,9 +79,7 @@ struct DiaryEntryImmersiveReaderView: View {
                 Text("Canto de oração • Recolhimento").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 180)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        .frame(maxWidth: .infinity).frame(height: 180).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
     }
 
     private var reflectionArticle: some View {
@@ -108,11 +105,29 @@ struct DiaryEntryImmersiveReaderView: View {
         )
     }
 
+    private static let metadataFormatter: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "pt_BR"); f.dateFormat = "d 'de' MMMM"; return f
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "pt_BR"); f.dateFormat = "d MMM"; return f
+    }()
+
+    private static let defaultParagraphs: [String] = [
+        "Ofereci cada mistério pelas intenções e aflições da minha família. Durante a oração, veio-me ao coração uma viva consciência de que a cruz já foi redimida pelo amor de Nosso Senhor.",
+        "Senti uma profunda paz no recolhimento interior, renovando o propósito de guardar a mansidão e fixar o olhar em Cristo."
+    ]
+
+    private static func computeParagraphs(for entry: PrivateDiaryCheckInEntry) -> [String] {
+        guard let notes = entry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return defaultParagraphs
+        }
+        let split = notes.components(separatedBy: "\n\n").filter { !$0.isEmpty }
+        return split.isEmpty ? [notes] : split
+    }
+
     private var formattedMetadata: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "d 'de' MMMM"
-        return "\(formatter.string(from: currentEntry.createdAt)) · \(currentEntry.practice.title)"
+        "\(Self.metadataFormatter.string(from: currentEntry.createdAt)) · \(currentEntry.practice.title)"
     }
 
     private var entryTitle: String {
@@ -125,16 +140,7 @@ struct DiaryEntryImmersiveReaderView: View {
         }
     }
 
-    private var reflectionParagraphs: [String] {
-        if let notes = currentEntry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let split = notes.components(separatedBy: "\n\n").filter { !$0.isEmpty }
-            return split.isEmpty ? [notes] : split
-        }
-        return [
-            "Ofereci cada mistério pelas intenções e aflições da minha família. Durante a oração, veio-me ao coração uma viva consciência de que a cruz já foi redimida pelo amor de Nosso Senhor.",
-            "Senti uma profunda paz no recolhimento interior, renovando o propósito de guardar a mansidão e fixar o olhar em Cristo."
-        ]
-    }
+    private var reflectionParagraphs: [String] { cachedParagraphs }
 
     private var previousEntry: PrivateDiaryCheckInEntry? {
         guard let idx = allEntries.firstIndex(where: { $0.id == currentEntry.id }), idx + 1 < allEntries.count else { return nil }
@@ -147,14 +153,12 @@ struct DiaryEntryImmersiveReaderView: View {
     }
 
     private func shortDateLabel(for entry: PrivateDiaryCheckInEntry) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "d MMM"
-        return formatter.string(from: entry.createdAt).capitalized
+        Self.shortDateFormatter.string(from: entry.createdAt).capitalized
     }
 
     private func flip(to entry: PrivateDiaryCheckInEntry?) {
         guard let entry else { return }
+        cachedParagraphs = Self.computeParagraphs(for: entry)
         withAnimation(.easeInOut(duration: 0.25)) { currentEntry = entry }
     }
 

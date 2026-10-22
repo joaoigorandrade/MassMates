@@ -1,9 +1,10 @@
 import SwiftUI
 
-struct SpiritualDiaryEntryCardView: View {
+struct SpiritualDiaryEntryCardView: View, Equatable {
     // MARK: - Dependencies & State
     private let entry: PrivateDiaryCheckInEntry
     private let onSelectEntry: (PrivateDiaryCheckInEntry) -> Void
+    private let dayString: String
 
     // MARK: - Init
     init(
@@ -12,6 +13,11 @@ struct SpiritualDiaryEntryCardView: View {
     ) {
         self.entry = entry
         self.onSelectEntry = onSelectEntry
+        self.dayString = String(Calendar.current.component(.day, from: entry.createdAt))
+    }
+
+    nonisolated static func == (lhs: SpiritualDiaryEntryCardView, rhs: SpiritualDiaryEntryCardView) -> Bool {
+        lhs.entry == rhs.entry
     }
 
     // MARK: - Body / Public API
@@ -74,11 +80,6 @@ struct SpiritualDiaryEntryCardView: View {
         Image(systemName: "chevron.right")
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(MassMatesPalette.textTertiary)
-    }
-
-    private var dayString: String {
-        let day = Calendar.current.component(.day, from: entry.createdAt)
-        return String(day)
     }
 
     private var isPrivateBlank: Bool {

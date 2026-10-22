@@ -59,6 +59,7 @@ struct TodayDashboardView: View {
                 onSelectSeason: { season in viewModel.selectSeasonColor(season) },
                 onOpenStreak: { navigator?.present(.spiritualDiary(season: data.activeSeasonColor)) }
             )
+            .equatable()
             .padding(.top, MassMatesSpacing.sm)
 
             Spacer(minLength: MassMatesSpacing.sm)
@@ -70,6 +71,7 @@ struct TodayDashboardView: View {
                 onOpenGospel: { navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor)) },
                 onOpenTimer: { mode in navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor)) }
             )
+            .equatable()
 
             quietSponsoredBanner
         }
@@ -132,9 +134,9 @@ struct TodayDashboardView: View {
     private var quietSponsoredBanner: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             Text("PATROCINADO").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
-            Text("·").font(.system(size: 12)).foregroundStyle(MassMatesPalette.line)
+            Text("·").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.line)
             Text("Edições CNBB · Bíblia Sagrada Edição Pastoral")
-                .font(.system(size: 11, weight: .regular)).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
             Spacer()
             Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
         }

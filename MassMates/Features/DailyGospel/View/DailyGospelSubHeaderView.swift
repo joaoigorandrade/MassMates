@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct DailyGospelSubHeaderView: View {
+struct DailyGospelSubHeaderView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable var viewModel: DailyGospelViewModel
@@ -10,6 +10,13 @@ struct DailyGospelSubHeaderView: View {
     init(viewModel: DailyGospelViewModel, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.onClose = onClose
+    }
+
+    nonisolated static func == (lhs: DailyGospelSubHeaderView, rhs: DailyGospelSubHeaderView) -> Bool {
+        MainActor.assumeIsolated {
+            lhs.viewModel === rhs.viewModel &&
+            lhs.viewModel.selectedSection == rhs.viewModel.selectedSection
+        }
     }
 
     // MARK: - Body / Public API

@@ -36,6 +36,7 @@ extension GroupDetailView {
                 onDeleteComment: { comment in Task { await viewModel.deleteComment(comment) } },
                 onComposerFocus: { Task { await viewModel.loadComments(for: post.id) } }
             )
+            .equatable()
         case .sponsoredAd(_, let sponsorName, let headline, let bodyText, let couponCode):
             SponsoredNativeCardView(
                 sponsorName: sponsorName,

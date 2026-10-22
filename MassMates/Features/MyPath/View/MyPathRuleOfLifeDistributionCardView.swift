@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MyPathGraceAndMercyView: View {
+struct MyPathGraceAndMercyView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let canClaimStreakMercy: Bool
@@ -19,6 +19,10 @@ struct MyPathGraceAndMercyView: View {
         self.onBack = onBack
         self.onClaimStreakMercy = onClaimStreakMercy
         self.onUnlockSaintTheme = onUnlockSaintTheme
+    }
+
+    nonisolated static func == (lhs: MyPathGraceAndMercyView, rhs: MyPathGraceAndMercyView) -> Bool {
+        lhs.canClaimStreakMercy == rhs.canClaimStreakMercy
     }
 
     // MARK: - Body / Public API

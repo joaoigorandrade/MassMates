@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct TodayHeaderView: View {
+struct TodayHeaderView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -43,6 +43,12 @@ struct TodayHeaderView: View {
             onSelectSeason: onSelectSeason,
             onOpenStreak: onOpenHistory ?? onOpenOnboarding
         )
+    }
+
+    nonisolated static func == (lhs: TodayHeaderView, rhs: TodayHeaderView) -> Bool {
+        lhs.seasonTitle == rhs.seasonTitle &&
+        lhs.saintOrFeast == rhs.saintOrFeast &&
+        lhs.streakDays == rhs.streakDays
     }
 
     // MARK: - Body / Public API

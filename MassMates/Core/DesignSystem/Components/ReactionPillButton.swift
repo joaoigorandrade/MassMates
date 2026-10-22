@@ -1,7 +1,6 @@
 import SwiftUI
 
-struct ReactionPillButton: View {
-    // MARK: - Dependencies & State
+struct ReactionPillButton: View, Equatable {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let title: String
@@ -10,7 +9,6 @@ struct ReactionPillButton: View {
     private let isActive: Bool
     private let action: () -> Void
 
-    // MARK: - Init
     init(
         title: String,
         systemImage: String,
@@ -25,7 +23,13 @@ struct ReactionPillButton: View {
         self.action = action
     }
 
-    // MARK: - Body / Public API
+    nonisolated static func == (lhs: ReactionPillButton, rhs: ReactionPillButton) -> Bool {
+        lhs.title == rhs.title &&
+        lhs.systemImage == rhs.systemImage &&
+        lhs.count == rhs.count &&
+        lhs.isActive == rhs.isActive
+    }
+
     var body: some View {
         Button(action: action) {
             pillContent
@@ -34,13 +38,9 @@ struct ReactionPillButton: View {
                 .background(isActive ? theme.tintSoft : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .overlay(borderOverlay)
-                .phaseAnimator([false, true], trigger: isActive) { content, phase in
-                    content.scaleEffect(phase && !reduceMotion ? 1.08 : 1.0)
-                } animation: { _ in
-                    reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.65)
-                }
+                .scaleEffect(isActive && !reduceMotion ? 1.04 : 1.0)
                 .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.2),
+                    reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.65),
                     value: isActive
                 )
         }
@@ -50,7 +50,6 @@ struct ReactionPillButton: View {
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 
-    // MARK: - Subviews / Private Helpers
     private var pillContent: some View {
         HStack(spacing: MassMatesSpacing.xxs) {
             Image(systemName: systemImage)

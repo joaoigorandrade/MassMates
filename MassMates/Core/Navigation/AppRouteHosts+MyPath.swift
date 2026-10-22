@@ -1,119 +1,123 @@
 import Navigation
 import SwiftUI
 
+private final class HostBox<T>: @unchecked Sendable {
+    var value: T?
+}
+
 struct MyPathTabRootHostView: View {
-    // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.sharedMyPathService) private var myPathService
     @Environment(\.sharedRewardedAdCoordinator) private var rewardedAdCoordinator
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
+    @State private var box = HostBox<MyPathViewModel>()
 
-    // MARK: - Init
     init() {}
 
-    // MARK: - Body / Public API
     var body: some View {
-        let resolvedService = myPathService ?? LocalMyPathService()
         MyPathProfileView(
-            viewModel: MyPathViewModel(
-                milestonesService: resolvedService,
-                widgetService: resolvedService,
-                rewardedAdCoordinator: rewardedAdCoordinator,
-                season: theme.season
-            ),
-            onOpenDiary: {
-                navigator?.present(.spiritualDiary(season: theme.season))
-            },
-            onOpenSettings: {
-                navigator?.present(.settings(season: theme.season))
-            }
+            viewModel: resolveViewModel(),
+            onOpenDiary: { navigator?.present(.spiritualDiary(season: theme.season)) },
+            onOpenSettings: { navigator?.present(.settings(season: theme.season)) }
         )
     }
 
-    // MARK: - Subviews / Private Helpers
+    private func resolveViewModel() -> MyPathViewModel {
+        if let vm = box.value { return vm }
+        let resolvedService = myPathService ?? LocalMyPathService()
+        let vm = MyPathViewModel(
+            milestonesService: resolvedService,
+            widgetService: resolvedService,
+            rewardedAdCoordinator: rewardedAdCoordinator,
+            season: theme.season
+        )
+        box.value = vm
+        return vm
+    }
 }
 
 struct SpiritualDiaryRouteHostView: View {
-    // MARK: - Dependencies & State
     @Environment(\.sharedCheckInEngine) private var checkInEngine
+    @State private var box = HostBox<SpiritualDiaryViewModel>()
     private let season: LiturgicalColor
 
-    // MARK: - Init
     nonisolated init(season: LiturgicalColor) {
         self.season = season
     }
 
-    // MARK: - Body / Public API
     var body: some View {
-        let resolvedEngine = checkInEngine ?? LocalCheckInEngineService()
-        SpiritualDiaryModalView(
-            viewModel: SpiritualDiaryViewModel(checkInService: resolvedEngine)
-        )
-        .environment(\.liturgicalTheme, Theme(season: season))
-        .presentationCornerRadius(MassMatesRadius.sheet)
+        SpiritualDiaryModalView(viewModel: resolveViewModel())
+            .environment(\.liturgicalTheme, Theme(season: season))
+            .presentationCornerRadius(MassMatesRadius.sheet)
     }
 
-    // MARK: - Subviews / Private Helpers
+    private func resolveViewModel() -> SpiritualDiaryViewModel {
+        if let vm = box.value { return vm }
+        let resolvedEngine = checkInEngine ?? LocalCheckInEngineService()
+        let vm = SpiritualDiaryViewModel(checkInService: resolvedEngine)
+        box.value = vm
+        return vm
+    }
 }
 
 struct SettingsRouteHostView: View {
-    // MARK: - Dependencies & State
     @Environment(\.sharedMyPathService) private var myPathService
     @Environment(\.dismiss) private var dismiss
+    @State private var box = HostBox<SettingsViewModel>()
     private let season: LiturgicalColor
 
-    // MARK: - Init
     nonisolated init(season: LiturgicalColor) {
         self.season = season
     }
 
-    // MARK: - Body / Public API
     var body: some View {
-        let resolvedService = myPathService ?? LocalMyPathService()
-        SettingsModalView(
-            viewModel: SettingsViewModel(
-                settingsService: resolvedService,
-                milestonesService: resolvedService,
-                onOpenDiaryBackup: {
-                    dismiss()
-                }
-            )
-        )
-        .environment(\.liturgicalTheme, Theme(season: season))
-        .presentationCornerRadius(MassMatesRadius.sheet)
+        SettingsModalView(viewModel: resolveViewModel())
+            .environment(\.liturgicalTheme, Theme(season: season))
+            .presentationCornerRadius(MassMatesRadius.sheet)
     }
 
-    // MARK: - Subviews / Private Helpers
+    private func resolveViewModel() -> SettingsViewModel {
+        if let vm = box.value { return vm }
+        let resolvedService = myPathService ?? LocalMyPathService()
+        let vm = SettingsViewModel(
+            settingsService: resolvedService,
+            milestonesService: resolvedService,
+            onOpenDiaryBackup: { dismiss() }
+        )
+        box.value = vm
+        return vm
+    }
 }
 
 struct OnboardingRouteHostView: View {
-    // MARK: - Dependencies & State
     @Environment(\.sharedOnboardingService) private var onboardingService
     @Environment(\.sharedTodayViewModel) private var todayViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var box = HostBox<OnboardingViewModel>()
     private let season: LiturgicalColor
 
-    // MARK: - Init
     nonisolated init(season: LiturgicalColor) {
         self.season = season
     }
 
-    // MARK: - Body / Public API
     var body: some View {
-        let resolvedService = onboardingService ?? LocalOnboardingService()
-        OnboardingFlowView(
-            viewModel: OnboardingViewModel(
-                readingService: resolvedService,
-                completingService: resolvedService,
-                onOnboardingFinished: { config in
-                    todayViewModel?.selectPreset(config.selectedPreset)
-                    dismiss()
-                }
-            )
-        )
-        .environment(\.liturgicalTheme, Theme(season: season))
-        .presentationCornerRadius(MassMatesRadius.sheet)
+        OnboardingFlowView(viewModel: resolveViewModel())
+            .environment(\.liturgicalTheme, Theme(season: season))
+            .presentationCornerRadius(MassMatesRadius.sheet)
     }
 
-    // MARK: - Subviews / Private Helpers
+    private func resolveViewModel() -> OnboardingViewModel {
+        if let vm = box.value { return vm }
+        let resolvedService = onboardingService ?? LocalOnboardingService()
+        let vm = OnboardingViewModel(
+            readingService: resolvedService,
+            completingService: resolvedService,
+            onOnboardingFinished: { config in
+                todayViewModel?.selectPreset(config.selectedPreset)
+                dismiss()
+            }
+        )
+        box.value = vm
+        return vm
+    }
 }

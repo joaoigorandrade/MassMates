@@ -11,10 +11,13 @@ struct SpiritualDiaryModalView: View {
     @State private var selectedEntryForReading: PrivateDiaryCheckInEntry?
     @State private var selectedMonth: Date = Date()
     @State private var isSearchActive: Bool = false
+    @State private var displayedEntries: [PrivateDiaryCheckInEntry] = []
 
     // MARK: - Init
     init(viewModel: SpiritualDiaryViewModel = SpiritualDiaryViewModel()) {
         self.viewModel = viewModel
+        let initial = Self.computeDisplayed(entries: viewModel.filteredEntries, month: Date(), query: viewModel.searchQuery)
+        self._displayedEntries = State(initialValue: initial)
     }
 
     // MARK: - Body / Public API
@@ -36,10 +39,12 @@ struct SpiritualDiaryModalView: View {
         .animation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.8), value: viewModel.isDiaryUnlocked)
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .sheet(item: $selectedEntryForReading) { entry in
-            DiaryEntryImmersiveReaderView(entry: entry, allEntries: displayedEntries)
-                .environment(\.liturgicalTheme, theme)
+        .sheet(item: $selectedEntryForReading) {
+            DiaryEntryImmersiveReaderView(entry: $0, allEntries: displayedEntries).environment(\.liturgicalTheme, theme)
         }
+        .onChange(of: viewModel.filteredEntries) { updateDisplayedEntries() }
+        .onChange(of: viewModel.searchQuery) { updateDisplayedEntries() }
+        .onAppear { updateDisplayedEntries() }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -49,8 +54,7 @@ struct SpiritualDiaryModalView: View {
                 Image(systemName: "chevron.left").font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
-            }
-            .buttonStyle(.plain)
+            }.buttonStyle(.plain)
             Spacer()
             Text("Diário").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
@@ -58,8 +62,7 @@ struct SpiritualDiaryModalView: View {
                 Image(systemName: isSearchActive ? "xmark" : "magnifyingglass").font(.system(size: 17, weight: .medium))
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
-            }
-            .buttonStyle(.plain)
+            }.buttonStyle(.plain)
         }
         .frame(height: 52)
     }
@@ -67,10 +70,8 @@ struct SpiritualDiaryModalView: View {
     private var monthSwitcher: some View {
         HStack(spacing: MassMatesSpacing.lg) {
             monthChevron(icon: "chevron.left") { changeMonth(by: -1) }
-            Text(monthYearLabel)
-                .font(MassMatesFont.callout).fontWeight(.medium)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .contentTransition(.numericText())
+            Text(monthYearLabel).font(MassMatesFont.callout).fontWeight(.medium)
+                .foregroundStyle(MassMatesPalette.textPrimary).contentTransition(.numericText())
             monthChevron(icon: "chevron.right") { changeMonth(by: 1) }
         }
     }
@@ -80,8 +81,7 @@ struct SpiritualDiaryModalView: View {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-        }
-        .buttonStyle(.plain)
+        }.buttonStyle(.plain)
     }
 
     private var entriesSection: some View {
@@ -107,10 +107,8 @@ struct SpiritualDiaryModalView: View {
             Image(systemName: "magnifyingglass").foregroundStyle(MassMatesPalette.textTertiary)
             TextField("Buscar no diário...", text: $viewModel.searchQuery).font(MassMatesFont.callout)
         }
-        .padding(.horizontal, MassMatesSpacing.md)
-        .frame(height: 44)
-        .background(MassMatesPalette.surfaceMuted)
-        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+        .padding(.horizontal, MassMatesSpacing.md).frame(height: 44)
+        .background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.button))
     }
 
     private var bottomBiometricPill: some View {
@@ -121,14 +119,10 @@ struct SpiritualDiaryModalView: View {
                 Image(systemName: "lock.fill").font(.system(size: 13))
                 Text("Protegido por Face ID").font(MassMatesFont.caption)
             }
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            .padding(.vertical, 8)
-            .padding(.horizontal, MassMatesSpacing.md)
-            .background(MassMatesPalette.surfaceMuted.opacity(0.8))
-            .clipShape(Capsule())
+            .foregroundStyle(MassMatesPalette.textSecondary).padding(.vertical, 8).padding(.horizontal, MassMatesSpacing.md)
+            .background(MassMatesPalette.surfaceMuted.opacity(0.8)).clipShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .padding(.bottom, MassMatesSpacing.sm)
+        .buttonStyle(.plain).padding(.bottom, MassMatesSpacing.sm)
     }
 
     private var lockedBiometricGate: some View {
@@ -138,9 +132,7 @@ struct SpiritualDiaryModalView: View {
             MassMatesPrimaryButton(title: "Desbloquear com Biometria", systemImage: "lock.open") {
                 _ = viewModel.unlockWithBiometrics(simulateSuccess: true)
             }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, MassMatesSpacing.xl)
+        }.frame(maxWidth: .infinity).padding(.vertical, MassMatesSpacing.xl)
     }
 
     private var hairlineDivider: some View {
@@ -151,15 +143,25 @@ struct SpiritualDiaryModalView: View {
         selectedMonth.formatted(.dateTime.month(.wide).year()).capitalized
     }
 
-    private var displayedEntries: [PrivateDiaryCheckInEntry] {
+    private static func computeDisplayed(
+        entries: [PrivateDiaryCheckInEntry], month: Date, query: String
+    ) -> [PrivateDiaryCheckInEntry] {
         let cal = Calendar.current
-        let matching = viewModel.filteredEntries.filter { cal.isDate($0.createdAt, equalTo: selectedMonth, toGranularity: .month) }
-        return !matching.isEmpty ? Array(matching.prefix(5)) : (viewModel.searchQuery.isEmpty ? Array(viewModel.filteredEntries.prefix(5)) : [])
+        let matching = entries.filter { cal.isDate($0.createdAt, equalTo: month, toGranularity: .month) }
+        return !matching.isEmpty ? Array(matching.prefix(5)) : (query.isEmpty ? Array(entries.prefix(5)) : [])
+    }
+
+    private func updateDisplayedEntries() {
+        displayedEntries = Self.computeDisplayed(
+            entries: viewModel.filteredEntries, month: selectedMonth, query: viewModel.searchQuery
+        )
     }
 
     private func changeMonth(by value: Int) {
-        if let next = Calendar.current.date(byAdding: .month, value: value, to: selectedMonth) {
-            withAnimation(reduceMotion ? .none : .snappy(duration: 0.2)) { selectedMonth = next }
+        guard let next = Calendar.current.date(byAdding: .month, value: value, to: selectedMonth) else { return }
+        withAnimation(reduceMotion ? .none : .snappy(duration: 0.2)) {
+            selectedMonth = next
+            displayedEntries = Self.computeDisplayed(entries: viewModel.filteredEntries, month: next, query: viewModel.searchQuery)
         }
     }
 
@@ -167,6 +169,7 @@ struct SpiritualDiaryModalView: View {
         withAnimation(reduceMotion ? .none : .snappy(duration: 0.2)) {
             isSearchActive.toggle()
             if !isSearchActive { viewModel.searchQuery = "" }
+            updateDisplayedEntries()
         }
     }
 }

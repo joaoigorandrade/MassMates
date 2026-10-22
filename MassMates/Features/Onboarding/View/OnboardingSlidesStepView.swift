@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct OnboardingSlidesStepView: View {
+struct OnboardingSlidesStepView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let slides: [OnboardingSlide]
@@ -27,6 +27,12 @@ struct OnboardingSlidesStepView: View {
         self.onSkip = onSkip
     }
 
+    nonisolated static func == (lhs: OnboardingSlidesStepView, rhs: OnboardingSlidesStepView) -> Bool {
+        lhs.currentIndex == rhs.currentIndex &&
+        lhs.isOnFinalSlide == rhs.isOnFinalSlide &&
+        lhs.slides == rhs.slides
+    }
+
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: 0) {
@@ -40,9 +46,9 @@ struct OnboardingSlidesStepView: View {
     // MARK: - Subviews / Private Helpers
     private var pagedSlidesView: some View {
         TabView(selection: selectionBinding) {
-            ForEach(Array(resolvedSlides.enumerated()), id: \.element.id) { index, slide in
+            ForEach(resolvedSlides) { slide in
                 OnboardingSlidePageView(slide: slide)
-                    .tag(index)
+                    .tag(slide.id)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -85,11 +91,14 @@ struct OnboardingSlidesStepView: View {
         .disabled(isOnFinalSlide)
     }
 
-    private var selectionBinding: Binding<Int> {
+    private var selectionBinding: Binding<String> {
         Binding(
-            get: { currentIndex },
-            set: { newIndex in
-                if newIndex != currentIndex {
+            get: {
+                guard resolvedSlides.indices.contains(currentIndex) else { return resolvedSlides.first?.id ?? "" }
+                return resolvedSlides[currentIndex].id
+            },
+            set: { newId in
+                if let newIndex = resolvedSlides.firstIndex(where: { $0.id == newId }), newIndex != currentIndex {
                     onSelectIndex(newIndex)
                 }
             }

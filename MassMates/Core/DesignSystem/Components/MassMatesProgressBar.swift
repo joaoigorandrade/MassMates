@@ -1,17 +1,18 @@
 import SwiftUI
 
-struct MassMatesProgressBar: View {
-    // MARK: - Dependencies & State
+struct MassMatesProgressBar: View, Equatable {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let progress: Double
 
-    // MARK: - Init
     init(progress: Double) {
         self.progress = min(max(progress, 0), 1)
     }
 
-    // MARK: - Body / Public API
+    nonisolated static func == (lhs: MassMatesProgressBar, rhs: MassMatesProgressBar) -> Bool {
+        lhs.progress == rhs.progress
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
@@ -29,8 +30,6 @@ struct MassMatesProgressBar: View {
         .frame(height: MassMatesLayout.progressBarHeight)
         .accessibilityValue("\(Int((progress * 100).rounded())) por cento")
     }
-
-    // MARK: - Subviews / Private Helpers
 }
 
 #Preview("Progress Bar — 5 Seasons (Light / Dark / AX3)") {

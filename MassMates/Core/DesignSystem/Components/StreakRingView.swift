@@ -1,21 +1,24 @@
 import SwiftUI
 
-struct StreakRingView: View {
-    // MARK: - Dependencies & State
+struct StreakRingView: View, Equatable {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let streakDays: Int
     private let progress: Double
     private let size: CGFloat
 
-    // MARK: - Init
     init(streakDays: Int, progress: Double, size: CGFloat = 68) {
         self.streakDays = streakDays
         self.progress = min(max(progress, 0), 1)
         self.size = size
     }
 
-    // MARK: - Body / Public API
+    nonisolated static func == (lhs: StreakRingView, rhs: StreakRingView) -> Bool {
+        lhs.streakDays == rhs.streakDays &&
+        lhs.progress == rhs.progress &&
+        lhs.size == rhs.size
+    }
+
     var body: some View {
         ZStack {
             trackCircle
@@ -27,7 +30,6 @@ struct StreakRingView: View {
         .accessibilityLabel(accessibilityLabelText)
     }
 
-    // MARK: - Subviews / Private Helpers
     private var trackCircle: some View {
         Circle()
             .stroke(MassMatesPalette.line, lineWidth: MassMatesLayout.streakRingStroke)

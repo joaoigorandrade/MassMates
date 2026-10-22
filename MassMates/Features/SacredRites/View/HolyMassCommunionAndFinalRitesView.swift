@@ -1,11 +1,15 @@
 import SwiftUI
 
-struct HolyMassCommunionAndFinalRitesView: View {
+struct HolyMassCommunionAndFinalRitesView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
 
     // MARK: - Init
     init() {}
+
+    nonisolated static func == (lhs: HolyMassCommunionAndFinalRitesView, rhs: HolyMassCommunionAndFinalRitesView) -> Bool {
+        true
+    }
 
     // MARK: - Body / Public API
     var body: some View {
@@ -54,7 +58,8 @@ struct HolyMassCommunionAndFinalRitesView: View {
 
     private var agnusDeiLinesBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            ForEach(Array(HolyMassRitesCatalog.agnusDeiLines.enumerated()), id: \.offset) { _, line in
+            ForEach(0..<HolyMassRitesCatalog.agnusDeiLines.count, id: \.self) { idx in
+                let line = HolyMassRitesCatalog.agnusDeiLines[idx]
                 Text("\(Text(line.lead))\(Text(line.response).bold())")
                     .font(MassMatesFont.scripture)
                     .foregroundStyle(MassMatesPalette.textPrimary)

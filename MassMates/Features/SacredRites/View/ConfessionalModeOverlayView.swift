@@ -88,8 +88,8 @@ struct ConfessionalModeOverlayView: View {
                     .padding(.vertical, MassMatesSpacing.xs)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(viewModel.privateNotes.enumerated()), id: \.element.id) { index, note in
-                        if index > 0 { darkSectionHairline }
+                    ForEach(viewModel.privateNotes) { note in
+                        if note.id != viewModel.privateNotes.first?.id { darkSectionHairline }
                         confessionalNoteRow(note)
                     }
                 }

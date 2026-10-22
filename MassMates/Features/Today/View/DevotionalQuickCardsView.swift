@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct DevotionalQuickCardsView: View {
+struct DevotionalQuickCardsView: View, Equatable {
     // MARK: - Dependencies & State
     @State private var feedbackTrigger = false
     private let reading: DailyLiturgicalReading
@@ -16,6 +16,10 @@ struct DevotionalQuickCardsView: View {
         self.reading = reading
         self.onOpenGospel = onOpenGospel
         self.onOpenTimer = onOpenTimer
+    }
+
+    nonisolated static func == (lhs: DevotionalQuickCardsView, rhs: DevotionalQuickCardsView) -> Bool {
+        lhs.reading == rhs.reading
     }
 
     // MARK: - Body / Public API

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct CheckInCelebrationCardView: View {
+struct CheckInCelebrationCardView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,6 +16,10 @@ struct CheckInCelebrationCardView: View {
         self.result = result
         self.activeStreakDays = activeStreakDays
         self.onDone = onDone
+    }
+
+    nonisolated static func == (lhs: CheckInCelebrationCardView, rhs: CheckInCelebrationCardView) -> Bool {
+        lhs.result == rhs.result && lhs.activeStreakDays == rhs.activeStreakDays
     }
 
     // MARK: - Body / Public API

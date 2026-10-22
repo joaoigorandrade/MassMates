@@ -23,13 +23,11 @@ struct NewCheckInModalView: View {
         VStack(spacing: 0) {
             Capsule().fill(MassMatesPalette.line).frame(width: 36, height: 4).padding(.vertical, 8)
             if let result = viewModel.submissionResult {
-                CheckInCelebrationCardView(result: result, activeStreakDays: activeStreakDays) { navigator?.dismiss() }
+                CheckInCelebrationCardView(result: result, activeStreakDays: activeStreakDays) { navigator?.dismiss() }.equatable()
             } else if currentStep == .practice {
-                practiceStep
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+                practiceStep.transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             } else {
-                fruitAndDestinationStep
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+                fruitAndDestinationStep.transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             }
         }
         .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: currentStep)
@@ -72,41 +70,13 @@ struct NewCheckInModalView: View {
     }
 
     private var practiceGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
-            spacing: 10
-        ) {
-            ForEach(SpiritualPractice.allCases) { practiceTile($0) }
-        }
-    }
-
-    private func practiceTile(_ practice: SpiritualPractice) -> some View {
-        let isSelected = viewModel.selectedPractice == practice
-        return Button { viewModel.selectPractice(practice) } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: practice.checkInIconName).font(.system(size: 18))
-                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-                        .symbolEffect(.bounce, value: isSelected)
-                    Spacer()
-                    if isSelected {
-                        Circle().fill(theme.tint).frame(width: 8, height: 8)
-                    } else if practice == .confession {
-                        Text("PRIVADO").font(.system(size: 10, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
-                    }
-                }
-                Text(practice.checkInChipTitle).font(MassMatesFont.callout.weight(.medium))
-                    .foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            ForEach(SpiritualPractice.allCases, id: \.id) { practice in
+                CheckInPracticeTileView(practice: practice, isSelected: viewModel.selectedPractice == practice) {
+                    viewModel.selectPractice(practice)
+                }.equatable()
             }
-            .padding(MassMatesSpacing.sm).frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
-            .background(isSelected ? theme.tintSoft.opacity(0.4) : MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button)
-                .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 1.5 : 1))
-            .scaleEffect(isSelected && !reduceMotion ? 1.02 : 1.0)
-            .animation(reduceMotion ? .none : .snappy(duration: 0.2), value: isSelected)
         }
-        .buttonStyle(.plain)
     }
 
     private func stepTopBar(stepText: String, showBack: Bool) -> some View {
@@ -117,16 +87,14 @@ struct NewCheckInModalView: View {
                 } label: {
                     Image(systemName: "chevron.left").font(MassMatesFont.caption.weight(.semibold))
                         .foregroundStyle(MassMatesPalette.textSecondary).frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
+                }.buttonStyle(.plain)
             }
             Text(stepText).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).tracking(0.6)
             Spacer()
             Button { navigator?.dismiss() } label: {
                 Image(systemName: "xmark").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: 32, height: 32).background(MassMatesPalette.surfaceMuted).clipShape(.circle)
-            }
-            .buttonStyle(.plain)
+            }.buttonStyle(.plain)
         }
     }
 
@@ -145,10 +113,8 @@ struct NewCheckInModalView: View {
                 Text("Continuar").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
                     .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                     .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-            .buttonStyle(.plain)
-            Text("O registro fortalecerá a sua fidelidade diária.")
-                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            }.buttonStyle(.plain)
+            Text("O registro fortalecerá a sua fidelidade diária.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
         }
     }
 
@@ -161,13 +127,46 @@ struct NewCheckInModalView: View {
                 Text("Confirmar Registro").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
                     .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                     .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            }
-            .buttonStyle(.plain)
+            }.buttonStyle(.plain)
             Text(viewModel.isDestinationLockedToPrivateDiary
                 ? "Destino restrito ao diário pessoal para proteger o sigilo."
                 : "Seu registro fortalece a perseverança comunitária.")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
         }
+    }
+}
+
+private struct CheckInPracticeTileView: View, Equatable {
+    @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let practice: SpiritualPractice; let isSelected: Bool; let onSelect: () -> Void
+
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.practice == rhs.practice && lhs.isSelected == rhs.isSelected
+    }
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: practice.checkInIconName).font(.system(size: 18))
+                        .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary).symbolEffect(.bounce, value: isSelected)
+                    Spacer()
+                    if isSelected {
+                        Circle().fill(theme.tint).frame(width: 8, height: 8)
+                    } else if practice == .confession {
+                        Text("PRIVADO").font(.system(size: 10, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
+                    }
+                }
+                Text(practice.checkInChipTitle).font(MassMatesFont.callout.weight(.medium)).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+            }
+            .padding(MassMatesSpacing.sm).frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
+            .background(isSelected ? theme.tintSoft.opacity(0.4) : MassMatesPalette.surface)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button).stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 1.5 : 1))
+            .scaleEffect(isSelected && !reduceMotion ? 1.02 : 1.0)
+            .animation(reduceMotion ? .none : .snappy(duration: 0.2), value: isSelected)
+        }.buttonStyle(.plain)
     }
 }
 

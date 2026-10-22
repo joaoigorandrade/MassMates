@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct GroupFeedPostCardView: View {
+struct GroupFeedPostCardView: View, @preconcurrency Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -20,20 +20,14 @@ struct GroupFeedPostCardView: View {
 
     // MARK: - Init
     init(
-        post: GroupFeedPost,
-        comments: [GroupFeedComment] = [],
-        commentDraft: Binding<String>,
-        showsComments: Bool = true,
-        commentErrorMessage: String? = nil,
-        canModerateComments: Bool = false,
-        showsCommentsHint: Bool = false,
-        witnessPhotoURL: URL? = nil,
-        onReaction: @escaping (FeedReactionType) -> Void,
-        onSubmitComment: @escaping () -> Void,
-        onDeleteComment: @escaping (GroupFeedComment) -> Void = { _ in },
-        onComposerFocus: @escaping () -> Void = {}
+        post: GroupFeedPost, comments: [GroupFeedComment] = [], commentDraft: Binding<String>,
+        showsComments: Bool = true, commentErrorMessage: String? = nil, canModerateComments: Bool = false,
+        showsCommentsHint: Bool = false, witnessPhotoURL: URL? = nil,
+        onReaction: @escaping (FeedReactionType) -> Void, onSubmitComment: @escaping () -> Void,
+        onDeleteComment: @escaping (GroupFeedComment) -> Void = { _ in }, onComposerFocus: @escaping () -> Void = {}
     ) {
         self.post = post
+        self.comments = comments
         self._commentDraft = commentDraft
         self.showsComments = showsComments
         self.commentErrorMessage = commentErrorMessage
@@ -44,7 +38,17 @@ struct GroupFeedPostCardView: View {
         self.onSubmitComment = onSubmitComment
         self.onDeleteComment = onDeleteComment
         self.onComposerFocus = onComposerFocus
-        self.comments = comments
+    }
+
+    static func == (lhs: GroupFeedPostCardView, rhs: GroupFeedPostCardView) -> Bool {
+        lhs.post == rhs.post &&
+        lhs.comments == rhs.comments &&
+        lhs.commentDraft == rhs.commentDraft &&
+        lhs.showsComments == rhs.showsComments &&
+        lhs.commentErrorMessage == rhs.commentErrorMessage &&
+        lhs.canModerateComments == rhs.canModerateComments &&
+        lhs.showsCommentsHint == rhs.showsCommentsHint &&
+        lhs.witnessPhotoURL == rhs.witnessPhotoURL
     }
 
     // MARK: - Body / Public API
@@ -139,10 +143,7 @@ struct GroupFeedPostCardView: View {
             .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(isDrawerExpanded ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
-            .overlay(
-                RoundedRectangle(cornerRadius: MassMatesRadius.chip)
-                    .stroke(isDrawerExpanded ? theme.tint : MassMatesPalette.line, lineWidth: 1)
-            )
+            .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(isDrawerExpanded ? theme.tint : MassMatesPalette.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Apoio fraterno, \(comments.count) comentários")

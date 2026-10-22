@@ -35,6 +35,7 @@ struct DailyGospelModalView: View {
             DailyGospelSubHeaderView(viewModel: viewModel) {
                 navigator?.dismiss()
             }
+            .equatable()
             readingTabView
             bottomBar
         }

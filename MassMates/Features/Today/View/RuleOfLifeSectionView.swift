@@ -86,13 +86,7 @@ struct RuleOfLifeSectionView: View {
                 Spacer()
                 Text("\(completedCount) de \(items.count)").font(.system(size: 14, weight: .medium)).foregroundStyle(theme.tint)
             }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(MassMatesPalette.line)
-                    Capsule().fill(theme.tint).frame(width: max(0, geo.size.width * progressRatio))
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: completedCount)
-                }
-            }.frame(height: MassMatesSpacing.xxs)
+            MassMatesProgressBar(progress: progressRatio)
         }.padding(.bottom, MassMatesSpacing.lg)
     }
 
@@ -159,7 +153,7 @@ struct RuleOfLifeSectionView: View {
 
     private var hairlineDivider: some View { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
     private var completedCount: Int { items.filter(\.isCompleted).count }
-    private var progressRatio: CGFloat { items.isEmpty ? 0 : CGFloat(completedCount) / CGFloat(items.count) }
+    private var progressRatio: Double { items.isEmpty ? 0 : Double(completedCount) / Double(items.count) }
 
     private func toggleItem(_ target: DailyRuleChecklistItem) {
         guard let index = items.firstIndex(where: { $0.id == target.id }) else { return }

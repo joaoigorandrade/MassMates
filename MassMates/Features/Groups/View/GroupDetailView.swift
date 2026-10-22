@@ -8,6 +8,8 @@ struct GroupDetailView: View {
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable var viewModel: GroupDetailViewModel
 
+    private static let publicPractices = SpiritualPractice.allCases.filter { !$0.isStrictlyPrivate }
+
     // MARK: - Init
     init(viewModel: GroupDetailViewModel) {
         self.viewModel = viewModel
@@ -122,7 +124,7 @@ struct GroupDetailView: View {
                 Button("Ver tudo") { viewModel.selectedSubTab = .feed }
                     .font(MassMatesFont.callout).foregroundStyle(theme.tint).buttonStyle(.plain)
             }
-            ForEach(Array(viewModel.feedItems.prefix(2))) { item in feedItemView(for: item, showsComments: false) }
+            ForEach(viewModel.feedItems.prefix(2)) { item in feedItemView(for: item, showsComments: false) }
             SponsoredNativeCardView(
                 sponsorName: "Livraria Paulus", headline: "Livraria Paulus — Retiro Inaciano Guiado",
                 bodyText: "Caderno de oração para 30 dias de discernimento e exercícios espirituais no lar.",
@@ -136,7 +138,7 @@ struct GroupDetailView: View {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 Text("Partilhar fruto da oração com o grupo").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                 Picker("Prática", selection: $viewModel.quickPostPractice) {
-                    ForEach(SpiritualPractice.allCases.filter { !$0.isStrictlyPrivate }) { practice in
+                    ForEach(Self.publicPractices) { practice in
                         Text(practice.title).tag(practice)
                     }
                 }

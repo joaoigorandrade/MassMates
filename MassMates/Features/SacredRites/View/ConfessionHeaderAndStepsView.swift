@@ -51,8 +51,8 @@ struct ConfessionHeaderAndStepsView: View {
 
     private var quietSegmentedTabs: some View {
         HStack(spacing: MassMatesSpacing.sm) {
-            ForEach(Array(ConfessionTab.allCases.enumerated()), id: \.element.id) { index, tab in
-                if index > 0 {
+            ForEach(ConfessionTab.allCases) { tab in
+                if tab != ConfessionTab.allCases.first {
                     Text("·")
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.line)
@@ -123,8 +123,8 @@ struct ConfessionHeaderAndStepsView: View {
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             VStack(spacing: 0) {
-                ForEach(Array(viewModel.fiveSteps.enumerated()), id: \.element.id) { index, step in
-                    if index > 0 { Divider().overlay(MassMatesPalette.line) }
+                ForEach(viewModel.fiveSteps) { step in
+                    if step.id != viewModel.fiveSteps.first?.id { Divider().overlay(MassMatesPalette.line) }
                     stepRow(step)
                 }
             }

@@ -67,8 +67,8 @@ struct CheckInSafeguardAndNoteSectionView: View {
 
     private var bottomActionRow: some View {
         HStack(spacing: MassMatesSpacing.xs) {
-            if let photoData = viewModel.selectedPhotoData, let uiImage = UIImage(data: photoData) {
-                photoThumbnail(uiImage: uiImage)
+            if let thumbnail = viewModel.selectedPhotoThumbnail {
+                photoThumbnail(uiImage: thumbnail)
             } else {
                 photoPickerButton
             }
@@ -127,7 +127,7 @@ struct CheckInSafeguardAndNoteSectionView: View {
         .onChange(of: selectedPickerItem) { _, newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                    viewModel.selectedPhotoData = data
+                    await viewModel.setPhotoData(data)
                 }
             }
         }

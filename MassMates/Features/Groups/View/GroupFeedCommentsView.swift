@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Compact comments drawer displaying fraternal comments and a restrained composer.
-struct GroupFeedCommentsView: View {
+struct GroupFeedCommentsView: View, @preconcurrency Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     private let comments: [GroupFeedComment]
@@ -33,6 +33,14 @@ struct GroupFeedCommentsView: View {
         self.onSubmitComment = onSubmitComment
         self.onDeleteComment = onDeleteComment
         self.onComposerFocus = onComposerFocus
+    }
+
+    static func == (lhs: GroupFeedCommentsView, rhs: GroupFeedCommentsView) -> Bool {
+        lhs.comments == rhs.comments &&
+        lhs.commentDraft == rhs.commentDraft &&
+        lhs.commentErrorMessage == rhs.commentErrorMessage &&
+        lhs.canModerateComments == rhs.canModerateComments &&
+        lhs.showsCommentsHint == rhs.showsCommentsHint
     }
 
     // MARK: - Body / Public API

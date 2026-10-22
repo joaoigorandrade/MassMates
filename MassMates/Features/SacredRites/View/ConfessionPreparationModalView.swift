@@ -76,9 +76,9 @@ struct ConfessionPreparationModalView: View {
                 Capsule()
                     .fill((showingContrition || idx <= currentCommandmentIndex) ? theme.tint : MassMatesPalette.line)
                     .frame(height: 2.5)
-                    .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: currentCommandmentIndex)
             }
         }
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: currentCommandmentIndex)
     }
 
     private var viewportContent: some View {
@@ -89,8 +89,6 @@ struct ConfessionPreparationModalView: View {
             }
             .id(showingContrition ? -1 : currentCommandmentIndex)
             .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
-            .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: showingContrition)
-            .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: currentCommandmentIndex)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, MassMatesLayout.screenMargin).padding(.top, MassMatesSpacing.md)

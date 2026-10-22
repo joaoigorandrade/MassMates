@@ -1,11 +1,15 @@
 import SwiftUI
 
-struct HolyMassWordRitesView: View {
+struct HolyMassWordRitesView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
 
     // MARK: - Init
     init() {}
+
+    nonisolated static func == (lhs: HolyMassWordRitesView, rhs: HolyMassWordRitesView) -> Bool {
+        true
+    }
 
     // MARK: - Body / Public API
     var body: some View {

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The content of a feed post: caption, spiritual reflection in book serif,
 /// and optional witness photo with 12px corner radius.
-struct GroupFeedPostMediaView: View {
+struct GroupFeedPostMediaView: View, Equatable {
     // MARK: - Dependencies & State
     private let caption: String?
     private let fruitOfPrayer: String?
@@ -13,6 +13,12 @@ struct GroupFeedPostMediaView: View {
         self.caption = caption
         self.fruitOfPrayer = fruitOfPrayer
         self.witnessPhotoURL = witnessPhotoURL
+    }
+
+    nonisolated static func == (lhs: GroupFeedPostMediaView, rhs: GroupFeedPostMediaView) -> Bool {
+        lhs.caption == rhs.caption &&
+        lhs.fruitOfPrayer == rhs.fruitOfPrayer &&
+        lhs.witnessPhotoURL == rhs.witnessPhotoURL
     }
 
     // MARK: - Body / Public API

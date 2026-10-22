@@ -1,7 +1,7 @@
 import Navigation
 import SwiftUI
 
-private struct SeasonalInitiative: Identifiable, Sendable {
+private struct SeasonalInitiative: Identifiable, Sendable, Equatable {
     let id: String
     let title: String
     let subtitle: String
@@ -82,33 +82,63 @@ struct FeaturedChallengesSectionView: View {
         VStack(spacing: 0) {
             hairlineDivider
             ForEach(initiatives) { initiative in
-                initiativeRow(initiative)
+                FeaturedInitiativeRowView(
+                    initiative: initiative,
+                    isJoined: joinedIds.contains(initiative.id),
+                    onJoin: { joinInitiative(initiative.id) }
+                )
                 hairlineDivider
             }
         }
+    }
+
+    private func joinInitiative(_ id: String) {
+        guard !joinedIds.contains(id) else { return }
+        joinedIds.insert(id)
+        onJoinChallenge?(id)
     }
 
     private var hairlineDivider: some View {
         Rectangle().fill(MassMatesPalette.line).frame(height: 1)
     }
 
-    private func initiativeRow(_ initiative: SeasonalInitiative) -> some View {
+    private var footerCaption: some View {
+        Text("Desafios em destaque usam sua vaga sazonal.")
+            .font(MassMatesFont.caption)
+            .foregroundStyle(MassMatesPalette.textSecondary)
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+            .padding(.bottom, MassMatesSpacing.md)
+    }
+}
+
+private struct FeaturedInitiativeRowView: View, Equatable {
+    // MARK: - Dependencies & State
+    @Environment(\.liturgicalTheme) private var theme
+    let initiative: SeasonalInitiative
+    let isJoined: Bool
+    let onJoin: () -> Void
+
+    nonisolated static func == (lhs: FeaturedInitiativeRowView, rhs: FeaturedInitiativeRowView) -> Bool {
+        lhs.initiative == rhs.initiative && lhs.isJoined == rhs.isJoined
+    }
+
+    // MARK: - Body / Public API
+    var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(initiative.title)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .lineLimit(1)
-                subtitleView(for: initiative)
+                Text(initiative.title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+                subtitleView
             }
             Spacer()
-            joinButton(for: initiative)
+            joinButton
         }
         .frame(minHeight: 72)
     }
 
+    // MARK: - Subviews / Private Helpers
     @ViewBuilder
-    private func subtitleView(for initiative: SeasonalInitiative) -> some View {
+    private var subtitleView: some View {
         if initiative.isSponsored, let sponsor = initiative.sponsorName {
             HStack(spacing: 4) {
                 Text(initiative.subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
@@ -120,13 +150,8 @@ struct FeaturedChallengesSectionView: View {
         }
     }
 
-    private func joinButton(for initiative: SeasonalInitiative) -> some View {
-        let isJoined = joinedIds.contains(initiative.id)
-        return Button {
-            guard !isJoined else { return }
-            joinedIds.insert(initiative.id)
-            onJoinChallenge?(initiative.id)
-        } label: {
+    private var joinButton: some View {
+        Button(action: onJoin) {
             Text(isJoined ? "Inscrito" : "Participar")
                 .font(MassMatesFont.callout)
                 .fontWeight(.medium)
@@ -134,15 +159,7 @@ struct FeaturedChallengesSectionView: View {
                 .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget, alignment: .trailing)
         }
         .buttonStyle(.plain)
-    }
-
-    private var footerCaption: some View {
-        Text("Desafios em destaque usam sua vaga sazonal.")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textSecondary)
-            .frame(maxWidth: .infinity)
-            .multilineTextAlignment(.center)
-            .padding(.bottom, MassMatesSpacing.md)
+        .disabled(isJoined)
     }
 }
 

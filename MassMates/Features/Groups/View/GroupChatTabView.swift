@@ -86,12 +86,36 @@ struct GroupChatTabView: View {
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             ForEach(messages) { message in
-                messageRow(message)
+                GroupChatMessageRowView(message: message)
             }
         }
     }
 
-    private func messageRow(_ message: GroupChatMessage) -> some View {
+    private var composerCard: some View {
+        GroupChatInputBarView(
+            messageDraft: $messageDraft,
+            errorMessage: errorMessage,
+            onSendMessage: onSendMessage
+        )
+    }
+}
+
+struct GroupChatMessageRowView: View, Equatable {
+    // MARK: - Dependencies & State
+    @Environment(\.liturgicalTheme) private var theme
+    private let message: GroupChatMessage
+
+    // MARK: - Init
+    init(message: GroupChatMessage) {
+        self.message = message
+    }
+
+    nonisolated static func == (lhs: GroupChatMessageRowView, rhs: GroupChatMessageRowView) -> Bool {
+        lhs.message == rhs.message
+    }
+
+    // MARK: - Body / Public API
+    var body: some View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
                 HStack(spacing: MassMatesSpacing.xs) {
@@ -116,24 +140,7 @@ struct GroupChatTabView: View {
         }
     }
 
-    private var composerCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                TextField("Escrever mensagem fraterna...", text: $messageDraft)
-                    .padding(MassMatesSpacing.sm)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.danger)
-                }
-                MassMatesPrimaryButton(title: "Enviar no Chat", systemImage: "paperplane.fill") {
-                    onSendMessage()
-                }
-            }
-        }
-    }
+    // MARK: - Subviews / Private Helpers
 }
 
 #Preview("Group Chat Tab — 5 Seasons (Light / Dark / AX3)") {

@@ -23,36 +23,44 @@ struct MentalPrayerSectionView: View {
 
     // MARK: - Subviews / Private Helpers
     private var circularTimerDial: some View {
-        ZStack {
-            Circle()
-                .stroke(MassMatesPalette.line, lineWidth: 1.5)
-            Circle()
-                .trim(from: 0, to: viewModel.progress)
-                .stroke(theme.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.progress)
-            VStack(spacing: MassMatesSpacing.xxs) {
-                Text(viewModel.formattedRemainingTime)
-                    .font(MassMatesFont.timerNumeral)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .contentTransition(.numericText())
-                Text("Silêncio interior")
-                    .font(MassMatesFont.caption)
-                    .tracking(1.4)
-                    .textCase(.uppercase)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+        dialAnimation(
+            ZStack {
+                Circle()
+                    .stroke(MassMatesPalette.line, lineWidth: 1.5)
+                Circle()
+                    .trim(from: 0, to: viewModel.progress)
+                    .stroke(theme.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.progress)
+                VStack(spacing: MassMatesSpacing.xxs) {
+                    Text(viewModel.formattedRemainingTime)
+                        .font(MassMatesFont.timerNumeral)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                        .contentTransition(.numericText())
+                    Text("Silêncio interior")
+                        .font(MassMatesFont.caption)
+                        .tracking(1.4)
+                        .textCase(.uppercase)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
             }
-        }
-        .frame(width: 240, height: 240)
-        .phaseAnimator([0.0, 1.0]) { view, phase in
+            .frame(width: 240, height: 240)
+        )
+    }
+
+    @ViewBuilder
+    private func dialAnimation(_ view: some View) -> some View {
+        if viewModel.isRunning && !reduceMotion {
             view
-                .scaleEffect(viewModel.isRunning && !reduceMotion ? 1.0 + (0.015 * phase) : 1.0)
-                .shadow(
-                    color: theme.tint.opacity(viewModel.isRunning && !reduceMotion ? 0.18 * phase : 0),
-                    radius: 10 * phase
-                )
-        } animation: { _ in
-            .easeInOut(duration: 2.4)
+                .phaseAnimator([0.0, 1.0]) { content, phase in
+                    content
+                        .scaleEffect(1.0 + (0.015 * phase))
+                        .shadow(color: theme.tint.opacity(0.18 * phase), radius: 10 * phase)
+                } animation: { _ in
+                    .easeInOut(duration: 2.4)
+                }
+        } else {
+            view
         }
     }
 

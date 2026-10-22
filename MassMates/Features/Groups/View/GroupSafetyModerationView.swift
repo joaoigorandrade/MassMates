@@ -4,10 +4,17 @@ struct GroupSafetyModerationView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: GroupDetailViewModel
+    @State private var otherMembers: [GroupMemberSummary]
+    @State private var moderatablePosts: [GroupFeedPost]
 
     // MARK: - Init
     init(viewModel: GroupDetailViewModel) {
         self.viewModel = viewModel
+        self._otherMembers = State(initialValue: viewModel.members.filter { !$0.isCurrentUser })
+        self._moderatablePosts = State(initialValue: Array(viewModel.feedItems.compactMap { item in
+            guard case .post(let post) = item else { return nil }
+            return post
+        }.prefix(3)))
     }
 
     // MARK: - Body / Public API
@@ -18,6 +25,15 @@ struct GroupSafetyModerationView: View {
             }
             adminControlsCard
             memberSafetyCard
+        }
+        .onChange(of: viewModel.members) { _, newMembers in
+            otherMembers = newMembers.filter { !$0.isCurrentUser }
+        }
+        .onChange(of: viewModel.feedItems) { _, newItems in
+            moderatablePosts = Array(newItems.compactMap { item in
+                guard case .post(let post) = item else { return nil }
+                return post
+            }.prefix(3))
         }
     }
 
@@ -49,31 +65,14 @@ struct GroupSafetyModerationView: View {
                         Task { await viewModel.resetInviteCode() }
                     }
                 }
-                ForEach(viewModel.members.filter { !$0.isCurrentUser }) { member in
-                    memberModerationRow(member)
+                ForEach(otherMembers) { member in
+                    GroupMemberModerationRowView(
+                        member: member,
+                        onRemove: { Task { await viewModel.removeMember(member.id) } },
+                        onBlock: { Task { await viewModel.blockUser(member) } }
+                    )
                 }
             }
-        }
-    }
-
-    private func memberModerationRow(_ member: GroupMemberSummary) -> some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Text("\(member.name) (\(member.roleLabel))")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Spacer()
-            Button("Remover") {
-                Task { await viewModel.removeMember(member.id) }
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.danger)
-            .frame(minHeight: MassMatesLayout.minTapTarget)
-            Button("Bloquear") {
-                Task { await viewModel.blockUser(member) }
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.warning)
-            .frame(minHeight: MassMatesLayout.minTapTarget)
         }
     }
 
@@ -88,8 +87,12 @@ struct GroupSafetyModerationView: View {
                         Text(reason.title).tag(reason)
                     }
                 }
-                ForEach(firstModeratablePosts) { post in
-                    postModerationRow(post)
+                ForEach(moderatablePosts) { post in
+                    GroupPostModerationRowView(
+                        post: post,
+                        onReport: { Task { await viewModel.reportContent(targetId: post.id, summary: "\(post.authorName): \(post.practice.title)") } },
+                        onDelete: { Task { await viewModel.deleteFeedPost(post.id) } }
+                    )
                 }
                 if !viewModel.moderationReports.isEmpty {
                     Text("Denúncias ativas: \(viewModel.moderationReports.count)")
@@ -99,34 +102,59 @@ struct GroupSafetyModerationView: View {
             }
         }
     }
+}
 
-    private var firstModeratablePosts: [GroupFeedPost] {
-        viewModel.feedItems.compactMap { item in
-            guard case .post(let post) = item else { return nil }
-            return post
-        }
-        .prefix(3)
-        .map { $0 }
+private struct GroupMemberModerationRowView: View, Equatable {
+    let member: GroupMemberSummary
+    let onRemove: () -> Void
+    let onBlock: () -> Void
+
+    nonisolated static func == (lhs: GroupMemberModerationRowView, rhs: GroupMemberModerationRowView) -> Bool {
+        lhs.member == rhs.member
     }
 
-    private func postModerationRow(_ post: GroupFeedPost) -> some View {
+    var body: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            Text("\(member.name) (\(member.roleLabel))")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Spacer()
+            Button("Remover", action: onRemove)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.danger)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+            Button("Bloquear", action: onBlock)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.warning)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+        }
+    }
+}
+
+private struct GroupPostModerationRowView: View, Equatable {
+    @Environment(\.liturgicalTheme) private var theme
+    let post: GroupFeedPost
+    let onReport: () -> Void
+    let onDelete: () -> Void
+
+    nonisolated static func == (lhs: GroupPostModerationRowView, rhs: GroupPostModerationRowView) -> Bool {
+        lhs.post == rhs.post
+    }
+
+    var body: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             Text("\(post.authorName) • \(post.practice.title)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Spacer()
-            Button("Denunciar") {
-                Task { await viewModel.reportContent(targetId: post.id, summary: "\(post.authorName): \(post.practice.title)") }
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(theme.tint)
-            .frame(minHeight: MassMatesLayout.minTapTarget)
-            Button("Excluir") {
-                Task { await viewModel.deleteFeedPost(post.id) }
-            }
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.danger)
-            .frame(minHeight: MassMatesLayout.minTapTarget)
+            Button("Denunciar", action: onReport)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(theme.tint)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+            Button("Excluir", action: onDelete)
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.danger)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
         }
     }
 }

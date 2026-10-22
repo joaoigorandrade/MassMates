@@ -55,9 +55,7 @@ struct HolyMassGuideModalView: View {
     }
 
     private var liturgicalSectionCaption: some View {
-        let curr = viewModel.currentSectionIndex + 1
-        let total = HolyMassRiteSection.allCases.count
-        return Text("\(viewModel.selectedSection.title.uppercased()) · \(curr) DE \(total)")
+        Text("\(viewModel.selectedSection.title.uppercased()) · \(viewModel.currentSectionIndex + 1) DE \(HolyMassRiteSection.allCases.count)")
             .font(MassMatesFont.caption)
             .tracking(0.8)
             .fontWeight(.medium)
@@ -81,12 +79,17 @@ struct HolyMassGuideModalView: View {
 
     private var segmentedProgressBar: some View {
         HStack(spacing: 4) {
-            ForEach(0..<HolyMassRiteSection.allCases.count, id: \.self) { idx in
+            ForEach(HolyMassRiteSection.allCases) { section in
                 Capsule()
-                    .fill(idx <= viewModel.currentSectionIndex ? theme.tint : MassMatesPalette.line)
+                    .fill(isSectionPassedOrCurrent(section) ? theme.tint : MassMatesPalette.line)
                     .frame(height: 3)
             }
         }
+    }
+
+    private func isSectionPassedOrCurrent(_ section: HolyMassRiteSection) -> Bool {
+        guard let idx = HolyMassRiteSection.allCases.firstIndex(of: section) else { return false }
+        return idx <= viewModel.currentSectionIndex
     }
 
     private var viewportContent: some View {
@@ -118,9 +121,9 @@ struct HolyMassGuideModalView: View {
     private var dockedBottomNavigation: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             HStack(spacing: 6) {
-                ForEach(0..<HolyMassRiteSection.allCases.count, id: \.self) { idx in
+                ForEach(HolyMassRiteSection.allCases) { section in
                     Circle()
-                        .fill(idx == viewModel.currentSectionIndex ? theme.tint : MassMatesPalette.line)
+                        .fill(section == viewModel.selectedSection ? theme.tint : MassMatesPalette.line)
                         .frame(width: 6, height: 6)
                 }
             }
@@ -131,8 +134,7 @@ struct HolyMassGuideModalView: View {
             }
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
-        .padding(.top, MassMatesSpacing.xs)
-        .padding(.bottom, MassMatesSpacing.md)
+        .padding(.top, MassMatesSpacing.xs).padding(.bottom, MassMatesSpacing.md)
         .background(MassMatesPalette.bg)
     }
 

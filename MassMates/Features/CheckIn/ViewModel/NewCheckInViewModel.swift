@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 @MainActor
 @Observable
@@ -14,7 +15,18 @@ final class NewCheckInViewModel {
     var fruitOfPrayer: String = ""
     var photoCaption: String = ""
     var confessorOrPenanceNotes: String = ""
-    var selectedPhotoData: Data? = nil
+    var selectedPhotoData: Data? = nil {
+        didSet {
+            guard let selectedPhotoData else {
+                selectedPhotoThumbnail = nil
+                return
+            }
+            if selectedPhotoThumbnail == nil {
+                selectedPhotoThumbnail = UIImage(data: selectedPhotoData)
+            }
+        }
+    }
+    private(set) var selectedPhotoThumbnail: UIImage? = nil
     private(set) var destinationMode: CheckInDestinationMode
     private(set) var selectedGroupIds: Set<String>
     private(set) var submissionResult: CheckInSubmissionResult?
@@ -50,6 +62,19 @@ final class NewCheckInViewModel {
             selectedGroupIds = Set(joined.map(\.id))
             destinationMode = joined.isEmpty ? .privateDiaryOnly : .selectedGroups
         }
+    }
+
+    func setPhotoData(_ data: Data?) async {
+        guard let data else {
+            selectedPhotoThumbnail = nil
+            selectedPhotoData = nil
+            return
+        }
+        let thumbnail = await Task.detached(priority: .userInitiated) {
+            UIImage(data: data)
+        }.value
+        selectedPhotoThumbnail = thumbnail
+        selectedPhotoData = data
     }
 
     func selectPractice(_ practice: SpiritualPractice) {
