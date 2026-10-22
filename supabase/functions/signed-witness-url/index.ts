@@ -1,6 +1,6 @@
 // supabase/functions/signed-witness-url/index.ts
 // =============================================================================
-// A6 · signed-witness-url
+// A6 · signed-witness-url  (+ the gap-closure BATCH mode)
 // =============================================================================
 // Issues a short-lived signed URL for an object in the PRIVATE
 // `witness-photos` bucket.
@@ -18,8 +18,16 @@
 //      TTL to 60..3600 seconds.
 //   3. Only the SIGNING step uses the service role key.
 //
-// Nothing but the bucket name and the object path is ever taken from the
-// request body.
+// BATCH MODE (gap closure)
+//   The caller may send { object_paths: ["...", "..."], expires_in? }.
+//   The AUTHORIZATION GATE is then `public.create_signed_witness_urls(...)`,
+//   which runs the SAME checks for every path (A6's own single-path
+//   implementation, one call per path) and NEVER fails because of one bad
+//   path. Every authorised path is signed and the answer is
+//   `{ items: [{ path, signed_url, reason, ... }] }`.
+//
+//   The singular form is UNCHANGED: `{ object_path }` still answers
+//   `{ signed_url, expires_in, object_path, source }`.
 //
 // NOTE: no regular expressions are used on purpose — the bearer token is
 // split on spaces so the parsing cannot be tripped up by escaping.
@@ -29,6 +37,7 @@ const BUCKET = 'witness-photos';
 const MIN_TTL = 60;
 const MAX_TTL = 3600;
 const DEFAULT_TTL = 300;
+const MAX_PATHS = 50;
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -55,6 +64,18 @@ function clampTtl(raw: unknown): number {
   return Math.min(MAX_TTL, Math.max(MIN_TTL, Math.trunc(parsed)));
 }
 
+interface SignResult {
+  path: string;
+  signed_url: string | null;
+  reason: string | null;
+  authorized: boolean;
+  source: string | null;
+  object_path: string | null;
+  group_id: string | null;
+  owner_id: string | null;
+  expires_in: number;
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') {
     return json(405, { error: 'method_not_allowed' });
@@ -79,11 +100,121 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json(400, { error: 'invalid_json' });
   }
 
+  const expiresIn = clampTtl(body.expires_in);
+  const rawPaths = body.object_paths;
+
+  // ---- BATCH mode ----------------------------------------------------------
+  if (Array.isArray(rawPaths)) {
+    const paths = rawPaths
+      .map((p) => String(p ?? '').trim())
+      .filter((p) => p.length > 0)
+      .slice(0, MAX_PATHS);
+
+    if (paths.length === 0) {
+      return json(400, { error: 'object_paths_required' });
+    }
+
+    let decision: { items?: SignResult[] };
+    try {
+      const authRes = await fetch(supabaseUrl + '/rest/v1/rpc/create_signed_witness_urls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: anonKey,
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify({ p_paths: paths, p_expires_in: expiresIn }),
+      });
+
+      if (!authRes.ok) {
+        const raw = await authRes.text();
+        console.error('create_signed_witness_urls rejected the request', authRes.status, raw);
+        if (authRes.status === 400) return json(400, { error: 'invalid_path' });
+        if (authRes.status === 401) return json(401, { error: 'authentication_required' });
+        return json(403, { error: 'not_authorized' });
+      }
+
+      decision = (await authRes.json()) as { items?: SignResult[] };
+    } catch (err) {
+      console.error('authorization call failed', err);
+      return json(502, { error: 'authorization_unavailable' });
+    }
+
+    const items = decision.items ?? [];
+    const out: SignResult[] = [];
+
+    for (const item of items) {
+      const base: SignResult = {
+        path: item.path,
+        signed_url: null,
+        reason: item.reason ?? null,
+        authorized: item.authorized === true,
+        source: item.source ?? null,
+        object_path: item.object_path ?? null,
+        group_id: item.group_id ?? null,
+        owner_id: item.owner_id ?? null,
+        expires_in: Number(item.expires_in ?? expiresIn),
+      };
+
+      if (!base.authorized || !base.object_path) {
+        // The path failed its check: the reason explains WHY, and it never
+        // reveals whether the object exists.
+        out.push(base);
+        continue;
+      }
+
+      // A deployment that ships `storage.create_signed_url` already signed it.
+      if (typeof item.signed_url === 'string' && item.signed_url.length > 0) {
+        out.push({ ...base, signed_url: item.signed_url, source: 'database' });
+        continue;
+      }
+
+      try {
+        const signRes = await fetch(
+          supabaseUrl + '/storage/v1/object/sign/' + BUCKET + '/' + base.object_path,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: serviceKey,
+              Authorization: 'Bearer ' + serviceKey,
+            },
+            body: JSON.stringify({ expiresIn: base.expires_in }),
+          },
+        );
+
+        if (!signRes.ok) {
+          const raw = await signRes.text();
+          console.error('storage signing failed', signRes.status, raw);
+          out.push({ ...base, signed_url: null, reason: 'object_not_found' });
+          continue;
+        }
+
+        const signed = (await signRes.json()) as { signedURL?: string };
+        if (!signed.signedURL) {
+          out.push({ ...base, signed_url: null, reason: 'signing_failed' });
+          continue;
+        }
+
+        out.push({
+          ...base,
+          signed_url: supabaseUrl + '/storage/v1' + signed.signedURL,
+          source: 'edge_function',
+        });
+      } catch (err) {
+        console.error('signing call failed', err);
+        out.push({ ...base, signed_url: null, reason: 'signing_unavailable' });
+      }
+    }
+
+    return json(200, { items: out, count: out.length, expires_in: expiresIn });
+  }
+
+  // ---- SINGLE mode (unchanged) --------------------------------------------
   const requestedPath = String(body.object_path ?? body.path ?? '').trim();
   if (!requestedPath) {
     return json(400, { error: 'object_path_required' });
   }
-  const expiresIn = clampTtl(body.expires_in);
 
   // ---- 1. authorize as the caller -----------------------------------------
   let decision: Record<string, unknown>;

@@ -44,8 +44,16 @@ api_url = "http://127.0.0.1"
 
 [auth]
 enabled = true
+# The iOS app registers the `massmates` URL scheme (see Project.swift).
+# Two deep links must be allowed:
+#   massmates://auth/callback  -> the OAuth / magic-link redirect
+#   massmates://join/:code     -> the 6-digit fraternity invite code
 site_url = "massmates://"
-additional_redirect_urls = ["massmates://auth/callback", "http://localhost:3000/auth/callback"]
+additional_redirect_urls = [
+  "massmates://auth/callback",
+  "massmates://join/:code",
+  "http://localhost:3000/auth/callback",
+]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
@@ -73,18 +81,20 @@ file_size_limit = "25MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic", "text/plain", "application/pdf"]
 
 [storage.buckets.avatars]
-public = false
+public = true
 file_size_limit = "5MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
 
 [storage.buckets.group-covers]
-public = false
-file_size_limit = "10MiB"
+public = true
+file_size_limit = "8MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
 
-[storage.buckets.check-in-proofs]
+# A6 · the ONLY private bucket. Path convention:
+#   witness-photos/<group_id>/<user_id>/<uuid>.<ext>
+[storage.buckets.witness-photos]
 public = false
-file_size_limit = "25MiB"
+file_size_limit = "10MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/heic"]
 
 [edge_runtime]

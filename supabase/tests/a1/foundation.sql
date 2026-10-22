@@ -125,11 +125,14 @@ select ok (public.pgtap_rls_forced ('public.user_blocks'::regclass), 'RLS is FOR
 -- E. RLS helper functions exist with the contracted signature
 -- ---------------------------------------------------------------------------
 select has_function ('public', 'current_user_id', 'current_user_id() exists');
-select has_function ('public', 'is_group_member', array['uuid', 'uuid']::name[], 'is_group_member(uuid, uuid) exists');
-select has_function ('public', 'is_group_admin', array['uuid', 'uuid']::name[], 'is_group_admin(uuid, uuid) exists');
-select has_function ('public', 'is_group_member_of_any', array['uuid']::name[], 'is_group_member_of_any(uuid) exists');
-select has_function ('public', 'is_any_group_admin', array['uuid']::name[], 'is_any_group_admin(uuid) exists');
-select has_function ('public', 'is_blocked', array['uuid', 'uuid']::name[], 'is_blocked(uuid, uuid) exists');
+-- A10 / migration 0900: the RLS helpers are SELF-SCOPED. The two-argument
+-- forms (which let a signed-in user enumerate arbitrary group membership and
+-- the block graph) were removed; the privileged bodies live in `private`.
+select has_function ('public', 'is_group_member', array['uuid']::name[], 'is_group_member(uuid) exists (self-scoped)');
+select has_function ('public', 'is_group_admin', array['uuid']::name[], 'is_group_admin(uuid) exists (self-scoped)');
+select has_function ('public', 'is_group_member_of_any', 'is_group_member_of_any() exists (self-scoped)');
+select has_function ('public', 'is_any_group_admin', 'is_any_group_admin() exists (self-scoped)');
+select has_function ('public', 'is_blocked', array['uuid']::name[], 'is_blocked(uuid) exists (self-scoped)');
 select has_function ('public', 'set_updated_at', 'set_updated_at() exists');
 select has_function ('public', 'attach_updated_at', array['regclass']::name[], 'attach_updated_at(regclass) exists');
 select has_function ('public', 'pgtap_summary', 'pgtap_summary() exists');
@@ -168,28 +171,32 @@ values ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-1111111
 
 -- ---------------------------------------------------------------------------
 -- G. Membership helpers (explicit user id)
+--     A10 / migration 0900: the PUBLIC helpers are self-scoped (they always
+--     use auth.uid()). The two-user logic now lives in the non-exposed
+--     `private.is_*_impl` functions, which the server code calls directly.
+--     These assertions exercise that logic.
 -- ---------------------------------------------------------------------------
-select ok (public.is_group_member ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111'), 'is_group_member: admin is a member');
-select ok (public.is_group_member ('55555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222'), 'is_group_member: member is a member');
-select ok (not public.is_group_member ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333'), 'is_group_member: non-member is not a member');
-select ok (not public.is_group_member ('55555555-5555-5555-5555-555555555555', '44444444-4444-4444-4444-444444444444'), 'is_group_member: blocker is not a member');
-select ok (not public.is_group_member ('55555555-5555-5555-5555-555555555555', null), 'is_group_member: null user (anon) is not a member');
-select ok (public.is_group_admin ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111'), 'is_group_admin: admin is an admin');
-select ok (not public.is_group_admin ('55555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222'), 'is_group_admin: plain member is not an admin');
-select ok (not public.is_group_admin ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333'), 'is_group_admin: outsider is not an admin');
-select ok (not public.is_group_admin ('55555555-5555-5555-5555-555555555555', null), 'is_group_admin: null user (anon) is not an admin');
-select ok (public.is_group_member_of_any ('22222222-2222-2222-2222-222222222222'), 'is_group_member_of_any: member belongs to a group');
-select ok (not public.is_group_member_of_any ('33333333-3333-3333-3333-333333333333'), 'is_group_member_of_any: outsider belongs to no group');
-select ok (public.is_any_group_admin ('11111111-1111-1111-1111-111111111111'), 'is_any_group_admin: admin of a group');
-select ok (not public.is_any_group_admin ('22222222-2222-2222-2222-222222222222'), 'is_any_group_admin: plain member is admin of no group');
+select ok (private.is_group_member_impl ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111'), 'is_group_member: admin is a member');
+select ok (private.is_group_member_impl ('55555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222'), 'is_group_member: member is a member');
+select ok (not private.is_group_member_impl ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333'), 'is_group_member: non-member is not a member');
+select ok (not private.is_group_member_impl ('55555555-5555-5555-5555-555555555555', '44444444-4444-4444-4444-444444444444'), 'is_group_member: blocker is not a member');
+select ok (not private.is_group_member_impl ('55555555-5555-5555-5555-555555555555', null), 'is_group_member: null user (anon) is not a member');
+select ok (private.is_group_admin_impl ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111'), 'is_group_admin: admin is an admin');
+select ok (not private.is_group_admin_impl ('55555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222'), 'is_group_admin: plain member is not an admin');
+select ok (not private.is_group_admin_impl ('55555555-5555-5555-5555-555555555555', '33333333-3333-3333-3333-333333333333'), 'is_group_admin: outsider is not an admin');
+select ok (not private.is_group_admin_impl ('55555555-5555-5555-5555-555555555555', null), 'is_group_admin: null user (anon) is not an admin');
+select ok (private.is_group_member_of_any_impl ('22222222-2222-2222-2222-222222222222'), 'is_group_member_of_any: member belongs to a group');
+select ok (not private.is_group_member_of_any_impl ('33333333-3333-3333-3333-333333333333'), 'is_group_member_of_any: outsider belongs to no group');
+select ok (private.is_any_group_admin_impl ('11111111-1111-1111-1111-111111111111'), 'is_any_group_admin: admin of a group');
+select ok (not private.is_any_group_admin_impl ('22222222-2222-2222-2222-222222222222'), 'is_any_group_admin: plain member is admin of no group');
 
 -- ---------------------------------------------------------------------------
 -- H. Blocking (symmetric)
 -- ---------------------------------------------------------------------------
-select ok (public.is_blocked ('11111111-1111-1111-1111-111111111111', '44444444-4444-4444-4444-444444444444'), 'is_blocked: blocked user sees the block');
-select ok (public.is_blocked ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111'), 'is_blocked: blocker sees the block (symmetric)');
-select ok (not public.is_blocked ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333'), 'is_blocked: unrelated users are not blocked');
-select ok (not public.is_blocked ('11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111'), 'is_blocked: a user is not blocked by themselves');
+select ok (private.is_blocked_impl ('11111111-1111-1111-1111-111111111111', '44444444-4444-4444-4444-444444444444'), 'is_blocked: blocked user sees the block');
+select ok (private.is_blocked_impl ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111'), 'is_blocked: blocker sees the block (symmetric)');
+select ok (not private.is_blocked_impl ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333'), 'is_blocked: unrelated users are not blocked');
+select ok (not private.is_blocked_impl ('11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111'), 'is_blocked: a user is not blocked by themselves');
 
 -- ---------------------------------------------------------------------------
 -- I. Caller identity through the JWT GUC (default arguments)

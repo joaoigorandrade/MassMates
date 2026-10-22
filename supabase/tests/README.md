@@ -3,7 +3,7 @@
 **Owner: A1 (schema foundation).** Read this before writing any test file.
 Every agent A2..A10 uses this exact procedure.
 
-- Remote project ref: `khovpljkitslmjmonizu`
+- Remote project ref: `khovpljkitslmjmonuzu`
 - Schema contract: [`supabase/SCHEMA.md`](../SCHEMA.md)
 - Shared conventions: [`docs/backend/CONVENTIONS.md`](../../docs/backend/CONVENTIONS.md)
 
@@ -352,6 +352,27 @@ supabase/tests/
   a9/...                 <- A9: iOS client integration
   a10/...                <- A10: security & QA audit
 ```
+
+## 11. The A10 suites (the security & QA audit)
+
+| File | Assertions | What it proves |
+|---|---|---|
+| `a10/rls_matrix.sql` | 647 | For EVERY one of the 39 public tables and for EACH of the five personas (`anon`, outsider, member, admin, blocked) the number of rows reachable with SELECT / UPDATE / DELETE is asserted against a hand-written expectation. The probe helpers raise a deliberate exception, so the probe runs in a sub-transaction and the fixture survives for the next persona. |
+| `a10/rpc_matrix.sql` | 96 | The whole privilege matrix (who may execute what), the exact SQLSTATE + message of the non-member error contract of 23 RPCs, and the JSON shape of 50+ happy paths. |
+| `a10/privacy.sql` | 65 | The sacred-privacy invariants end to end: the catalog scan, the enforced CHECK constraints, the create-group → join → group check-in → private check-in → confession flow, the fan-out counts, the streak / Rule of Life maths, the outbox and audit-log silence, the Guardian Angel anonymity, and the moderation path. |
+
+Two mechanics are worth copying:
+
+* **A probe that must not change the fixture** runs inside a PL/pgSQL block
+  with an `EXCEPTION` handler and raises a deliberate exception at the end —
+  the block is a sub-transaction, so the DML is rolled back while the row
+  counter survives.
+* **A probe that runs as a persona** is `SECURITY INVOKER` and is called
+  while the session role is switched (`set local role authenticated;`), so
+  the table's own RLS policy applies. The temp helpers are reachable by
+  `anon` / `authenticated` through the default ACL — but note that
+  `GRANT … ON SCHEMA pg_temp` does **NOT** work: `GRANT` resolves the schema
+  name literally and the real namespace is `pg_temp_<pid>`.
 
 Never create a table owned by another agent just to make your test pass
 (CONVENTIONS §2). Report the request instead.

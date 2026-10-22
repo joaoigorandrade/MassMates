@@ -1,4 +1,19 @@
 -- =============================================================================
+-- A10 NOTE (2026-10-22) -- the APPLIED version of this file
+-- =============================================================================
+-- This file was applied to the remote project `khovpljkitslmjmonuzu` as
+--   migration version 20261022025652  ("create_feed_fanout_trigger")
+-- The backend agents ran CONCURRENTLY, so the applied order does NOT follow
+-- the prefix order (the prefix only records the author's ownership range).
+-- The file is therefore NOT renamed -- it is already applied.
+--
+-- A clean replay in FILENAME order is safe: the only two forward references
+-- in the whole chain are `to_regclass`-guarded on purpose
+-- (0305 -> public.feed_posts, 0402 -> public.notification_outbox), so they
+-- no-op until the table exists.
+-- =============================================================================
+
+-- =============================================================================
 -- A4 · 0305 · feed fan-out bridge to A5's public.feed_posts
 -- =============================================================================
 -- Owner: A4. A5 owns public.feed_posts; A4 owns public.check_in_destinations.

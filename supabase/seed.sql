@@ -1,9 +1,18 @@
 -- MassMates — local seed data
--- Intentionally empty. A1 (schema foundation) seeds no rows: the foundation
--- tables reference `auth.users`, which only exists for real accounts.
--- Agents that own demo/dev data may append idempotent INSERTs here, guarded by
--- `on conflict do nothing` and wrapped in `begin; ... rollback;` when the data
--- is only needed for local exploration.
+--
+-- IDEMPOTENT: running it twice (or running it on a database that already
+-- carries the migration `0605_seed_liturgical_calendar` rows) changes
+-- NOTHING. Every INSERT in `seed_liturgical.sql` is guarded with
+-- `on conflict … do nothing`, and the seed only ever adds the A7 liturgical
+-- calendar (2026 + 2027).
+--
+-- It must not conflict with the applied migrations: the only tables it
+-- writes are `public.liturgical_days`, `public.daily_readings`,
+-- `public.saints` and `public.saint_icons`, and the rows it inserts are the
+-- same rows migration 0605 inserts.
+--
+-- A1 (schema foundation) seeds no rows: the foundation tables reference
+-- `auth.users`, which only exists for real accounts.
 --
 -- A7 (liturgical content & monetization) appends the liturgical calendar:
 -- the 2026 + 2027 seasons, colours, celebrations, saints and reward themes.

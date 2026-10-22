@@ -5,7 +5,7 @@
 > Shared conventions: [`docs/backend/CONVENTIONS.md`](../docs/backend/CONVENTIONS.md).
 > Test harness: [`supabase/tests/README.md`](tests/README.md).
 >
-> **Live project:** `khovpljkitslmjmonizu` · PostgreSQL **17.11** · Supabase.
+> **Live project:** `khovpljkitslmjmonuzu` · PostgreSQL **17.11** · Supabase.
 > **Applied migrations (A1):** `install_extensions`, `create_enums`,
 > `create_core_tables`, `create_helper_functions`, `enable_rls_and_policies`,
 > `create_practice_points_and_audit_log`, `attach_updated_at_triggers`,
@@ -281,14 +281,46 @@ a mutable search path. The definer is the table owner (`postgres`), which has
 
 | Signature | Semantics | `security definer` |
 |---|---|---|
-| `public.current_user_id() → uuid` | `auth.uid()` of the caller; `NULL` for `anon` / no JWT. | no (invoker) |
-| `public.is_group_member(p_group_id uuid, p_user_id uuid default auth.uid()) → boolean` | `true` when `p_user_id` is a member of `p_group_id`. `NULL` user ⇒ `false`. | **yes** |
-| `public.is_group_admin(p_group_id uuid, p_user_id uuid default auth.uid()) → boolean` | `true` when `p_user_id` is an **admin** of `p_group_id` (`member_role = 'admin'`). | **yes** |
-| `public.is_group_member_of_any(p_user_id uuid default auth.uid()) → boolean` | `true` when `p_user_id` belongs to at least one group. Used by A5 feed/chat policies. | **yes** |
-| `public.is_any_group_admin(p_user_id uuid default auth.uid()) → boolean` | `true` when `p_user_id` is an admin of at least one group. Gates `audit_log` reads. | **yes** |
-| `public.is_blocked(p_user_id uuid, p_other_id uuid) → boolean` | `true` when a block exists **in either direction** between the two users. Symmetric by design: a block hides both the blocker's and the blocked user's content from the other side. | **yes** |
+| `public.current_user_id() → uuid` | `auth.uid()` of the caller; `NULL` for `anon` / no JWT. **Not executable by `anon`** (migration 0902). | no (invoker) |
+| `public.is_group_member(p_group_id uuid) → boolean` | `true` when the **caller** is a member of `p_group_id`. | no (invoker) |
+| `public.is_group_admin(p_group_id uuid) → boolean` | `true` when the **caller** is an **admin** of `p_group_id` (`member_role = 'admin'`). | no (invoker) |
+| `public.is_group_member_of_any() → boolean` | `true` when the **caller** belongs to at least one group. | no (invoker) |
+| `public.is_any_group_admin() → boolean` | `true` when the **caller** is an admin of at least one group. Gates `audit_log` reads. | no (invoker) |
+| `public.is_blocked(p_other_id uuid) → boolean` | `true` when a block exists **in either direction** between the caller and `p_other_id`. Symmetric by design: a block hides both the blocker's and the blocked user's content from the other side. | no (invoker) |
 | `public.set_updated_at() → trigger` | `BEFORE UPDATE` trigger body: `new.updated_at := now()`. | no (invoker) |
 | `public.attach_updated_at(p_table regclass) → void` | Creates/replaces the trigger `trg_<table>_updated_at` on `p_table`, wired to `public.set_updated_at()`. **Owner-only** (`EXECUTE` revoked from `public, anon, authenticated, service_role`) — call it from a migration running as `postgres`. | no (invoker) |
+
+> ### ⚠️ The helpers are SELF-SCOPED since migration 0900
+> Before A10's audit the helpers took a **second argument**
+> (`p_user_id uuid DEFAULT auth.uid()`) and were `SECURITY DEFINER` in the
+> exposed `public` schema. Because `authenticated` MUST keep `EXECUTE` on
+> them (PostgreSQL evaluates a policy expression with the *querying role's*
+> privileges), any signed-in user could call
+> `POST /rest/v1/rpc/is_group_member {"p_group_id":"…","p_user_id":"…"}` and
+> learn whether an **arbitrary** user belonged to an **arbitrary** group —
+> and `is_blocked` leaked the whole block graph. That was the
+> `authenticated_security_definer_function_executable` finding and an
+> enumeration oracle.
+>
+> Every policy in the project already passed the **caller's own** id as the
+> second argument, so the two-user form was never needed by a policy. The
+> fix was therefore a pure signature simplification:
+>
+> | Before | After |
+> |---|---|
+> | `public.is_group_member(uuid, uuid DEFAULT auth.uid())` | `public.is_group_member(uuid)` |
+> | `public.is_group_admin(uuid, uuid DEFAULT auth.uid())` | `public.is_group_admin(uuid)` |
+> | `public.is_blocked(uuid, uuid)` | `public.is_blocked(uuid)` |
+> | `public.is_group_member_of_any(uuid DEFAULT auth.uid())` | `public.is_group_member_of_any()` |
+> | `public.is_any_group_admin(uuid DEFAULT auth.uid())` | `public.is_any_group_admin()` |
+>
+> The privileged bodies now live in the **non-exposed** `private` schema as
+> `SECURITY DEFINER` (`private.is_group_member_impl(uuid, uuid)` …) and the
+> public helpers are thin `SECURITY INVOKER` wrappers that supply
+> `auth.uid()` themselves. Server-side code (the `private.*_impl` bodies of
+> A3/A5/A8) calls the private implementation directly and keeps the
+> two-user form. See §21.
+
 
 > ### RLS recursion rule (CONVENTIONS §4)
 > **Never** write a policy that reads a table the reader cannot see, unless the
@@ -320,20 +352,20 @@ If you need one of them inside an **`anon`** policy (A3's public group
 preview, for example), re-grant it explicitly for that case only:
 
 ```sql
-grant execute on function public.is_group_member (uuid, uuid) to anon;
+grant execute on function public.is_group_member (uuid) to anon;
 ```
 
-### 3.2 Known security finding (open — A10 owns the decision)
+### 3.2 Known security finding — **CLOSED by A10 (migration 0900)**
 
-`get_advisors({type: "security"})` reports **one** remaining lint:
+`get_advisors({type: "security"})` reported **one** lint:
 
 ```
-authenticated_security_definer_function_executable   WARN   5 findings
+authenticated_security_definer_function_executable   WARN   33 findings
 ```
 
-Because the helpers live in `public` (the schema PostgREST exposes) and
-`authenticated` must keep `EXECUTE` (policies need it), a signed-in user can
-call them directly as an RPC:
+Because the helpers lived in `public` (the schema PostgREST exposes) and
+`authenticated` must keep `EXECUTE` (policies need it), a signed-in user
+could call them directly as an RPC:
 
 ```
 POST /rest/v1/rpc/is_group_member   {"p_group_id":"…","p_user_id":"…"}
@@ -341,31 +373,12 @@ POST /rest/v1/rpc/is_blocked        {"p_user_id":"…","p_other_id":"…"}
 ```
 
 and learn whether an arbitrary user is a member of an arbitrary group, or
-whether an arbitrary pair of users has blocked each other. **A1 could not
-close this without breaking the contract** (the function names are mandated by
-CONVENTIONS §4 and used by 9 agents; the `p_user_id` argument is needed by
-policies that ask "is *this other user* a member of this group?").
+whether an arbitrary pair of users has blocked each other.
 
-**Recommended remediation (A10 / orchestrator decision):** move the
-`security definer` implementations into a schema that PostgREST does **not**
-expose, and point every policy at that schema.
-
-```sql
--- 1. create a non-exposed schema
-create schema if not exists app;
-grant usage on schema app to authenticated, service_role;
-
--- 2. move the implementation there (security definer, set search_path = '')
-create function app.is_group_member (p_group_id uuid, p_user_id uuid default auth.uid())
-returns boolean language sql stable security definer set search_path = '' as $$ … $$;
-
--- 3. re-point the policies: public.is_group_member(...) -> app.is_group_member(...)
--- 4. drop the public wrappers once no policy references them
-drop function public.is_group_member (uuid, uuid);
-```
-
-The functions must keep working for **policies** — that is the only reason
-`authenticated` keeps the grant.
+**A10 closed it (2026-10-22).** The 5 helpers became self-scoped (§3) and
+the 28 domain RPCs moved to `private.<name>_impl` behind a thin
+`SECURITY INVOKER` wrapper (migration 0901). The advisor now reports
+**0 findings**. See §21.
 
 ### 3.3 pgTAP harness helpers (development only)
 
@@ -560,7 +573,7 @@ completed; the response bodies were read back).
   `net.check_worker_is_up`, …
 - `USAGE` on schema `net` granted to `postgres`, `anon`, `authenticated`,
   `service_role`.
-- Project URL: `https://khovpljkitslmjmonizu.supabase.co`.
+- Project URL: `https://khovpljkitslmjmonuzu.supabase.co`.
 
 ### 7.1 Exact signatures (pg_net 0.20.4)
 
@@ -581,7 +594,7 @@ net._http_collect_response(request_id bigint, async boolean default true) → ne
 ```sql
 -- POST a JSON body; returns the request id
 select net.http_post (
-  url     := 'https://khovpljkitslmjmonizu.supabase.co/functions/v1/my-function',
+  url     := 'https://khovpljkitslmjmonuzu.supabase.co/functions/v1/my-function',
   body    := '{"probe":"a1"}'::jsonb,
   params  := '{}'::jsonb,
   headers := jsonb_build_object (
@@ -593,7 +606,7 @@ select net.http_post (
 
 -- GET with query parameters
 select net.http_get (
-  url     := 'https://khovpljkitslmjmonizu.supabase.co/functions/v1/my-function',
+  url     := 'https://khovpljkitslmjmonuzu.supabase.co/functions/v1/my-function',
   params  := jsonb_build_object ('limit', 10),
   timeout_milliseconds := 5000
 );
@@ -858,15 +871,18 @@ rollback;
 
 ---
 
-## 13. Advisor status (A1 baseline)
+## 13. Advisor status (A1 baseline → A10 final)
 
-`get_advisors` after A1's work:
+`get_advisors` after A1's work, and after A10's audit:
 
-| Type | Lint | Level | Count | Status |
-|---|---|---|---|---|
-| security | `anon_security_definer_function_executable` | WARN | 5 | **fixed** — `revoke … from public` + re-grant to `authenticated`/`service_role` (migration `0011`). |
-| security | `authenticated_security_definer_function_executable` | WARN | 5 | **open by design** — see §3.2. A10 owns the decision. |
-| performance | `unused_index` | INFO | 6 | **accepted** — the tables are empty, so no index can have been used yet. They are all needed: `idx_groups_created_by` and `idx_practice_points_group_id` back foreign keys (removing them would trip the `unindexed_foreign_keys` lint), and the `audit_log` / `user_blocks` indexes back the queries A2/A3/A6 will run. |
+| Type | Lint | Level | Count (A1) | Count (A10) | Status |
+|---|---|---|---|---|---|
+| security | `anon_security_definer_function_executable` | WARN | 5 | **0** | **fixed** — `revoke … from public` + re-grant to `authenticated`/`service_role` (migration `0011`), and every later agent revoked `anon` explicitly. |
+| security | `authenticated_security_definer_function_executable` | WARN | 5 (33 by the time A10 started) | **0** | **fixed by A10** — the 5 helpers became self-scoped (migration `0900`) and the 28 domain RPCs moved behind a `SECURITY INVOKER` wrapper over a `private.*_impl` implementation (migration `0901`). See §21. |
+| security | `function_search_path_mutable` | WARN | 0 | **0** | never regressed. |
+| performance | `unindexed_foreign_keys` | INFO | 0 | **0** | the 2 findings A8 created (`guardian_nudges.group_id`, `notification_outbox.group_id`) were fixed by A8 in `0706_index_guardian_angel_foreign_keys`. |
+| performance | `unused_index` | INFO | 6 | **26** | **accepted baseline** — the tables are empty, so the planner cannot prove an index unused. Every one of them backs a foreign key, a unique constraint or a documented lookup path. The full list is in §21. |
+
 
 > `idx_user_blocks_blocker_id` is technically redundant — the
 > `user_blocks_blocker_id_blocked_id_key` unique index already has
@@ -1284,8 +1300,14 @@ create table public.chat_messages (
   body        text not null check (char_length (body) between 1 and 2000),
   reply_to_id uuid references public.chat_messages (id) on delete set null,
   created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  updated_at  timestamptz not null default now(),
+  -- moderation (added by migration 0407 — see §15.11)
+  is_hidden     boolean not null default false,
+  hidden_reason text,
+  hidden_at     timestamptz
 );
+create index chat_messages_hidden_idx
+  on public.chat_messages (group_id, created_at desc) where is_hidden;
 
 -- public.pinned_notices
 create table public.pinned_notices (
@@ -1324,6 +1346,7 @@ public.create_chat_message(p_group_id uuid, p_body text, p_reply_to_id uuid defa
 public.set_pinned_notice(p_group_id uuid, p_body text) -> jsonb
 public.clear_pinned_notice(p_group_id uuid) -> jsonb
 public.soft_delete_feed_post(p_post_id uuid) -> jsonb
+public.soft_delete_chat_message(p_message_id uuid) -> jsonb
 public.emit_prayer_notification(p_intention_id uuid, p_prayer_id uuid) -> jsonb   -- service_role only
 public.insert_feed_post(p_check_in_id uuid, p_group_id uuid, p_user_id uuid,
                          p_practice_kind public.practice_kind,
@@ -1346,6 +1369,7 @@ Return shapes:
 | `set_pinned_notice` | `{id, group_id, author_id, body, is_active, replaced, created_at}` |
 | `clear_pinned_notice` | `{group_id, cleared}` |
 | `soft_delete_feed_post` | `{post_id, group_id, hidden, hidden_reason, changed}` |
+| `soft_delete_chat_message` | `{message_id, group_id, hidden, hidden_reason, hidden_at, changed}` |
 | `insert_feed_post` | `{id, check_in_id, group_id, user_id, practice_kind}` |
 
 Every `created_at` is a **UTC ISO-8601 string with microseconds**, e.g.
@@ -1389,7 +1413,7 @@ INSERT/UPDATE/DELETE `postgres_changes` event carries the whole row.
 | `amen_reactions` | the post is visible **AND** not blocked | own rows, on a visible post | — | own rows |
 | `prayer_intentions` | group member **AND** not blocked **AND** (`not is_hidden` **OR** group admin) | own rows, in a group you belong to | own rows (body only) | own rows or group admin |
 | `intention_prayers` | the intention is visible **AND** not blocked | own rows | — | own rows |
-| `chat_messages` | group member **AND** not blocked | own rows, in a group you belong to | — | own rows or group admin |
+| `chat_messages` | group member **AND** not blocked **AND** (`not is_hidden` **OR** group admin) | own rows, in a group you belong to | — | own rows or group admin |
 | `pinned_notices` | group member | group admin | group admin (body only) | group admin |
 
 > A blocked pair hides content **in both directions** (`public.is_blocked()` is
@@ -1433,6 +1457,17 @@ create trigger trg_intention_prayers_notify
   after insert on public.intention_prayers
   for each row execute function private.a8_notify_prayer_notification ();
 ```
+
+> **STATUS: DONE by A8** (migration `0704_create_notification_outbox_triggers`).
+> A8 created `trg_intention_prayers_notify` exactly as documented above and
+> **replaced the body** of `public.emit_prayer_notification` with its own
+> `INSERT INTO public.notification_outbox … ON CONFLICT (dedupe_key) DO
+> NOTHING` implementation (dedupe key `prayed:<intention_prayer_id>`).
+> A5's `toggle_prayed_for()` still calls the function, so **both** paths fire
+> for the same prayer — the outbox `dedupe_key` makes them idempotent, so the
+> author receives exactly **one** push. Verified end-to-end
+> (`supabase/tests/a5/community.sql`, "the 'prayed for you' notification is
+> emitted exactly ONCE per prayer").
 
 (A8 may instead replace the body of `public.emit_prayer_notification()` with
 its own `INSERT INTO public.notification_outbox …`; the trigger above then
@@ -1491,6 +1526,97 @@ form that is strictly correct; `p_before` still accepts a bare ISO-8601
 timestamp for convenience.
 
 ---
+
+
+### 15.11 Chat moderation (migration `0407_chat_message_moderation`)
+
+> Added after A6 reported the gap: `public.chat_messages` had no `is_hidden`
+> column, so A6's `public.hide_content('chat_message', …)` could record the
+> `moderation_actions` + `audit_log` trail but could not actually hide the
+> message. Chat moderation is **in scope** (group admins must be able to
+> remove inappropriate content; App Store UGC compliance needs a working
+> report → hide path).
+
+**New columns on `public.chat_messages`:**
+
+| Column | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| `is_hidden` | `boolean` | NOT NULL | `false` | Set only by the server. A hidden message is invisible to ordinary members. |
+| `hidden_reason` | `text` | NULL | — | `'admin_removed'` is written by `public.soft_delete_chat_message`. A6's `hide_content` path sets **only** `is_hidden`, so this can be NULL for an A6-hidden message. |
+| `hidden_at` | `timestamptz` | NULL | — | **No default, never set automatically on UPDATE** — only the moderation RPC stamps it. The `updated_at` convention (`trg_chat_messages_updated_at`) is unchanged. |
+
+**New index:** `chat_messages_hidden_idx on public.chat_messages (group_id, created_at desc) where is_hidden`.
+
+**Updated SELECT policy** (identical semantics to `feed_posts`):
+
+```sql
+create policy chat_messages_select_members
+  on public.chat_messages
+  for select
+  to authenticated
+  using (
+    public.is_group_member (group_id, (select auth.uid ()))
+    and not public.is_blocked ((select auth.uid ()), user_id)
+    and (not is_hidden or public.is_group_admin (group_id, (select auth.uid ())))
+  );
+```
+
+**New RPC** (mirrors `public.soft_delete_feed_post`):
+
+```
+public.soft_delete_chat_message(p_message_id uuid) -> jsonb
+```
+
+* `SECURITY DEFINER SET search_path = ''`;
+  `REVOKE EXECUTE FROM PUBLIC, anon;` `GRANT EXECUTE TO authenticated, service_role;`
+  (**the explicit `anon` revoke is required** — this project grants EXECUTE on
+  new `public` functions to `anon` by default, so `from public` alone is not
+  enough. Verified: `has_function_privilege('anon', …, 'execute') = false`).
+* **Group-admin only** (admin of the message's group). Otherwise `42501`
+  `only a group admin can remove a message`.
+* Sets `is_hidden = true`, `hidden_reason = 'admin_removed'`,
+  `hidden_at = now()`. The row is **kept** (soft delete) and stays visible to
+  the group admins.
+* Appends **one** row to `public.audit_log`: `action = 'chat.message_removed'`,
+  `target_type = 'chat_message'`, `target_id = <message id>`,
+  `metadata = {"group_id":…,"message_author_id":…,"reason":"admin_removed"}`.
+* Returns `{message_id, group_id, hidden, hidden_reason, hidden_at, changed}`.
+* Idempotent: a second call returns `changed = 0` and writes **no** second
+  audit row.
+
+**`public.get_chat_messages` was updated too** — it is `SECURITY DEFINER`, so
+it bypasses RLS and has to apply the visibility rules itself. Hidden messages
+are now returned **to a group admin only**, exactly like the feed.
+`public.create_chat_message` also refuses to reply to a hidden message (it
+reads as non-existent) so the moderation state is not leaked.
+
+#### Cross-agent verification with A6 — **WORKS, no A6 change needed**
+
+A6's `private.auto_hide_content()` already contained
+
+```sql
+update public.chat_messages set is_hidden = true where id = …
+```
+
+guarded by `private.has_column (v_tbl, 'is_hidden')`. The guard now passes, so
+**A6's `public.hide_content('chat_message', …)` actually hides the message.**
+Proven in `supabase/tests/a5/chat_moderation.sql`:
+
+| Assertion | Result |
+|---|---|
+| `hide_content('chat_message', <id>, 'test') ->> 'hidden'` | `'true'` |
+| `chat_messages.is_hidden` after the call | `true` |
+| `chat_messages.hidden_reason` after the call | `NULL` (A6 sets only `is_hidden`) |
+| `chat_messages.hidden_at` after the call | `NULL` (set only by A5's RPC) |
+| `moderation_actions` row (`action_type = 'hide_chat_message'`) | 1 |
+| the message for an ordinary member | invisible |
+
+A6's `public.admin_delete_post` still delegates to
+`public.soft_delete_feed_post` (dynamic `select public.soft_delete_feed_post(…)`),
+still writes the `moderation_actions` + `audit_log` trail, and the
+`feed_posts.is_hidden` visibility policy is unchanged — all verified in the
+same file (section G).
+
 
 ## 16. A4 additions — check-in engine, streaks & scoring
 
@@ -1726,3 +1852,1515 @@ create trigger trg_check_in_destinations_fanout
 > A5's `feed_posts` must keep the columns
 > `check_in_id, group_id, user_id, practice_kind, reflection_text, photo_path,
 > points, created_at` (all other NOT NULL columns need defaults).
+
+---
+
+## 17. A7 additions — liturgical content & monetization
+
+> **Owner:** A7 (liturgical content & monetization) · migrations `0601`–`0606` ·
+> Edge Function `admob-ssv` · tests `supabase/tests/a7/`.
+> Full prose: [`docs/backend/LITURGICAL_CONTENT.md`](../../docs/backend/LITURGICAL_CONTENT.md).
+
+### 18.1 Tables
+
+| Table | Owner | Purpose |
+|---|---|---|
+| `public.liturgical_days` | A7 | one row per day: season, liturgical colour, celebration, rank |
+| `public.daily_readings` | A7 | First Reading / Psalm / Gospel of the day + `translation` + `is_complete` |
+| `public.saints` | A7 | the saints of the day |
+| `public.saint_icons` | A7 | the unlockable reward themes (SF Symbol + season) |
+| `public.user_saint_unlocks` | A7 | a user's unlocked theme until `expires_at` |
+| `public.sponsors` | A7 | Catholic publishers / ministries behind a sponsored challenge |
+| `public.sponsored_challenges` | A7 | a sponsored challenge in the Groups discovery showcase |
+| `public.reward_grants` | A7 | **the monetization ledger** — one row per earned reward |
+| `public.ad_view_tokens` | A7 | a pending rewarded-ad view (binds the SSV callback to a user) |
+| `public.ssv_receipts` | A7 | operational trace of every AdMob SSV callback |
+
+```sql
+create table public.liturgical_days (
+  id               uuid primary key default gen_random_uuid(),
+  calendar_date    date not null unique,
+  season           public.liturgical_season not null,
+  liturgical_color text not null check (liturgical_color in ('green','purple','white','red','rose')),
+  celebration      text check (char_length(celebration) between 1 and 200),
+  "rank"           text check ("rank" in ('solemnity','feast','memorial','optional_memorial','ordinary')),
+  notes            text check (char_length(notes) <= 2000),
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+
+create table public.daily_readings (
+  id                 uuid primary key default gen_random_uuid(),
+  calendar_date      date not null unique references public.liturgical_days (calendar_date) on delete cascade,
+  first_reading_ref  text check (char_length(first_reading_ref) <= 200),
+  first_reading_text text,
+  psalm_ref          text check (char_length(psalm_ref) <= 200),
+  psalm_text         text,
+  gospel_ref         text check (char_length(gospel_ref) <= 200),
+  gospel_text        text,
+  liturgical_color   text check (liturgical_color in ('green','purple','white','red','rose')),
+  translation        text not null default 'cnbb' check (translation in ('cnbb','vatican')),
+  is_complete        boolean not null default false,
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now(),
+  constraint daily_readings_complete_check
+    check (not is_complete or (first_reading_text is not null and gospel_text is not null))
+);
+
+create table public.saints (
+  id            uuid primary key default gen_random_uuid(),
+  calendar_date date not null,
+  name          text not null check (char_length(name) between 1 and 120),
+  kind          text not null check (kind in ('saint','blessed','optional_saint','beato')),
+  biography     text,
+  patronage     text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  constraint saints_calendar_name_key unique (calendar_date, name)
+);
+
+create table public.saint_icons (
+  id             uuid primary key default gen_random_uuid(),
+  saint_id       uuid references public.saints (id) on delete cascade,
+  slug           text not null unique check (slug ~ '^[a-z0-9-]{2,64}$'),
+  name           text not null check (char_length(name) between 1 and 80),
+  icon_sf_symbol text not null check (char_length(icon_sf_symbol) between 1 and 60),
+  season         public.liturgical_season,
+  is_active      boolean not null default true,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create table public.user_saint_unlocks (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references public.profiles (id) on delete cascade,
+  saint_icon_id uuid not null references public.saint_icons (id) on delete cascade,
+  granted_at    timestamptz not null default now(),
+  expires_at    timestamptz not null,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  constraint user_saint_unlocks_user_icon_key unique (user_id, saint_icon_id),
+  constraint user_saint_unlocks_expiry_check check (expires_at > granted_at)
+);
+
+create table public.sponsors (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null check (char_length(name) between 1 and 120),
+  slug        text not null unique check (slug ~ '^[a-z0-9-]{2,80}$'),
+  logo_path   text check (char_length(logo_path) <= 400),
+  website_url text check (char_length(website_url) <= 300),
+  description text check (char_length(description) <= 1000),
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table public.sponsored_challenges (
+  id                uuid primary key default gen_random_uuid(),
+  group_id          uuid not null references public.groups (id) on delete cascade,
+  sponsor_id        uuid not null references public.sponsors (id) on delete cascade,
+  headline          text not null check (char_length(headline) between 1 and 120),
+  description       text check (char_length(description) <= 1000),
+  coupon_code       text check (char_length(coupon_code) <= 40),
+  coupon_url        text check (char_length(coupon_url) <= 300),
+  starts_on         date,
+  ends_on           date,
+  is_active         boolean not null default true,
+  display_order     integer not null default 0,
+  featured_group_id uuid references public.group_featured (group_id) on delete set null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  constraint sponsored_challenges_window_check
+    check (ends_on is null or starts_on is null or ends_on >= starts_on)
+);
+
+create table public.reward_grants (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references public.profiles (id) on delete cascade,
+  reward_type    text not null check (reward_type in ('streak_mercy','group_slot','saint_theme')),
+  source         text not null check (source in ('admob_ssv','admin_grant','sponsored','achievement')),
+  ad_network     text check (char_length(ad_network) <= 40),
+  transaction_id text check (char_length(transaction_id) <= 200),
+  status         text not null default 'granted' check (status in ('granted','consumed','expired','revoked')),
+  granted_at     timestamptz not null default now(),
+  expires_at     timestamptz,
+  consumed_at    timestamptz,
+  metadata       jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata) = 'object'),
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create unique index reward_grants_txn_uk
+  on public.reward_grants (source, transaction_id)
+  where transaction_id is not null;
+
+create table public.ad_view_tokens (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references public.profiles (id) on delete cascade,
+  transaction_id text not null unique check (char_length(transaction_id) between 8 and 200),
+  reward_type    text not null check (reward_type in ('streak_mercy','group_slot','saint_theme')),
+  created_at     timestamptz not null default now(),
+  expires_at     timestamptz not null,
+  consumed_at    timestamptz,
+  updated_at     timestamptz not null default now(),
+  constraint ad_view_tokens_window_check check (expires_at > created_at)
+);
+
+create table public.ssv_receipts (
+  id             uuid primary key default gen_random_uuid(),
+  transaction_id text check (char_length(transaction_id) <= 200),
+  reward_type    text check (reward_type in ('streak_mercy','group_slot','saint_theme')),
+  user_id        uuid references public.profiles (id) on delete set null,
+  ad_type        text check (char_length(ad_type) <= 40),
+  ad_value       numeric(12, 2),
+  currency       text check (char_length(currency) <= 8),
+  package_name   text check (char_length(package_name) <= 120),
+  outcome        text not null check (outcome in ('granted','duplicate','rejected')),
+  reason         text check (char_length(reason) <= 200),
+  received_at    timestamptz not null default now(),
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+```
+
+> `public.sponsors.logo_path` points at the **existing `group-covers` bucket**
+> (A6). No new bucket is created: the sponsor artwork is public and one bucket
+> is enough.
+
+### 17.2 RLS summary
+
+| Table | SELECT | INSERT/UPDATE/DELETE |
+|---|---|---|
+| `liturgical_days`, `daily_readings`, `saints`, `saint_icons` | `anon`, `authenticated` (public content) | **none** — `service_role` only |
+| `user_saint_unlocks` | `authenticated`, own rows only | **none** — written by `grant_reward` |
+| `sponsors`, `sponsored_challenges` | `anon`, `authenticated` | **none** — `service_role` only |
+| `reward_grants` | `authenticated`, own rows only | **none** — `service_role` + `grant_reward` |
+| `ad_view_tokens` | `authenticated`, own rows only | **none** — written by `begin_ad_reward_impl` |
+| `ssv_receipts` | `service_role` only | `service_role` only |
+
+RLS is **enabled and forced** on every one of them, and the platform's default
+`INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER/REFERENCES` grants to
+`anon`/`authenticated` are **revoked explicitly**.
+
+### 17.3 RPC signatures (verbatim)
+
+```sql
+public.get_today_liturgy ()                                   -> jsonb   -- anon, authenticated, service_role
+public.get_liturgical_calendar (p_year integer)               -> jsonb   -- anon, authenticated, service_role
+public.my_rewards ()                                          -> jsonb   -- authenticated, service_role
+public.begin_ad_reward (p_reward_type text)                   -> jsonb   -- authenticated, service_role
+public.consume_reward (p_grant_id uuid)                       -> jsonb   -- authenticated, service_role
+public.grant_reward (
+  p_user_id        uuid,
+  p_reward_type    text,
+  p_source         text,
+  p_transaction_id text    default null,
+  p_expires_days   integer default null,
+  p_metadata       jsonb   default '{}'::jsonb
+)                                                             -> jsonb   -- service_role ONLY
+```
+
+Private (non-exposed) helpers:
+
+```sql
+private.easter_sunday (p_year integer)              -> date
+private.first_sunday_on_or_after (p_date date)       -> date
+private.liturgical_calendar (p_year integer)         -> table (calendar_date, season, liturgical_color, celebration, "rank")
+private.caller_role ()                               -> text
+private.consume_reward_impl (p_grant_id uuid)        -> jsonb
+private.begin_ad_reward_impl (p_reward_type text)    -> jsonb
+```
+
+**Security posture.** `public.grant_reward` is `SECURITY DEFINER` with
+`set search_path = ''`, owned by `postgres`, and is executable by
+**`service_role` only** (`REVOKE EXECUTE FROM PUBLIC, anon, authenticated`) —
+so the linter never sees an exposed definer function a client can call. The
+two functions a signed-in user may call on its **own** data
+(`consume_reward`, `begin_ad_reward`) are thin `SECURITY INVOKER`
+wrappers over a `SECURITY DEFINER` implementation in the non-exposed
+`private` schema (the pattern A3 uses) — again, no new
+`authenticated_security_definer_function_executable` finding. The read-only
+RPCs are `SECURITY INVOKER`.
+
+### 17.4 The reward-granting contract
+
+`public.grant_reward` is the **only** write path of the ledger. It is
+idempotent on `(source, transaction_id)`:
+
+| `reward_type` | What is granted | Where | Duration |
+|---|---|---|---|
+| `streak_mercy` | one missed day repaired | A4 `public.streak_mercy_grants` | 30 days |
+| `group_slot` | `+1` Group Slot | A3 `public.slot_unlocks` (`kind='group_slot'`, `source='rewarded_video'`) | 30 days |
+| `saint_theme` | one app theme / icon | `public.user_saint_unlocks` | 7 days |
+
+* a replayed `(source, transaction_id)` returns
+  `{ok:true, granted:false, duplicate:true}` and creates **no** second
+  reward (the partial unique index `reward_grants_txn_uk` is the backstop);
+* a second `streak_mercy` while one is still active returns
+  `{ok:false, reason:'streak_mercy_limit_reached'}` (one mercy per 30 days,
+  product plan §4);
+* the ledger row and the entitlement row are written in the **same
+  transaction**: if the target table is missing, the whole grant fails and no
+  orphan ledger row is left behind;
+* `public.consume_reward(uuid)` marks the caller's own grant `consumed`
+  (`status='consumed'`, `consumed_at=now()`). A caller can never consume
+  another user's grant.
+
+### 17.5 The AdMob SSV flow
+
+Edge Function `supabase/functions/admob-ssv/index.ts`, deployed with
+**`verify_jwt: false`** (Google cannot present a Supabase JWT) and it
+verifies the request itself. It **fails closed**: without the operator's
+`ADMOBSIGNING_KEY` secret it refuses every request.
+
+```
+app  ──(1) POST /rest/v1/rpc/begin_ad_reward {p_reward_type}  ──▶ creates public.ad_view_tokens row
+app  ──(2) shows the rewarded video, passing the token id to AdMob as the
+          custom parameter  massmates_txn=<transaction_id>
+Google ──(3) SSV ping ─▶  /functions/v1/admob-ssv?ad_type=…&reward_type=…&sig=…&massmates_txn=…
+Edge  ──(4) verifies the RSA-SHA256 signature of the canonical query string
+          against ADMOBSIGNING_KEY, checks package_name, the reward-type
+          allow-list, the pending token, its expiry and the user
+Edge  ──(5) POST /rest/v1/rpc/grant_reward (service role)  ──▶ the reward
+```
+
+Response contract: `200 {ok:true, granted:true, reward_type, transaction_id}`,
+or `200 {ok:true, granted:false, duplicate:true}` for an already-granted
+transaction, or a **4xx** with `{ok:false, reason:"…"}` for anything that
+fails verification (`missing_parameters`, `package_mismatch`,
+`signing_key_not_configured`, `app_signing_key_mismatch`,
+`invalid_signature`, `reward_type_not_allowed`, `no_pending_ad_view`,
+`ad_view_token_expired`, `ad_view_token_already_used`,
+`reward_type_mismatch`, `user_mismatch`).
+
+> The MCP has no `secrets set` tool: the operator must run
+> `supabase secrets set ADMOBSIGNING_KEY="-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----"`
+> (or the equivalent base64 SPKI DER) before the function can grant anything.
+> Until then it answers `400 signing_key_not_configured` and grants nothing.
+
+### 17.6 The liturgical seeding rules
+
+* The calendar is **computed** from the general Roman calendar rules
+  (`private.liturgical_calendar`), never typed out day by day:
+  Advent = the four Sundays before Christmas; Christmas = 25 Dec → the
+  Baptism of the Lord; Lent = Ash Wednesday (Easter − 46) → Holy Saturday;
+  Easter = Easter → Pentecost (Easter + 49); Ordinary Time = the rest.
+* Easter itself comes from the anonymous Gregorian algorithm
+  (`private.easter_sunday`), so any year from 1583 to 4099 can be seeded.
+* Colour: a solemnity or a feast of martyrs carries its own colour; every
+  other day takes the colour of its season (advent purple · christmas white ·
+  lent purple · easter white · ordinary time green).
+* **No Scripture text is ever invented.** The seed writes the structure and
+  the celebration names of the fixed-date solemnities we are certain about,
+  and nothing else. `first_reading_text` / `psalm_text` / `gospel_text`
+  stay `NULL` and `is_complete` stays `false` until an authenticated
+  `service_role` pipeline ingests the official **CNBB** text verbatim.
+  `saints.biography` stays `NULL` for the same reason.
+* Seeded: **2026 and 2027** (730 days). Adding a year = two INSERTs
+  (`docs/backend/LITURGICAL_CONTENT.md` §6).
+
+---
+
+## 18. A6 additions — storage, moderation & safety
+
+> **Owner: A6.** Migrations `0501`–`0505`. Policy document:
+> [`docs/backend/MODERATION.md`](../docs/backend/MODERATION.md).
+> Test suite: `supabase/tests/a6/storage_moderation.sql` (81 assertions, PASS).
+
+### 18.1 Storage buckets
+
+| Bucket | `public` | `file_size_limit` | `allowed_mime_types` | Path convention (inside the bucket) |
+|---|---|---|---|---|
+| `avatars` | **true** | 5 242 880 (5 MB) | `image/jpeg`, `image/png`, `image/heic`, `image/webp` | `<user_id>/<uuid>.<ext>` |
+| `group-covers` | **true** | 8 388 608 (8 MB) | same | `<group_id>/<uuid>.<ext>` |
+| `witness-photos` | **false** | 10 485 760 (10 MB) | same | `<group_id>/<user_id>/<uuid>.<ext>` |
+
+`storage.buckets.id` is the bucket name; `storage.objects.name` is the path
+**inside** the bucket (it does NOT repeat the bucket name).
+`storage.foldername(name)` returns the path segments **without the file name**,
+so for `witness-photos/<gid>/<uid>/<file>.jpg` the object name is
+`<gid>/<uid>/<file>.jpg` and `foldername` = `['<gid>', '<uid>']`.
+
+> **Sacred privacy:** `witness-photos` is the ONLY private bucket. It holds
+> prayer-witness photographs and nothing else — never confession, never
+> Spiritual Diary text. `anon` has **no policy at all** on it.
+
+### 18.2 `storage.objects` policies (12 policies)
+
+| Policy | Bucket | Cmd | Roles | Predicate |
+|---|---|---|---|---|
+| `avatars_select_public` | avatars | SELECT | `anon`, `authenticated` | `bucket_id = 'avatars'` |
+| `avatars_insert_own` | avatars | INSERT | `authenticated` | `owner_id = auth.uid()::text` **and** `foldername(name)[1] = auth.uid()::text` |
+| `avatars_update_own` | avatars | UPDATE | `authenticated` | own `owner_id`; `WITH CHECK` keeps the own-folder rule |
+| `avatars_delete_own` | avatars | DELETE | `authenticated` | own `owner_id` |
+| `group_covers_select_public` | group-covers | SELECT | `anon`, `authenticated` | `bucket_id = 'group-covers'` |
+| `group_covers_insert_member` | group-covers | INSERT | `authenticated` | `public.is_group_member(private.try_uuid(foldername(name)[1]), auth.uid())` |
+| `group_covers_update_admin` | group-covers | UPDATE | `authenticated` | `public.is_group_admin(…)` on the group of the path |
+| `group_covers_delete_admin` | group-covers | DELETE | `authenticated` | `public.is_group_admin(…)` on the group of the path |
+| `witness_photos_select_members` | witness-photos | SELECT | `authenticated` | `public.is_group_member(group of path, auth.uid())` **and not** `public.is_blocked(auth.uid(), owner of path)` |
+| `witness_photos_insert_owner` | witness-photos | INSERT | `authenticated` | `foldername(name)[2] = auth.uid()::text` **and** `public.is_group_member(group of path, auth.uid())` |
+| `witness_photos_update_owner` | witness-photos | UPDATE | `authenticated` | own `owner_id`; `WITH CHECK` keeps the own-folder rule |
+| `witness_photos_delete_owner_or_admin` | witness-photos | DELETE | `authenticated` | own `owner_id` **or** `public.is_group_admin(group of path, auth.uid())` |
+
+`private.try_uuid(text)` is a NULL-safe uuid cast (a malformed path segment
+must never make a policy predicate raise). It lives in the non-exposed
+`private` schema; `authenticated` keeps EXECUTE on it because PostgreSQL
+evaluates a policy expression with the querying role's privileges.
+
+### 18.3 Signed witness-photo URL
+
+```sql
+public.create_signed_witness_url (p_object_path text, p_expires_in integer default 300) → jsonb
+```
+
+`SECURITY DEFINER`, `set search_path = ''`, `REVOKE EXECUTE FROM PUBLIC, anon`,
+`GRANT EXECUTE TO authenticated, service_role`.
+
+Contract:
+
+* the path must match `^witness-photos/[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|jpeg|png|heic|webp)$`
+  (the bucket-relative form `<group>/<user>/<file>` is also accepted) —
+  otherwise `22023 invalid witness photo path`;
+* the caller must be a **member of the group in the path** — otherwise
+  `42501 not a member of the group that owns this photo`;
+* the caller must **not** be blocked by the photo owner — otherwise
+  `42501 blocked by the photo owner`;
+* `p_expires_in` is **clamped to 60..3600** seconds;
+* it returns
+  `{ "signed_url", "expires_in", "bucket_id", "object_path", "group_id", "owner_id", "source", "edge_function" }`.
+
+**This deployment has NO `storage.create_signed_url` helper** (verified against
+`pg_proc`: the `storage` schema only ships `foldername`, `search`,
+`filename`, `get_object_by_path`-style helpers — there is no signer). The RPC
+therefore acts as the **authorisation gate** and returns
+`"source": "edge_function"`, `"signed_url": null` and the validated
+`object_path`; the **`signed-witness-url` Edge Function** signs it with the
+service role (`POST /storage/v1/object/sign/witness-photos/<object_path>`,
+`{ "expiresIn": n }`) and returns the absolute URL. If a deployment later
+ships the SQL signer, the RPC uses it and returns `"source": "database"`.
+
+Edge Function: `supabase/functions/signed-witness-url/index.ts`
+(`verify_jwt: true`). It calls the RPC **with the caller's own JWT** (the
+`apikey` header is the project anon key, the `Authorization` header is the
+user's token) and only uses the service role for the signing step.
+Verified end-to-end: upload → sign → download of a real PNG (HTTP 200).
+
+### 18.4 Moderation tables
+
+```sql
+create table public.content_reports (
+  id           uuid primary key default gen_random_uuid(),
+  reporter_id  uuid not null references public.profiles (id) on delete cascade,
+  target_type  text not null check (target_type in
+                 ('post','chat_message','prayer_intention','check_in','profile','group')),
+  target_id    uuid not null,
+  group_id     uuid references public.groups (id) on delete cascade,
+  reason       text not null check (reason in
+                 ('inappropriate_photo','inappropriate_text','spam','harassment','hate','self_harm','other')),
+  details      text check (char_length(details) <= 500),
+  status       text not null default 'open' check (status in
+                 ('open','reviewing','actioned','dismissed')),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  resolved_at  timestamptz,
+  resolved_by  uuid            -- deliberately NOT a foreign key
+);
+```
+
+`resolved_by` is not a FK for the same reason `audit_log.actor_id` is not: the
+moderation history must survive the deletion of the moderator.
+
+```sql
+create table public.moderation_actions (
+  id          uuid primary key default gen_random_uuid(),
+  actor_id    uuid not null references public.profiles (id) on delete cascade,
+  action_type text not null check (action_type in
+                ('hide_post','restore_post','delete_post','hide_chat_message','hide_intention',
+                 'remove_member','warn_user','suspend_user','dismiss_report','action_report','auto_hide')),
+  target_type text not null,
+  target_id   uuid not null,
+  group_id    uuid references public.groups (id) on delete set null,
+  report_id   uuid references public.content_reports (id) on delete set null,
+  reason      text check (char_length(reason) <= 200),
+  metadata    jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata) = 'object'),
+  created_at  timestamptz not null default now()
+);
+```
+
+> `action_report` is an **addition** to the ten action types of the A6 spec: a
+> report that a moderator *acteded* on has no matching type, so the resolution
+> could not be recorded in the trail without it.
+
+```sql
+create view public.v_target_report_counts with (security_invoker = true) as
+  select target_type, target_id, count(*)::int as report_count
+    from public.content_reports
+   where status in ('open','reviewing')
+   group by 1,2;
+```
+
+`security_invoker = true` → the underlying `content_reports` RLS applies to the
+reader. `GRANT SELECT TO authenticated, service_role`.
+
+RLS on both tables (enabled **and** forced):
+
+| Table | Cmd | Role | Predicate |
+|---|---|---|---|
+| `content_reports` | SELECT | `authenticated` | `reporter_id = auth.uid()` **or** `public.is_group_admin(group_id, auth.uid())` |
+| `content_reports` | INSERT | `authenticated` | `reporter_id = auth.uid()` |
+| `content_reports` | UPDATE | `authenticated` | `public.is_group_admin(group_id, auth.uid())` |
+| `content_reports` | SELECT/INSERT/UPDATE | `service_role` | `true` |
+| `moderation_actions` | SELECT | `authenticated` | `public.is_group_admin(group_id, auth.uid())` |
+| `moderation_actions` | SELECT | `service_role` | `true` |
+
+`moderation_actions` has **no INSERT policy** for `authenticated`: rows are
+written only by A6's `security definer` RPCs, so a client can never forge a
+moderation action.
+
+Indexes: `idx_content_reports_target (target_type, target_id)`,
+`idx_content_reports_status_created (status, created_at desc)`,
+`idx_content_reports_reporter`, `idx_content_reports_group`,
+`idx_moderation_actions_target (target_type, target_id)`,
+`idx_moderation_actions_group_created (group_id, created_at desc)`,
+`idx_moderation_actions_actor`, `idx_moderation_actions_report`.
+`trg_content_reports_updated_at` keeps `content_reports.updated_at` current.
+
+### 18.5 Auto-hide
+
+`private.auto_hide_threshold()` returns **3**.
+
+`trg_content_reports_auto_hide` — `AFTER INSERT ON public.content_reports FOR
+EACH ROW EXECUTE FUNCTION private.auto_hide_after_report()` — counts the
+unresolved reports of the target; when the count reaches the threshold it
+hides the target and writes one `moderation_actions` row of type `auto_hide`
+plus one `audit_log` row (`moderation.auto_hidden`). It never stacks two
+`auto_hide` actions for the same target.
+
+Hiding is table-specific and never uses dynamic SQL on a caller-supplied name:
+
+| `target_type` | Hidden by |
+|---|---|
+| `post` | `public.feed_posts` → `is_hidden = true`, `hidden_reason = 'auto_hidden'` |
+| `prayer_intention` | `public.prayer_intentions` → `is_hidden = true` |
+| `chat_message` | **not hideable yet** — `chat_messages` has no `is_hidden` column (A5 request) |
+| `check_in` | the `feed_posts` rows that carry the check-in (`check_in_id`) |
+| `profile` / `group` | not hideable (no visibility flag) — the report is still recorded and shown to the moderator |
+
+### 18.6 A6 public RPCs (verbatim)
+
+All of them are `SECURITY DEFINER`, `set search_path = ''`,
+`REVOKE EXECUTE FROM PUBLIC, anon`, `GRANT EXECUTE TO authenticated, service_role`.
+
+```sql
+public.block_user (p_blocked_id uuid) → jsonb
+public.unblock_user (p_blocked_id uuid) → jsonb
+public.list_blocked_users () → jsonb
+public.report_content (p_target_type text, p_target_id uuid, p_reason text,
+                       p_details text default null, p_group_id uuid default null) → jsonb
+public.admin_delete_post (p_post_id uuid) → jsonb
+public.hide_content (p_target_type text, p_target_id uuid, p_reason text) → jsonb
+public.get_moderation_queue (p_group_id uuid) → jsonb
+public.resolve_report (p_report_id uuid, p_status text, p_note text default null) → jsonb
+public.get_moderation_actions (p_group_id uuid) → jsonb
+public.create_signed_witness_url (p_object_path text, p_expires_in integer default 300) → jsonb
+```
+
+Behaviour highlights:
+
+* `block_user` → `{ "blocked": true, "blocked_id", "created" }`; idempotent
+  (`ON CONFLICT DO NOTHING`), rejects a self block (`22023`), rejects an
+  unknown user (`P0002`); writes `audit_log` (`moderation.user_blocked`).
+* `unblock_user` → `{ "blocked": false, "blocked_id", "removed" }`; idempotent.
+* `list_blocked_users` → `{ "blocked_users": [ { user_id, display_name,
+  avatar_path, blocked_at } ], "count" }` — **only the caller's own blocks**.
+* `report_content` → `{ "report_id", "auto_hidden", "report_count", "status",
+  "group_id", "duplicate" }`. It is **idempotent per (reporter, target)**: a
+  retry returns the existing report (`"duplicate": true`) instead of creating
+  a second one, so a single member can never trip the auto-hide threshold
+  alone. It refuses a **private check-in** (`22023 this check-in is private
+  and cannot be reported`) and refuses content in a group the caller is not a
+  member of (`42501`).
+* `admin_delete_post` → group-admin only; **delegates to A5's
+  `public.soft_delete_feed_post(p_post_id uuid)`** (verified present) and adds
+  a `moderation_actions` row (`delete_post`) + an `audit_log` row
+  (`moderation.post_deleted`). If A5's function is ever removed, the RPC falls
+  back to hiding the post itself (`hidden_reason = 'admin_removed'`).
+* `hide_content` → group-admin only; hides a post / chat message / intention,
+  writes `moderation_actions` (`hide_post` / `hide_chat_message` /
+  `hide_intention`) + `audit_log` (`moderation.content_hidden`).
+* `get_moderation_queue` → the open + reviewing reports of the group with a
+  short preview of the reported content and the report counter.
+* `resolve_report` → `status` ∈ `open` / `reviewing` / `actioned` /
+  `dismissed`; writes `moderation_actions` (`dismiss_report` for a dismissal,
+  `action_report` for an action) + `audit_log` (`moderation.report_resolved`).
+* `get_moderation_actions` → the group's moderation trail, newest first.
+
+### 18.7 A6 private helpers (never exposed through PostgREST)
+
+`private.auto_hide_threshold()`, `private.has_column(regclass, text)`,
+`private.resolve_report_group(text, uuid, uuid)`,
+`private.report_target_exists(text, uuid)`,
+`private.target_preview(text, uuid)`,
+`private.auto_hide_content(text, uuid, text)`,
+`private.auto_hide_after_report()` (trigger),
+`private.try_uuid(text)`.
+
+`revoke all … from public, anon, authenticated` on all of them **except**
+`private.try_uuid`, which `authenticated` needs for the storage policies.
+
+### 18.8 A6 privilege note (important for A10)
+
+The project carries a **default privilege** that grants `EXECUTE` on every new
+function of schema `public` to `anon` / `authenticated` / `service_role`:
+
+```sql
+select defaclacl from pg_default_acl d
+  join pg_namespace n on n.oid = d.defaclnamespace
+ where n.nspname = 'public' and d.defaclobjtype = 'f';
+-- {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,…}
+```
+
+`revoke execute … from public` is therefore **not enough** — the explicit
+`anon` grant survives and PostgREST would expose the function as an
+unauthenticated RPC. Every A6 function is revoked from `anon` explicitly
+(migration `0505`). A2/A3/A4/A5 avoid the residual
+`authenticated_security_definer_function_executable` finding by keeping the
+implementation in `private` (`*_impl`) behind a thin public wrapper; A6's RPCs
+follow the A6 spec and are `security definer` in `public` — the finding is
+therefore **open by design** and is A10's decision (same as A1's §3.2).
+
+---
+
+## A2 additions — auth & account lifecycle
+
+> **Owner: A2.** Migrations `0101`–`0105`. Prefix range `0100`–`0199`.
+> Objects: `public.handle_new_user`, the `on_auth_user_created` trigger,
+> `public.account_deletion_requests`, the profile/deletion RPCs below and the
+> Edge Function `delete-account`.
+
+### A2.1 The `private` schema pattern
+
+| Schema | Exposed by PostgREST | Holds |
+|---|---|---|
+| `public` | yes | the **narrow public wrappers** A9 calls |
+| `private` | **no** (not in the dashboard's exposed-schema list) | the `SECURITY DEFINER` implementations (`*_impl`) |
+
+* `private` is created by migration `0101`; `REVOKE ALL ON SCHEMA private FROM PUBLIC`
+  + `GRANT USAGE ON SCHEMA private TO authenticated, service_role`.
+* Every `private` function is `SECURITY DEFINER`, `SET search_path = ''`,
+  fully qualified, and `EXECUTE` is revoked from `PUBLIC` **and from `anon`**
+  (the platform's default ACL grants `anon` a direct grant that survives a
+  `REVOKE … FROM PUBLIC` — migration `0105`).
+* The public wrappers are `SECURITY INVOKER` and simply delegate:
+  `public.get_my_profile()` → `private.get_my_profile_impl()`. The effective
+  privilege is the owner's, but **`authenticated_security_definer_function_executable`
+  does not increase** (verified: the count is unchanged by A2).
+* A2 adds **zero** findings to `get_advisors({type:"security"})`. The only new
+  performance finding is `unused_index` on
+  `idx_account_deletion_requests_user_id` — the same accepted category as
+  A1's baseline: the table is empty, and the index backs the foreign key
+  (removing it would trip `unindexed_foreign_keys`).
+
+### A2.2 `public.handle_new_user()` + the `auth.users` trigger
+
+```sql
+public.handle_new_user() → trigger   -- SECURITY DEFINER, SET search_path = ''
+trigger on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW
+```
+
+* `EXECUTE` is revoked from `PUBLIC, anon, authenticated` and granted to
+  `supabase_auth_admin` (the role GoTrue inserts with) + `service_role`.
+* Inserts into `public.profiles` with `ON CONFLICT (id) DO NOTHING`
+  (idempotent). `public.profiles` has FORCEd RLS and no client INSERT policy,
+  so this definer function is the **only** writer of a profile.
+* Derivation (`private.derive_*`): `display_name` ← `full_name` → `name` →
+  `user_name` → email local part → `Irmão`/`Irmã` (trimmed, truncated to 60);
+  `locale` ← `pt-BR`/`en` else `pt-BR`; `timezone` ← a real IANA name (checked
+  against `pg_catalog.pg_timezone_names`) else `America/Sao_Paulo`;
+  `avatar_path` ← `avatar_url` **only when it is an `avatars/…` storage path**
+  (the column is a path, not a URL — provider URLs are dropped);
+  `ad_consent_analytics` / `ad_personalization` **always `false`**;
+  `rule_of_life` = `'[]'`.
+* Migration `0102` backfills the profiles of the auth users that predate the
+  trigger (idempotent).
+
+### A2.3 `public.account_deletion_requests`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | PK, `gen_random_uuid()` |
+| `user_id` | `uuid` | FK → `public.profiles(id)` `ON DELETE CASCADE` |
+| `confirmation_token` | `uuid` | `UNIQUE` — second tap of the deletion |
+| `requested_at` | `timestamptz` | `now()` |
+| `confirmed_at` | `timestamptz` | set by the second tap |
+| `completed_at` | `timestamptz` | set by the Edge Function |
+| `status` | `text` | `pending` \| `confirmed` \| `completed` \| `expired` \| `cancelled` |
+| `expires_at` | `timestamptz` | `now() + interval '15 minutes'` |
+| `updated_at` | `timestamptz` | `trg_account_deletion_requests_updated_at` |
+
+* RLS enabled **and** forced. Policies: `…_select_own`, `…_insert_own`,
+  `…_update_own` (own rows only; a client may only move a row to `confirmed`
+  — with a `confirmed_at` — or cancel it). **No DELETE policy.**
+* Partial unique index `idx_account_deletion_requests_live_user (user_id) where
+  status in ('pending','confirmed')` — the database-level guarantee behind the
+  idempotency of `request_account_deletion()`.
+* Holds **no** confession, **no** spiritual-diary text and **no** private
+  check-in content — only ids, timestamps and a status.
+
+### A2.4 The RPC surface (A9 — verbatim signatures)
+
+```
+public.get_my_profile()                                            → jsonb
+public.update_my_profile(p_display_name text DEFAULT NULL,
+                          p_avatar_path text DEFAULT NULL,
+                          p_parish text DEFAULT NULL,
+                          p_city text DEFAULT NULL,
+                          p_timezone text DEFAULT NULL,
+                          p_locale text DEFAULT NULL,
+                          p_ad_consent_analytics boolean DEFAULT NULL,
+                          p_ad_personalization boolean DEFAULT NULL,
+                          p_rule_of_life jsonb DEFAULT NULL)         → jsonb
+public.update_ad_consent(p_analytics boolean, p_personalization boolean) → jsonb
+public.request_account_deletion()                                  → jsonb
+public.delete_my_account_request()                                 → jsonb   (alias of request_account_deletion)
+public.confirm_account_deletion(p_token uuid)                      → jsonb
+```
+
+* `update_my_profile` applies **only the non-NULL arguments** and returns the
+  updated row. `update_ad_consent` requires **both** flags and writes an
+  `account.ad_consent_updated` row to `public.audit_log`; `update_my_profile`
+  does the same when it changes a consent flag.
+* Validations: `display_name` 1–60 chars after trim · `locale in ('pt-BR','en')`
+  · `timezone` must exist in `pg_catalog.pg_timezone_names` · `avatar_path`
+  must match `^avatars/[A-Za-z0-9][A-Za-z0-9._/-]*$` and contain no `..` ·
+  `rule_of_life` must be a jsonb array of ≤ 10 objects with **exactly** the
+  keys `kind` (a `public.practice_kind` value) and `label` (1–60 chars).
+
+### A2.5 Error contract
+
+`RAISE EXCEPTION '<key>' USING ERRCODE = '22023'` (invalid_parameter_value),
+with the detail in `HINT`. A9 maps the key to the pt-BR / en string.
+
+| key | 22023 | meaning |
+|---|---|---|
+| `invalid_display_name` | ✓ | not 1–60 chars after trim |
+| `invalid_avatar_path` | ✓ | not an `avatars/…` path |
+| `invalid_locale` | ✓ | not `pt-BR`/`en` |
+| `invalid_timezone` | ✓ | not a known IANA zone |
+| `invalid_parish` / `invalid_city` | ✓ | longer than 120 chars |
+| `invalid_rule_of_life` | ✓ | not an array / bad entry shape / extra key |
+| `invalid_rule_of_life_kind` | ✓ | `kind` is not a `public.practice_kind` |
+| `invalid_rule_of_life_label` | ✓ | `label` not a 1–60 char string |
+| `rule_of_life_too_long` | ✓ | more than 10 commitments |
+| `invalid_ad_consent` | ✓ | a consent flag was NULL |
+| `invalid_deletion_token` | ✓ | unknown / already used token |
+| `deletion_token_expired` | ✓ | the 15-minute window closed |
+| `not_authenticated` | 42501 | no JWT on the call |
+| `profile_not_found` | P0002 | the caller has no profile row |
+
+### A2.6 New trigger on `public.profiles`
+
+`trg_profiles_a2_validate` — `BEFORE UPDATE … FOR EACH ROW EXECUTE FUNCTION
+private.validate_profile_update()`. It re-runs the A2 validations, so a direct
+PostgREST `PATCH /profiles` cannot bypass the rules that
+`public.update_my_profile()` enforces. **A2 does not ALTER the table** — it
+only adds the trigger.
+
+### A2.7 Edge Function `delete-account`
+
+`supabase/functions/delete-account/index.ts` (`deno.json` with the import map
+for `npm:@supabase/supabase-js@2`), deployed with `verify_jwt: true`.
+
+1. verifies the caller's JWT itself (`auth.getUser(token)` with the service
+   client) and takes the user id from the **verified** claims;
+2. requires a row of `public.account_deletion_requests` with
+   `user_id = <caller>`, `status in ('confirmed','completed')` and
+   `expires_at > now()`;
+3. deletes the caller's **own** storage objects only (buckets `avatars`,
+   `group-covers`, `witness-photos` — an object belongs to the user when its
+   path contains the user's uuid as a segment);
+4. deletes the caller's `group_members` rows; a group the caller created is
+   **deleted** when no member remains, otherwise the ownership is
+   **transferred** to the longest-standing admin (or, when there is no admin
+   left, to the longest-standing member, who is promoted to admin);
+5. marks the request `completed` (before the delete — the row is cascade
+   deleted with the profile);
+6. deletes the auth user (`auth.admin.deleteUser`), which cascades to
+   `public.profiles` and to every row that references it;
+7. inserts the `account.deleted` row into `public.audit_log`
+   (`actor_id` has no FK on purpose — it survives the deletion).
+
+`{ ok: true, deleted: true }` on success; `{ ok: false, error: '<key>' }` with
+400/401/405/409/500 otherwise.
+
+---
+
+## 19. A8 additions — Guardian Angel & push notifications
+
+> **Owner: A8** (migration prefix range `0700`–`0799`). Applied migrations:
+> `create_guardian_angel_tables` (0701), `create_guardian_angel_rpcs` (0702),
+> `schedule_guardian_angel_cron` (0703),
+> `create_notification_outbox_triggers` (0704),
+> `fix_eligible_members_alias` (0705),
+> `index_guardian_angel_foreign_keys` (0706).
+> Tests: `supabase/tests/a8/guardian_angel.sql` — **89 assertions, PASS**;
+> `supabase/tests/a8/push.sql` — **55 assertions, PASS**.
+> Full documentation: [`docs/backend/PUSH.md`](../docs/backend/PUSH.md).
+>
+> **SACRED PRIVACY.** Nothing in this section can hold Confession records,
+> Spiritual Diary text or the content of a private check-in. The Guardian
+> Angel reveals **only a display name** to the guardian, and the nudge is
+> **anonymous**.
+
+### 19.1 Tables
+
+#### `public.guardian_angel_opt_ins` — the per-group opt-in
+
+```sql
+create table public.guardian_angel_opt_ins (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  group_id   uuid not null references public.groups (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  constraint guardian_angel_opt_ins_user_group_key unique (user_id, group_id)
+);
+```
+
+* No `updated_at` — an opt-in row is immutable (it is created / deleted).
+* `profiles.guardian_angel_opt_in` is the **master switch**; it is kept in
+  sync by `public.opt_in_to_guardian_angel()` and is **true whenever the
+  user opted into ANY group**.
+
+#### `public.guardian_angel_pairings` — the (secret) draw
+
+```sql
+create table public.guardian_angel_pairings (
+  id               uuid primary key default gen_random_uuid(),
+  group_id         uuid not null references public.groups (id) on delete cascade,
+  cycle_key        text not null check (char_length (cycle_key) between 1 and 120),
+  guardian_id      uuid not null references public.profiles (id) on delete cascade,
+  protected_id     uuid not null references public.profiles (id) on delete cascade,
+  cycle_starts_on  date not null,
+  cycle_ends_on    date not null,
+  is_active        boolean not null default true,
+  revealed_at      timestamptz,
+  created_at       timestamptz not null default now(),
+  constraint guardian_angel_pairings_no_self check (guardian_id <> protected_id),
+  constraint guardian_angel_pairings_cycle_window check (cycle_ends_on >= cycle_starts_on),
+  constraint guardian_angel_pairings_cycle_guardian_key unique (cycle_key, guardian_id),
+  constraint guardian_angel_pairings_cycle_protected_key unique (cycle_key, protected_id)
+);
+```
+
+* Indexes: `(group_id, cycle_key)`, `(protected_id)`, `(guardian_id)`.
+* **There is NO client SELECT policy and the table privilege is REVOKED for
+  `anon`/`authenticated`.** A client can never read `guardian_id`
+  directly; every read goes through the redacting RPCs. This is the
+  mechanism that keeps the Guardian identity secret.
+* `revealed_at` is set at the end of the cycle (by
+  `public.reveal_guardian_identities()` or the daily cron job).
+
+#### `public.guardian_nudges` — the anonymous "I prayed for my protected soul"
+
+```sql
+create table public.guardian_nudges (
+  id           uuid primary key default gen_random_uuid(),
+  group_id     uuid not null references public.groups (id) on delete cascade,
+  pairing_id   uuid not null references public.guardian_angel_pairings (id) on delete cascade,
+  sender_id    uuid not null references public.profiles (id) on delete cascade,
+  protected_id uuid not null references public.profiles (id) on delete cascade,
+  cycle_key    text not null check (char_length (cycle_key) between 1 and 120),
+  local_date   date not null,
+  created_at   timestamptz not null default now(),
+  constraint guardian_nudges_sender_local_date_key unique (sender_id, local_date)
+);
+```
+
+* `UNIQUE (sender_id, local_date)` = **at most one nudge per Guardian per
+  local day**. The client supplies `local_date` (same pattern as
+  `check_ins.local_date`); the server validates it against ±1 day of today.
+* Indexes: `(protected_id, created_at DESC)`, `(pairing_id)`, `(group_id)`.
+* The client grant **omits `sender_id`** and the RLS policy only exposes the
+  sender's own rows — the recipient reads **zero** rows and cannot even
+  reference the column.
+
+#### `public.device_tokens`
+
+```sql
+create table public.device_tokens (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references public.profiles (id) on delete cascade,
+  platform     text not null default 'ios' check (platform in ('ios', 'android')),
+  apns_token   text not null check (char_length (apns_token) between 8 and 512),
+  environment  text not null default 'production' check (environment in ('sandbox', 'production')),
+  app_version  text check (char_length (app_version) <= 40),
+  is_active    boolean not null default true,
+  last_seen_at timestamptz not null default now(),
+  created_at   timestamptz not null default now(),
+  constraint device_tokens_platform_token_key unique (platform, apns_token)
+);
+```
+
+* Index: `(user_id, is_active)`.
+* `UNIQUE (platform, apns_token)`: the same token is never stored twice.
+  Re-registering it **moves** the row to the new user.
+
+#### `public.notification_outbox` — the transactional outbox
+
+```sql
+create table public.notification_outbox (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references public.profiles (id) on delete cascade,
+  channel           text not null default 'push' check (channel in ('push')),
+  notification_type text not null check (notification_type in (
+                    'prayed_for_you', 'amen', 'guardian_nudge',
+                    'pinned_notice', 'streak_milestone')),
+  title             text not null check (char_length (title) between 1 and 120),
+  body              text not null check (char_length (body) between 1 and 500),
+  payload           jsonb not null default '{}'::jsonb check (jsonb_typeof (payload) = 'object'),
+  group_id          uuid references public.groups (id) on delete cascade,
+  dedupe_key        text not null check (char_length (dedupe_key) between 1 and 200),
+  status            text not null default 'pending' check (status in (
+                    'pending', 'processing', 'sent', 'failed', 'cancelled')),
+  attempts          integer not null default 0 check (attempts >= 0),
+  scheduled_at      timestamptz not null default now(),
+  sent_at           timestamptz,
+  last_error        text check (char_length (last_error) <= 1000),
+  created_at        timestamptz not null default now(),
+  constraint notification_outbox_dedupe_key_key unique (dedupe_key)
+);
+```
+
+* Indexes: `(status, scheduled_at)`, `(user_id, created_at DESC)`, `(group_id)`.
+* **No client INSERT/UPDATE/DELETE** — only a SELECT policy for the user's
+  own rows. The client grant omits `dedupe_key` and `last_error`.
+* **LITURGICAL REMINDERS ARE LOCAL-ONLY.** The `notification_type` CHECK
+  does not accept a liturgical value, so no liturgical row can ever be
+  queued. Liturgical prompts are scheduled on the device.
+
+#### `private.app_settings` — operational settings
+
+```sql
+create table private.app_settings (
+  key        text primary key check (char_length (key) between 1 and 100),
+  value      text check (char_length (value) <= 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+* Keys: `push_dispatch_url`, `push_dispatch_secret`.
+* No policy and no privilege for `anon`/`authenticated`.
+
+### 19.2 The cycle key
+
+| Group type | Cycle | `cycle_key` |
+|---|---|---|
+| `fraternity` | the current **ISO week**, Monday..Sunday | `fraternity:<group_id>:<YYYY>-W<ww>` |
+| `challenge` | the **whole challenge window** (`starts_on`..`ends_on`) | `challenge:<group_id>:<starts_on>` |
+
+> The fraternity key is **group scoped on purpose**: a member may belong to
+> several fraternities in the same week, and the table has
+> `UNIQUE (cycle_key, guardian_id)` / `UNIQUE (cycle_key, protected_id)` — a
+> global `YYYY-Www` key would collide across groups.
+
+### 19.3 The derangement
+
+The draw is a **deterministic rotation by 1** over the eligible members
+sorted by `user_id`:
+
+```
+members = [m1, m2, ..., mn]      -- sorted by user_id
+m1 guards m2, m2 guards m3, ..., mn guards m1
+```
+
+* A rotation by 1 over a sorted list of `n >= 2` elements is a derangement:
+  nobody keeps its own position, so `guardian_id <> protected_id` always
+  holds, and every member appears exactly once as guardian and once as
+  protected.
+* **`random()` is never used** — a retry reproduces exactly the same draw.
+* The **eligible set** = master opt-in ON **and** a per-group
+  `guardian_angel_opt_ins` row **and** an active `group_members` row
+  **and** not blocked (either direction) with any other candidate.
+* Fewer than 2 eligible members → `{ "paired": 0, "reason":
+  "insufficient_opt_ins" }` and **no row is created**. A member who did not
+  opt in is never paired and never learns they were excluded.
+* The rotation offset is recorded in the `audit_log` metadata
+  (`rotation_offset`) and returned by the RPC.
+
+### 19.4 RPC signatures (verbatim — A9 uses these)
+
+```sql
+-- client facing (SECURITY INVOKER → private implementation)
+public.opt_in_to_guardian_angel (p_group_id uuid, p_opt_in boolean) returns jsonb
+public.my_guardian_assignment (p_group_id uuid) returns jsonb
+public.guardian_angel_state (p_group_id uuid) returns jsonb
+public.send_guardian_nudge (p_group_id uuid, p_local_date date default null) returns jsonb
+public.register_device_token (p_apns_token text, p_platform text default 'ios',
+                               p_environment text default 'production',
+                               p_app_version text default null) returns jsonb
+
+-- server only (SECURITY DEFINER, service_role only)
+public.run_guardian_angel_pairing (p_group_id uuid, p_cycle_key text default null,
+                                    p_cycle_starts_on date default null) returns jsonb
+public.sweep_guardian_angel_pairings (p_scope text default 'all') returns jsonb
+public.reveal_guardian_identities (p_group_id uuid) returns jsonb
+public.sweep_reveal_guardian_identities () returns jsonb
+public.claim_notification_outbox (p_limit integer default 50) returns setof jsonb
+public.complete_notification_outbox (p_outbox_id uuid, p_status text,
+                                      p_error text default null,
+                                      p_retry_at timestamptz default null) returns jsonb
+public.deactivate_device_token (p_token_id uuid) returns jsonb
+public.dispatch_push_notifications () returns jsonb
+
+-- A5's seam — the body was REPLACED by A8 in migration 0704
+public.emit_prayer_notification (p_intention_id uuid, p_prayer_id uuid) returns jsonb
+```
+
+Return shapes:
+
+| RPC | Returns |
+|---|---|
+| `opt_in_to_guardian_angel` | `{group_id, opted_in, group_opt_in, master_opt_in}` |
+| `my_guardian_assignment` | `{is_guardian, is_protected, protected_display_name, protected_intentions, guardian_display_name, revealed, cycle_key, cycle_starts_on, cycle_ends_on, can_nudge, nudges_today}` |
+| `guardian_angel_state` | `{group_id, opted_in, is_guardian, is_protected, cycle_ends_on, can_nudge, nudges_today}` |
+| `send_guardian_nudge` | `{sent, nudges_today, remaining, nudge_id, local_date}` |
+| `run_guardian_angel_pairing` | `{group_id, cycle_key, cycle_starts_on, cycle_ends_on, paired, inserted, updated, skipped, member_count, rotation_offset, reason}` |
+| `sweep_guardian_angel_pairings` | `{scope, groups, paired}` |
+| `reveal_guardian_identities` | `{group_id, revealed, revealed_at}` |
+| `claim_notification_outbox` | one jsonb per claimed row: `{id, user_id, notification_type, title, body, payload, group_id, attempts, scheduled_at}` |
+| `complete_notification_outbox` | `{id, status, attempts, scheduled_at}` |
+| `dispatch_push_notifications` | `{dispatched, request_id}` or `{dispatched:false, reason:"not_configured"}` |
+
+Error keys (the message IS the key):
+
+| SQLSTATE | message |
+|---|---|
+| `42501` | `authentication required` · `not_a_group_member` · `not_a_guardian` |
+| `22023` | `invalid_local_date` · `invalid_platform` · `invalid_environment` · `invalid_push_token` · `invalid_scope` · `invalid_status` · `challenge has no date window` |
+| `P0001` | `nudge_already_sent_today` · `cycle_ended` |
+| `P0002` | `group not found` · `outbox row not found` · `device token not found` |
+
+### 19.5 The cron jobs
+
+| Job name | Schedule | Command |
+|---|---|---|
+| `a8_pairing_weekly_fraternities` | `0 5 * * 1` | `select public.sweep_guardian_angel_pairings('fraternity');` |
+| `a8_pairing_daily_challenges` | `0 6 * * *` | `select public.sweep_guardian_angel_pairings('challenge');` |
+| `a8_reveal_ended_cycles` | `15 6 * * *` | `select public.sweep_reveal_guardian_identities();` |
+| `a8_push_dispatch` | `*/5 * * * *` | `select public.dispatch_push_notifications();` |
+
+Migration 0703 unschedules each name before scheduling it, so it is
+idempotent: **exactly one row per job name** in `cron.job`.
+
+### 19.6 The outbox notification types and dedupe keys
+
+| `notification_type` | Dedupe key | Emitted by |
+|---|---|---|
+| `prayed_for_you` | `prayed:<intention_prayer_id>` | `trg_intention_prayers_notify` → `public.emit_prayer_notification()` |
+| `amen` | `amen:<amen_reaction_id>` | `trg_amen_reactions_notify` |
+| `guardian_nudge` | `nudge:<nudge_id>` | `public.send_guardian_nudge()` |
+| `pinned_notice` | `pinned:<notice_id>:<member_id>` | `trg_pinned_notices_notify` |
+| `streak_milestone` | — | reserved (A4/A9 follow-up) |
+
+> **A5's seam.** `public.emit_prayer_notification()` was a safe no-op while
+> the outbox did not exist. Migration **0704 replaced its body** (same
+> signature, same `service_role`-only privilege, same
+> `{"emitted":bool,"reason":text}` return shape) and added the trigger
+> `trg_intention_prayers_notify` on `public.intention_prayers`. A5's
+> `toggle_prayed_for()` calls the seam **and** the trigger fires — both
+> resolve to the same dedupe key, so **exactly one** row is created.
+
+### 19.7 The anonymity guarantees
+
+* The **protected** member never receives the guardian's name or id before
+  `revealed_at` is set. `public.my_guardian_assignment()` returns
+  `guardian_display_name: null` and `revealed: false` until then, and the
+  `guardian_id` column is not reachable by any client at all.
+* The **guardian** receives the protected member's **display name** and up to
+  three of their **group prayer intentions** — never a private check-in, a
+  Confession or a Spiritual Diary text.
+* The **nudge is anonymous**: the pushed title/body is
+  *"Alguém rezou por você."* / *"Alguém rezou por você hoje."*, the payload
+  carries only `{group_id, cycle_key}`, and `sender_id` is not granted to
+  the client.
+* A **blocked pair never produces a notification** (checked with
+  `public.is_blocked()`, which is symmetric) — for the prayed-for, amen and
+  pinned-notice triggers and for the nudge.
+
+### 19.8 A8's own implementation notes
+
+* Every client-facing RPC is a **SECURITY INVOKER** wrapper in `public`
+  that forwards to a `private` implementation (SECURITY DEFINER, `set
+  search_path = ''`, fully qualified). A8 therefore contributes **0** to the
+  `authenticated_security_definer_function_executable` finding.
+* Every server-only RPC is a `public` SECURITY DEFINER function with
+  `EXECUTE` revoked from `PUBLIC`/`anon`/`authenticated` and granted to
+  `service_role` only.
+* The Edge Function `push-dispatch` (`supabase/functions/push-dispatch/`)
+  is deployed with `verify_jwt: false` and authenticates itself with the
+  service-role key **or** the `x-push-secret` shared secret. See
+  [`docs/backend/PUSH.md`](../docs/backend/PUSH.md) for the APNs token
+  generation, the HTTP/2 caveat and the production alternatives.
+
+---
+
+## 21. A10 audit — final state
+
+> **Owner:** A10 (security & QA audit) · migration prefix range `0900`–`0999`.
+> **Date:** 2026-10-22 · **Project:** `khovpljkitslmjmonuzu` (PostgreSQL 17.11).
+> A10 is the last agent of the backend wave: its job is to make the
+> backend *provably* secure, correct and documented.
+
+### 21.1 The final advisor counts
+
+| Type | Lint | Level | Before A10 | After A10 |
+|---|---|---|---|---|
+| security | `authenticated_security_definer_function_executable` | WARN | **33** | **0** |
+| security | `anon_security_definer_function_executable` | WARN | 0 | **0** (never regressed) |
+| security | `function_search_path_mutable` | WARN | 0 | **0** (never regressed) |
+| performance | `unindexed_foreign_keys` | INFO | 2 | **0** (A8 fixed them in `0706`; A10 verified) |
+| performance | `unused_index` | INFO | 27 | **18 – 27, accepted baseline**, see §21.6 |
+
+**The security advisor now reports ZERO findings of any kind.**
+
+### 21.2 The security fixes A10 applied
+
+| Migration | What it does |
+|---|---|
+| `0900_harden_rls_helpers` | The 5 RLS helpers become **self-scoped**; their bodies move to `private.is_*_impl` (`SECURITY DEFINER`); every policy that called the two-argument form is re-issued with the one-argument form. |
+| `0901_harden_domain_rpcs` | The 28 flagged domain RPCs move to `private.<name>_impl` (`SECURITY DEFINER`); their public counterparts become `SECURITY INVOKER` wrappers with the **exact** original signature, defaults, return type and error behaviour. |
+| `0902_residual_rpc_hardening` | `public.current_user_id()` is revoked from `anon`; `public.probe_wrapper()` is restricted to `service_role`. `anon` can now execute **exactly four** public functions. |
+| `0903_fix_a3_preview_usage` | **Bug fix.** `grant usage on schema a3_preview to authenticated, service_role` (+ the matching `grant execute`): the `preview_group_by_code` / `list_featured_challenges` wrappers are `SECURITY INVOKER`, so every SIGNED-IN user got `42501 permission denied for schema a3_preview`. Pre-existing since A3's migration 0208. |
+| `0904_fix_join_group_by_code` | **Bug fix.** `private.join_group_impl` captured `FOUND` into `v_has_invite`: the `INSERT INTO group_members` in between reset `FOUND` to `true`, so the invite-usage branch always ran and a code without a `group_invites` row failed with the misleading *"this invite code has reached its usage limit"*. Reachable through the `groups_update_admin` policy. |
+
+### 21.3 The helper signature change (before → after)
+
+| Before | After | The two-user logic now lives in |
+|---|---|---|
+| `public.is_group_member(p_group_id uuid, p_user_id uuid DEFAULT auth.uid())` | `public.is_group_member(p_group_id uuid)` | `private.is_group_member_impl(p_group_id uuid, p_user_id uuid)` |
+| `public.is_group_admin(p_group_id uuid, p_user_id uuid DEFAULT auth.uid())` | `public.is_group_admin(p_group_id uuid)` | `private.is_group_admin_impl(p_group_id uuid, p_user_id uuid)` |
+| `public.is_blocked(p_user_id uuid, p_other_id uuid)` | `public.is_blocked(p_other_id uuid)` | `private.is_blocked_impl(p_user_id uuid, p_other_id uuid)` |
+| `public.is_group_member_of_any(p_user_id uuid DEFAULT auth.uid())` | `public.is_group_member_of_any()` | `private.is_group_member_of_any_impl(p_user_id uuid)` |
+| `public.is_any_group_admin(p_user_id uuid DEFAULT auth.uid())` | `public.is_any_group_admin()` | `private.is_any_group_admin_impl(p_user_id uuid)` |
+
+**Why this is safe.** Every one of the ~40 policies that call a helper
+already passed the **caller's own** id as the second argument (A10 measured
+this against the live database before changing anything), so the two-user
+form was never needed by a policy. The rewrite is a pure textual collapse
+of that second argument; the semantics are unchanged and the block relation
+stays **symmetric**.
+
+**Why it is necessary.** `authenticated` must keep `EXECUTE` on the helpers
+(PostgreSQL evaluates a policy expression with the *querying role's*
+privileges), so a `SECURITY DEFINER` helper in the exposed `public` schema is
+reachable as an RPC: a signed-in user could learn whether an **arbitrary**
+user belonged to an **arbitrary** group, and `is_blocked` leaked the whole
+block graph. The signature change removes the capability, not just the
+endpoint.
+
+**The public wrappers are `SECURITY INVOKER`** and supply `auth.uid()`
+themselves. The privileged bodies live in the **non-exposed** `private`
+schema, where PostgREST never routes and the Supabase linter never looks.
+
+### 21.4 The 28 RPCs converted to `private.<name>_impl` + INVOKER wrapper
+
+| Owner | Functions |
+|---|---|
+| **A4** | `get_consistency_heatmap`, `get_group_progress`, `get_rule_of_life_ring`, `get_streak_summary`, `set_practice_points`, `submit_check_in`, `use_streak_mercy` |
+| **A5** | `clear_pinned_notice`, `create_chat_message`, `create_prayer_intention`, `get_chat_messages`, `get_feed_posts`, `get_prayer_intentions`, `set_pinned_notice`, `soft_delete_chat_message`, `soft_delete_feed_post`, `toggle_amen`, `toggle_prayed_for` |
+| **A6** | `admin_delete_post`, `block_user`, `create_signed_witness_url`, `get_moderation_actions`, `get_moderation_queue`, `hide_content`, `list_blocked_users`, `report_content`, `resolve_report`, `unblock_user` |
+
+The body was moved **verbatim** by reading it back with
+`pg_get_functiondef()`, so no body was ever re-typed. The public wrapper
+keeps the original volatility, the original argument names, the original
+defaults, the original return type and the original error behaviour.
+
+**Cross-references are safe.** A `SECURITY DEFINER` implementation that
+calls `public.other(...)` now calls the thin `INVOKER` wrapper, which
+forwards to `private.other_impl(...)`; the effective privilege is still the
+owner's (`postgres`), so the behaviour is unchanged. The one dynamic-SQL
+reference (`public.admin_delete_post` → `public.soft_delete_feed_post`)
+resolves the same way.
+
+### 21.5 The A10 test suites
+
+| File | Assertions | Verdict |
+|---|---|---|
+| `supabase/tests/a10/rls_matrix.sql` | **647** | PASS |
+| `supabase/tests/a10/rpc_matrix.sql` | **96** | PASS |
+| `supabase/tests/a10/privacy.sql` | **65** | PASS |
+
+* **rls_matrix** — for EVERY one of the 39 public tables and for EACH of
+  the five personas (`anon`, outsider, member, admin, blocked) the number of
+  rows reachable with SELECT / UPDATE / DELETE is asserted against a
+  hand-written expectation. The probe helpers raise a deliberate exception
+  so the probe runs in a sub-transaction and the fixture survives for the
+  next persona.
+* **rpc_matrix** — the whole privilege matrix, the exact SQLSTATE + message
+  of the non-member error contract of 23 RPCs, and the JSON shape of 50+
+  happy paths.
+* **privacy** — the sacred-privacy invariants end to end (see CONVENTIONS
+  §8): the catalog scan, the enforced CHECK constraints, the full
+  create-group → join → group check-in → private check-in → confession
+  flow, the fan-out counts, the streak / Rule of Life maths, the outbox and
+  audit-log silence, the Guardian Angel anonymity, and the moderation path.
+
+### 21.6 The accepted `unused_index` baseline (18 – 27 findings — INFO)
+
+The tables are **empty**, so the planner cannot prove an index unused. The
+exact count therefore MOVES with the usage statistics: it was **27** when
+A10 started, **26** after the first audit runs and **18** after the full
+A10 suite had exercised the real query paths. **The invariant is not the
+number but the rule: no index may be dropped.** Every one of them backs a
+foreign key, a unique constraint or a documented lookup path, and dropping
+one would immediately re-open `unindexed_foreign_keys`.
+
+| Table | Index | Why it stays |
+|---|---|---|
+| `group_featured` | `idx_group_featured_display_order` | the discovery-list ordering |
+| `audit_log` | `idx_audit_log_created_at` | the admin trail pagination |
+| `content_reports` | `idx_content_reports_status_created` | the moderation queue |
+| `moderation_actions` | `idx_moderation_actions_report` | the trail of one report |
+| `ssv_receipts` | `idx_ssv_receipts_received_at`, `idx_ssv_receipts_transaction_id` | the SSV replay lookup |
+| `prayer_intentions` | `idx_prayer_intentions_group_created_at` | the Prayer Wall pagination |
+| `chat_messages` | `idx_chat_messages_group_created_at`, `idx_chat_messages_user_id`, `chat_messages_hidden_idx` | the chat pagination / the hidden filter |
+| `amen_reactions` | `idx_amen_reactions_user_id` | the "my reactions" lookup |
+| `intention_prayers` | `idx_intention_prayers_intention_id` | the "who prayed" counter |
+| `feed_posts` | `idx_feed_posts_user_created_at`, `idx_feed_posts_visible_group_created_at` | the feed pagination |
+| `guardian_nudges` | `idx_guardian_nudges_protected_created`, `idx_guardian_nudges_pairing_id` | the nudge history |
+| `device_tokens` | `idx_device_tokens_user_active` | the push fan-out |
+| `liturgical_days` | `idx_liturgical_days_season` | the seasonal calendar |
+| `saints` | `idx_saints_lower_name` | the saints search |
+| `saint_icons` | `idx_saint_icons_saint_id` | the icon → saint link |
+| `user_saint_unlocks` | `idx_user_saint_unlocks_saint_icon_id` | the unlocked-themes lookup |
+| `notification_outbox` | `idx_notification_outbox_status_scheduled` | the dispatcher's claim query |
+| `sponsored_challenges` | `idx_sponsored_challenges_sponsor_id`, `idx_sponsored_challenges_featured_group_id`, `idx_sponsored_challenges_active` | the sponsor / featured / active filters |
+| `reward_grants` | `idx_reward_grants_user_id`, `idx_reward_grants_user_status` | the reward ledger |
+| `account_deletion_requests` | `idx_account_deletion_requests_user_id` | backs the FK |
+| `check_ins` | `idx_check_ins_user_local_date`, `idx_check_ins_user_created_at`, `idx_check_ins_group_shared_user_local_date` | the streak / heatmap / feed paths |
+| `check_in_destinations` | `idx_check_in_destinations_group_id` | backs the FK |
+| `group_invites` | `idx_group_invites_code`, `idx_group_invites_group_id`, `idx_group_invites_created_by` | the code lookup |
+| `group_members` | `idx_group_members_group_role`, `idx_group_members_user_id` | the roster / "my groups" |
+| `groups` | `idx_groups_created_by` | backs the FK |
+| `user_blocks` | `idx_user_blocks_blocker_id`, `idx_user_blocks_blocked_id` | the block lookups |
+| `practice_points` | `idx_practice_points_group_id` | backs the FK |
+| `pinned_notices` | `idx_pinned_notices_group_id`, `idx_pinned_notices_author_id` | backs the FKs |
+| `slot_unlocks` | `idx_slot_unlocks_user_kind` | the active-slot lookup |
+| `streak_events` | `idx_streak_events_user_id`, `idx_streak_events_user_local_date` | the streak audit trail |
+| `streak_mercy_grants` | `idx_streak_mercy_grants_user_id` | backs the FK |
+| `guardian_angel_opt_ins` | `idx_guardian_angel_opt_ins_group_id` | backs the FK |
+| `guardian_angel_pairings` | `idx_guardian_angel_pairings_group_cycle`, `idx_guardian_angel_pairings_guardian_id`, `idx_guardian_angel_pairings_protected_id` | the draw / the lookups |
+| `moderation_actions` | `idx_moderation_actions_actor`, `idx_moderation_actions_group_created`, `idx_moderation_actions_target` | the trail |
+| `content_reports` | `idx_content_reports_target`, `idx_content_reports_reporter`, `idx_content_reports_group` | the queue |
+| `feed_posts` | `idx_feed_posts_check_in_id` | backs the FK |
+| `ad_view_tokens` | `idx_ad_view_tokens_user_id`, `idx_ad_view_tokens_open` | the pending-token lookup |
+| `reward_grants` | `idx_reward_grants_user_reward_type` | the reward ledger |
+| `sponsored_challenges` | `idx_sponsored_challenges_group_id` | backs the FK |
+| `saint_icons` | `idx_saint_icons_active` | the active-themes filter |
+| `saints` | `idx_saints_calendar_date` | the day lookup |
+| `daily_readings` | `daily_readings_calendar_date_key` | the unique date |
+| `feed_post_comments` | `idx_feed_post_comments_group_created_at`, `idx_feed_post_comments_hidden`, `idx_feed_post_comments_user_id` | the group-scoped comment list · the moderation query of a group admin · the `feed_post_comments_user_id_fkey` FK (added by migration 1004) — see §22.2 |
+
+> `idx_user_blocks_blocker_id` is technically **redundant** — the
+> `user_blocks_blocker_id_blocked_id_key` unique index already has
+> `blocker_id` as its leading column. A1 kept it because the spec asked for
+> an index on `blocker_id`; it costs nothing on a table this small. It is
+> the only index in the project that is not strictly necessary.
+
+### 21.7 The final ownership map
+
+| Object | Table owner | Policies / RPCs | Notes |
+|---|---|---|---|
+| `public.profiles` | A1 (columns) | A1 (policies), A2 (trigger + profile RPCs), A9 (client) | The `handle_new_user` trigger is the only INSERT path. |
+| `public.groups`, `public.group_members`, `public.user_blocks` | A1 | A1 (policies), A3 (groups), A6 (blocks) | A10 rewrote the helper calls in every policy. |
+| `public.practice_points` | A1 (table) | A1 (baseline), A4 (data + RPC) | |
+| `public.audit_log` | A1 | A2 / A3 / A6 write through their own RPCs | Append-only, no FK on `actor_id`. |
+| `public.group_invites`, `public.slot_unlocks`, `public.group_featured` | A3 | A3 | A7 FKs `sponsored_challenges` to `group_featured`. |
+| `public.check_ins`, `public.check_in_destinations`, `public.streaks`, `public.streak_events`, `public.streak_mercy_uses`, `public.streak_mercy_grants` | A4 | A4 | `streak_mercy_grants` is written by A7's `grant_reward`. |
+| `public.feed_posts`, `public.amen_reactions`, `public.prayer_intentions`, `public.intention_prayers`, `public.chat_messages`, `public.pinned_notices` | A5 | A5 | `feed_posts` is written by A4's fan-out trigger. |
+| `public.content_reports`, `public.moderation_actions`, `public.v_target_report_counts` | A6 | A6 | |
+| `public.liturgical_days`, `public.daily_readings`, `public.saints`, `public.saint_icons`, `public.user_saint_unlocks`, `public.sponsors`, `public.sponsored_challenges`, `public.reward_grants`, `public.ad_view_tokens`, `public.ssv_receipts` | A7 | A7 | |
+| `public.guardian_angel_opt_ins`, `public.guardian_angel_pairings`, `public.guardian_nudges`, `public.device_tokens`, `public.notification_outbox` | A8 | A8 | |
+| `public.account_deletion_requests` | A2 | A2 | |
+| `private` (the non-exposed implementation schema) | A2 (created) | every agent | `USAGE` for `authenticated` + `service_role`; **never** for `anon`. |
+| `a3_preview` (the two public preview implementations) | A3 | A3 | `USAGE` for `anon`, `authenticated`, `service_role` since migration 0903. |
+| `public.is_*` helpers | A1 (created) | **A10** (moved to `private`, signatures simplified) | Self-scoped since 0900. |
+| `public.<name>` / `private.<name>_impl` (the 28 domain RPCs) | A4 / A5 / A6 | **A10** (the private/INVOKER split) | The signatures are unchanged. |
+| `public.pgtap_*` helpers | A1 | — | Test-only, not reachable by a client. |
+| `cron.job` (4 A8 jobs) | A8 | — | See §21.8. |
+| `storage.buckets` (3) | A6 | A6 | `witness-photos` is the only private one. |
+| `auth.instances` (1 row) | — | — | **Do not delete.** GoTrue requires it. |
+
+### 21.8 The cron jobs (final)
+
+| Job | Schedule | Command |
+|---|---|---|
+| `a8_pairing_weekly_fraternities` | `0 5 * * 1` | `select public.sweep_guardian_angel_pairings('fraternity')` |
+| `a8_pairing_daily_challenges` | `0 6 * * *` | `select public.sweep_guardian_angel_pairings('challenge')` |
+| `a8_reveal_ended_cycles` | `15 6 * * *` | `select public.sweep_reveal_guardian_identities()` |
+| `a8_push_dispatch` | `*/5 * * * *` | `select public.dispatch_push_notifications()` |
+
+### 21.9 What is still missing (operator actions)
+
+| Item | State |
+|---|---|
+| `ADMOBSIGNING_KEY` (Edge Function secret) | ❌ **NOT SET** — `admob-ssv` answers `400 signing_key_not_configured` and grants nothing. |
+| `PUSH_DISPATCH_SECRET` (Edge Function secret **and** `private.app_settings.push_dispatch_secret`) | ❌ **NOT SET** — `push-dispatch` answers `401 unauthorized`. |
+| `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC` | ❌ **NOT SET** — the operator must create the APNs auth key. |
+| The Auth providers (Apple / Google) and the SMTP relay | ❌ **not configured** — the runbook is `docs/backend/AUTH_SETUP.md`; the MCP exposes no provider/SMTP tool. |
+| `private.app_settings.push_dispatch_url` | ❌ **not set** — the dispatcher is a deliberate no-op until it is. |
+
+The full API reference is [`docs/backend/API.md`](../docs/backend/API.md) and
+the generated TypeScript types are
+[`supabase/types/database.ts`](types/database.ts).
+
+---
+
+## 22. Gap-closure additions
+
+> **Owner:** gap-closure agent (A9 follow-up) · migration prefix range
+> `1000`–`1099` · **Date:** 2026-10-22.
+> Applied migrations: `create_feed_post_comments` (1000), `create_my_groups`
+> (1001), `create_feed_comment_rpcs` (1002),
+> `create_signed_witness_urls_batch` (1003),
+> `index_feed_post_comments_user_id` (1004).
+> Tests: `supabase/tests/a10/my_groups.sql` (26 assertions),
+> `supabase/tests/a10/feed_comments.sql` (83),
+> `supabase/tests/a10/signed_urls_batch.sql` (37) — **all PASS**.
+
+This section closes the three gaps the iOS agent (A9) reported. Every new
+function follows A10's **private + INVOKER** pattern (§21.4): the privileged
+body lives in `private.<name>_impl` (`SECURITY DEFINER SET search_path = ''`,
+fully qualified) and the exposed function is a thin `SECURITY INVOKER SET
+search_path = ''` wrapper. `REVOKE ALL … FROM PUBLIC, anon` + `GRANT EXECUTE
+TO authenticated, service_role` (the **explicit `anon` revoke is mandatory**,
+§18.8).
+
+### 22.1 `public.my_groups()` — A3's domain
+
+```sql
+public.my_groups() returns jsonb
+```
+
+Returns the caller's **ACTIVE** groups in ONE call (the "Meus Grupos" screen
+needed four round trips before: `group_members` → `groups` → the member count
+→ `group_featured`).
+
+**Shape**
+
+```json
+{ "items": [ {
+    "id": "…", "name": "…", "description": "…",
+    "group_type": "fraternity|challenge",
+    "scoring_mode": "faithful_days|collective_treasure|custom_points",
+    "sharing_requirement": "open|written_fruit|photo_witness",
+    "cover_path": "…|null", "starts_on": "2026-10-01|null", "ends_on": "2026-10-31|null",
+    "goal_target": 100|null, "member_count": 12,
+    "role": "admin|member", "is_featured": true,
+    "invite_code": "123456|null", "archived_at": null
+} ] }
+```
+
+| Rule | Value |
+|---|---|
+| **`invite_code`** | Returned **only for the group admin**. A plain member always gets `null` — the code is a CAPABILITY (§14.3). |
+| `member_count` | The number of `public.group_members` rows of the group (the same count as A3's `preview_group_by_code` and A4's `get_group_progress`). |
+| `is_featured` | `true` when the group has a row in `public.group_featured` with `is_featured = true` (A3's rule). |
+| **Excluded** | An **archived** group (`archived_at is not null`). |
+| **Excluded** | A **challenge whose season has ended** — A3's ACTIVE-membership rule (§14.2): `ends_on IS NULL OR ends_on >= current_date`. A fraternity is never excluded by its end date. |
+| **Excluded** | A group whose **creator blocks the caller** — the same rule as A4's `blocked_by_group_creator` (`private.is_blocked_impl`, symmetric). |
+| Ordering | A **running challenge first**, then the **most recently joined** (`group_members.joined_at DESC`), then `groups.id` — stable and meaningful. |
+| `archived_at` | Always `null` in the answer (archived groups are excluded); it is kept in the shape for a stable contract. |
+
+Error contract: `42501 authentication required` when the caller has no
+identity. `anon` may **not** execute it.
+
+Implementation: `private.my_groups_impl()` (uses
+`private.is_blocked_impl(v_uid, g.created_by)`).
+
+### 22.2 `public.feed_post_comments` — A5's domain (the missing product feature)
+
+The product plan (`docs/plan/plan.md`, Flow 4 Tab A) requires that members can
+*"react with 'Amen' or 'United in Prayer' **and leave encouraging comments**"*.
+`addComment` was a **silent no-op** because no table existed.
+
+```sql
+create table public.feed_post_comments (
+  id            uuid primary key default gen_random_uuid(),
+  post_id       uuid not null references public.feed_posts (id) on delete cascade,
+  group_id      uuid not null references public.groups (id) on delete cascade,
+  user_id       uuid not null references public.profiles (id) on delete cascade,
+  body          text not null check (char_length (body) between 1 and 500),
+  is_hidden     boolean not null default false,
+  hidden_reason text,
+  hidden_at     timestamptz,
+  created_at    timestamptz not null default now()
+);
+```
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | PK, `gen_random_uuid()`. |
+| `post_id` | `uuid` | FK → `public.feed_posts(id)` `ON DELETE CASCADE`. |
+| `group_id` | `uuid` | FK → `public.groups(id)` `ON DELETE CASCADE`. Denormalised from the post so the policies never have to join `feed_posts`. |
+| `user_id` | `uuid` | FK → `public.profiles(id)` `ON DELETE CASCADE`. |
+| `body` | `text` | CHECK `char_length(body) between 1 and 500`. |
+| `is_hidden` | `boolean` | Server-owned moderation flag. |
+| `hidden_reason` | `text` | `'admin_removed'`. |
+| `hidden_at` | `timestamptz` | Stamped only by the moderation RPC. |
+| `created_at` | `timestamptz` | `now()`. |
+
+**No `updated_at`** → `public.attach_updated_at` is **not** attached: a comment
+is effectively append-only (mirrors `public.moderation_actions`).
+
+**Indexes**
+
+| Index | Definition | Why |
+|---|---|---|
+| `idx_feed_post_comments_post_created_at` | `(post_id, created_at desc, id desc)` | The comment pagination of `get_feed_post_comments` (cursor order `created_at DESC, id DESC`). |
+| `idx_feed_post_comments_group_created_at` | `(group_id, created_at desc)` | The group-scoped comment list. |
+| `idx_feed_post_comments_hidden` | `(group_id, created_at desc) where is_hidden` | The moderation query of a group admin. |
+| `idx_feed_post_comments_user_id` | `(user_id)` | Backs the `feed_post_comments_user_id_fkey` FK (the `unindexed_foreign_keys` lint must stay at **0**) and the "my comments" lookup. |
+
+**RLS** — enabled **and forced**; the policies use the **single-argument**
+helpers (§3):
+
+| Command | Role | Predicate |
+|---|---|---|
+| SELECT | `authenticated` | `public.is_group_member(group_id) and not public.is_blocked(user_id) and (not is_hidden or public.is_group_admin(group_id))` |
+| INSERT | `authenticated` | `user_id = (select auth.uid()) and public.is_group_member(group_id)` |
+| UPDATE | `authenticated` | `USING (user_id = (select auth.uid()))` · `WITH CHECK (same)` |
+| DELETE | `authenticated` | `USING (user_id = (select auth.uid()) or public.is_group_admin(group_id))` |
+
+Table privileges: `anon` → nothing. `authenticated` → `SELECT`, `INSERT
+(post_id, group_id, user_id, body)`, `UPDATE (body)` **only**, `DELETE`.
+The **column-level** UPDATE grant is what makes the moderation columns
+server-owned: a client may edit the body of its own comment, never
+`is_hidden` / `hidden_reason` / `hidden_at`.
+
+> ### ⚠️ Sacred privacy
+> A comment is **PUBLIC GROUP CONTENT by design**. It is readable by every
+> member of the post's group (unless a block applies). It must **never** hold
+> a Spiritual Diary text, a Confession record or a "private" check-in
+> reflection — those never leave the device (`feed_posts_no_confession` and
+> `check_ins_private_has_no_content_ck` enforce that upstream). The
+> `comment on table` says so explicitly.
+
+#### The four RPCs (verbatim signatures)
+
+```sql
+public.create_feed_post_comment(p_post_id uuid, p_body text) returns jsonb
+public.get_feed_post_comments(p_post_id uuid, p_before text default null, p_limit integer default 20) returns jsonb
+public.delete_feed_post_comment(p_comment_id uuid) returns jsonb
+public.soft_delete_feed_post_comment(p_comment_id uuid) returns jsonb
+```
+
+| RPC | Returns |
+|---|---|
+| `create_feed_post_comment` | `{ id, post_id, group_id, user_id, body, is_hidden, created_at }` |
+| `get_feed_post_comments` | `{ items: [ { id, post_id, group_id, user_id, body, is_hidden, created_at } ], next_cursor }` |
+| `delete_feed_post_comment` | `{ comment_id, group_id, deleted }` |
+| `soft_delete_feed_post_comment` | `{ comment_id, group_id, hidden, hidden_reason, hidden_at, changed }` |
+
+**Rules**
+
+* `create_feed_post_comment` **trims** the body; a blank body is rejected
+  (`22023 comment body cannot be empty`) and a body longer than 500 characters
+  is rejected (`22023 comment body must be at most 500 characters`). The
+  caller must be a member of the post's group and the post must be visible
+  (not hidden, not blocked) — otherwise `42501 post not available`. The
+  **database** enforces the length a second time with a CHECK constraint.
+* `get_feed_post_comments` uses **A5's composite cursor** (§15.3) exactly:
+  `next_cursor = "<created_at ISO-8601 UTC>|<row uuid>"`, ordering
+  `created_at DESC, id DESC`, `p_before` is a **`text`** parameter, and
+  `p_limit` is clamped to **1..50**. A hidden comment is returned to a **group
+  admin only**.
+* `delete_feed_post_comment` (hard delete) is allowed to the **author** or a
+  **group admin** of the comment's group; otherwise
+  `42501 only the author or a group admin can delete a comment`.
+* `soft_delete_feed_post_comment` is **group-admin only** (mirrors A5's
+  `soft_delete_feed_post`): it sets `is_hidden = true`,
+  `hidden_reason = 'admin_removed'`, `hidden_at = now()` and appends **one**
+  `public.audit_log` row — `action = 'feed.comment_removed'`,
+  `target_type = 'feed_post_comment'`, `target_id = <comment id>`,
+  `metadata = { group_id, comment_author_id, reason }`. It is **idempotent**:
+  a second call returns `changed = 0` and writes no second audit row.
+
+### 22.3 `public.create_signed_witness_urls()` — A6's domain
+
+```sql
+public.create_signed_witness_urls(p_paths text[], p_expires_in integer default 300) returns jsonb
+```
+
+Authorises **many** witness-photo paths in ONE call. The client used to pay
+one request per photo.
+
+**Shape**
+
+```json
+{ "items": [ {
+    "path": "witness-photos/<gid>/<uid>/<uuid>.jpg",
+    "signed_url": "https://…|null",
+    "reason": "…|null",
+    "authorized": true,
+    "source": "edge_function|null",
+    "object_path": "<gid>/<uid>/<uuid>.jpg|null",
+    "group_id": "…|null",
+    "owner_id": "…|null",
+    "expires_in": 300
+} ],
+  "count": 3, "requested": 3, "truncated": false, "expires_in": 300 }
+```
+
+| Rule | Value |
+|---|---|
+| **The checks are A6's own** | The batch calls `private.create_signed_witness_url_impl()` — A6's existing implementation — **once per path**. There is **no second copy of the path regex**: the path shape, the group-membership check and the block check are literally the same code as `public.create_signed_witness_url`. |
+| A path that fails its check | Comes back with `signed_url = null`, `authorized = false` and a `reason` — the **same message** the single-URL RPC raises: `invalid witness photo path` (22023), `not a member of the group that owns this photo` (42501) or `blocked by the photo owner` (42501). |
+| **The batch never fails** | One bad path never aborts the batch. |
+| **No existence leak** | The reasons describe the **caller's own authorisation**, never whether the object exists. |
+| `p_expires_in` | Clamped to **60..3600** seconds (identical to the single-URL RPC). `null` → 300. |
+| `p_paths` | At most **50** paths; the extra ones are dropped and the answer carries `truncated = true`. A `null` or empty array returns `items: []`. |
+
+#### How it signs
+
+This deployment has **no** `storage.create_signed_url` helper (§18.3), so the
+RPC is the **authorisation gate** and returns `signed_url = null` with
+`source = 'edge_function'` for an **authorised** path (exactly like the
+single-URL RPC). The actual signing is done by the **`signed-witness-url`
+Edge Function**, which now also accepts a **batch**:
+
+```
+POST /functions/v1/signed-witness-url
+{ "object_paths": ["witness-photos/<gid>/<uid>/<uuid>.jpg", …], "expires_in": 300 }
+→ { "items": [ { path, signed_url, reason, authorized, source, object_path, group_id, owner_id, expires_in } ], "count": n, "expires_in": 300 }
+```
+
+The Edge Function calls `public.create_signed_witness_urls` with the **caller's
+own JWT** (the authorisation gate) and then signs every authorised path with
+the service role. The **singular** form (`{ "object_path": … }` → `{ signed_url,
+expires_in, object_path, source }`) is **unchanged**.
+
+→ The client needs **one** Edge Function call for N photos, not N calls.
+
+### 22.4 The advisor status after the gap closure
+
+| Type | Lint | Level | Count |
+|---|---|---|---|
+| security | — | — | **0** (no finding of any kind) |
+| performance | `unindexed_foreign_keys` | INFO | **0** (the `user_id` FK is indexed by migration 1004) |
+| performance | `unused_index` | INFO | **21** (the accepted empty-table baseline of §21.6; the three new indexes back the pagination, the moderation query and the `user_id` FK) |
+
+### 22.5 The `rls_matrix.sql` extension (a necessary, non-weakening change)
+
+`supabase/tests/a10/rls_matrix.sql` asserts that its expectation table covers
+**EXACTLY** the public tables and that the set of tables granting
+INSERT/UPDATE/DELETE to `authenticated` is **EXACTLY** the documented one.
+Adding `public.feed_post_comments` therefore required **extending** that
+matrix (not weakening it): the new table got its own row in `a10_expect`
+(the five personas × SELECT/INSERT/UPDATE/DELETE) and was added to the three
+policy-set assertions. The plan went from **647** to **667** assertions
+(+15 matrix cells, +5 INSERT probes). No assertion was removed, skipped or
+relaxed — the matrix is now complete again.
+
+

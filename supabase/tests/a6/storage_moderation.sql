@@ -184,9 +184,9 @@ select ok ((select count(*) from public.user_blocks
 select throws_ok ($$select public.block_user('a6000000-0000-0000-0000-000000000001'::uuid)$$,
                   '22023', 'you cannot block yourself',
                   'A6: block_user rejects a self block');
-select ok (public.is_blocked ('a6000000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000005'),
+select ok (private.is_blocked_impl ('a6000000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000005'),
             'A6: is_blocked is true for the blocker');
-select ok (public.is_blocked ('a6000000-0000-0000-0000-000000000005', 'a6000000-0000-0000-0000-000000000001'),
+select ok (private.is_blocked_impl ('a6000000-0000-0000-0000-000000000005', 'a6000000-0000-0000-0000-000000000001'),
             'A6: is_blocked is true for the blocked user (symmetric)');
 select lives_ok ($$select public.unblock_user('a6000000-0000-0000-0000-000000000005'::uuid)$$,
                  'A6: unblock_user runs without error');

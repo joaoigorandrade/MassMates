@@ -1,4 +1,19 @@
 -- =============================================================================
+-- A10 NOTE (2026-10-22) -- the APPLIED version of this file
+-- =============================================================================
+-- This file was applied to the remote project `khovpljkitslmjmonuzu` as
+--   migration version 20261022025257  ("harden_rpc_wrappers")
+-- The backend agents ran CONCURRENTLY, so the applied order does NOT follow
+-- the prefix order (the prefix only records the author's ownership range).
+-- The file is therefore NOT renamed -- it is already applied.
+--
+-- A clean replay in FILENAME order is safe: the only two forward references
+-- in the whole chain are `to_regclass`-guarded on purpose
+-- (0305 -> public.feed_posts, 0402 -> public.notification_outbox), so they
+-- no-op until the table exists.
+-- =============================================================================
+
+-- =============================================================================
 -- A3 · 0205 · harden the exposed RPC wrappers
 -- =============================================================================
 -- The public RPCs created in 0202-0204 were first written as SECURITY DEFINER

@@ -1,4 +1,19 @@
 -- =============================================================================
+-- A10 NOTE (2026-10-22) -- the APPLIED version of this file
+-- =============================================================================
+-- This file was applied to the remote project `khovpljkitslmjmonuzu` as
+--   migration version 20261022025633  ("create_moderation_rpcs")
+-- The backend agents ran CONCURRENTLY, so the applied order does NOT follow
+-- the prefix order (the prefix only records the author's ownership range).
+-- The file is therefore NOT renamed -- it is already applied.
+--
+-- A clean replay in FILENAME order is safe: the only two forward references
+-- in the whole chain are `to_regclass`-guarded on purpose
+-- (0305 -> public.feed_posts, 0402 -> public.notification_outbox), so they
+-- no-op until the table exists.
+-- =============================================================================
+
+-- =============================================================================
 -- A6 · 0504 · moderation RPCs, auto-hide trigger and helpers
 -- =============================================================================
 -- Owner: A6 (storage, moderation & safety).
@@ -54,7 +69,7 @@ as $$
   select 3;
 $$;
 
-revoke all on function private.auto_hide_threshold () from public;
+revoke all on function private.auto_hide_threshold () from public, anon;
 
 create or replace function private.has_column (p_table regclass, p_column text)
   returns boolean
@@ -71,7 +86,7 @@ as $$
   );
 $$;
 
-revoke all on function private.has_column (regclass, text) from public;
+revoke all on function private.has_column (regclass, text) from public, anon;
 
 -- Resolve the group that owns a reported target.
 create or replace function private.resolve_report_group (
@@ -130,7 +145,7 @@ begin
 end;
 $$;
 
-revoke all on function private.resolve_report_group (text, uuid, uuid) from public;
+revoke all on function private.resolve_report_group (text, uuid, uuid) from public, anon;
 
 -- Does the reported target exist? When the owning table is not deployed yet
 -- the answer is optimistically 'yes' so the flow keeps working during a
@@ -167,7 +182,7 @@ begin
 end;
 $$;
 
-revoke all on function private.report_target_exists (text, uuid) from public;
+revoke all on function private.report_target_exists (text, uuid) from public, anon;
 
 -- Short preview of the reported content for the moderation queue. The column
 -- name is picked from a hardcoded allow-list — never from caller input.
@@ -205,7 +220,7 @@ begin
 end;
 $$;
 
-revoke all on function private.target_preview (text, uuid) from public;
+revoke all on function private.target_preview (text, uuid) from public, anon;
 
 -- Hide a target. Returns true when a row was actually hidden.
 -- The table and column names are hardcoded — the caller only supplies a uuid.
@@ -274,7 +289,7 @@ begin
 end;
 $$;
 
-revoke all on function private.auto_hide_content (text, uuid, text) from public;
+revoke all on function private.auto_hide_content (text, uuid, text) from public, anon;
 
 -- -----------------------------------------------------------------------------
 -- Auto-hide trigger
@@ -334,7 +349,7 @@ begin
 end;
 $$;
 
-revoke all on function private.auto_hide_after_report () from public;
+revoke all on function private.auto_hide_after_report () from public, anon;
 
 create trigger trg_content_reports_auto_hide
   after insert on public.content_reports
@@ -383,7 +398,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.block_user (uuid) from public;
+revoke execute on function public.block_user (uuid) from public, anon;
 grant  execute on function public.block_user (uuid) to authenticated, service_role;
 
 create or replace function public.unblock_user (p_blocked_id uuid)
@@ -420,7 +435,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.unblock_user (uuid) from public;
+revoke execute on function public.unblock_user (uuid) from public, anon;
 grant  execute on function public.unblock_user (uuid) to authenticated, service_role;
 
 create or replace function public.list_blocked_users ()
@@ -456,7 +471,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.list_blocked_users () from public;
+revoke execute on function public.list_blocked_users () from public, anon;
 grant  execute on function public.list_blocked_users () to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -587,11 +602,12 @@ begin
     'auto_hidden',  v_auto_hidden,
     'report_count', v_count,
     'status',       'open',
-    'group_id',     v_group);
+    'group_id',     v_group,
+    'duplicate',    false);
 end;
 $$;
 
-revoke execute on function public.report_content (text, uuid, text, text, uuid) from public;
+revoke execute on function public.report_content (text, uuid, text, text, uuid) from public, anon;
 grant  execute on function public.report_content (text, uuid, text, text, uuid) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -651,7 +667,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.admin_delete_post (uuid) from public;
+revoke execute on function public.admin_delete_post (uuid) from public, anon;
 grant  execute on function public.admin_delete_post (uuid) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -721,7 +737,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.hide_content (text, uuid, text) from public;
+revoke execute on function public.hide_content (text, uuid, text) from public, anon;
 grant  execute on function public.hide_content (text, uuid, text) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -782,7 +798,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.get_moderation_queue (uuid) from public;
+revoke execute on function public.get_moderation_queue (uuid) from public, anon;
 grant  execute on function public.get_moderation_queue (uuid) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -863,7 +879,7 @@ begin
 end;
 $$;
 
-revoke execute on function public.resolve_report (uuid, text, text) from public;
+revoke execute on function public.resolve_report (uuid, text, text) from public, anon;
 grant  execute on function public.resolve_report (uuid, text, text) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
@@ -919,5 +935,5 @@ begin
 end;
 $$;
 
-revoke execute on function public.get_moderation_actions (uuid) from public;
+revoke execute on function public.get_moderation_actions (uuid) from public, anon;
 grant  execute on function public.get_moderation_actions (uuid) to authenticated, service_role;

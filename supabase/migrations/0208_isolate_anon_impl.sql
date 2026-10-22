@@ -1,4 +1,19 @@
 -- =============================================================================
+-- A10 NOTE (2026-10-22) -- the APPLIED version of this file
+-- =============================================================================
+-- This file was applied to the remote project `khovpljkitslmjmonuzu` as
+--   migration version 20261022025721  ("isolate_anon_impl")
+-- The backend agents ran CONCURRENTLY, so the applied order does NOT follow
+-- the prefix order (the prefix only records the author's ownership range).
+-- The file is therefore NOT renamed -- it is already applied.
+--
+-- A clean replay in FILENAME order is safe: the only two forward references
+-- in the whole chain are `to_regclass`-guarded on purpose
+-- (0305 -> public.feed_posts, 0402 -> public.notification_outbox), so they
+-- no-op until the table exists.
+-- =============================================================================
+
+-- =============================================================================
 -- A3 · 0208 · isolate the anon-facing implementation + close the PUBLIC grants
 -- =============================================================================
 -- The `private` schema is shared with A2 / A4 / A5 / A6. Several of their

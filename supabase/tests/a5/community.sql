@@ -125,7 +125,7 @@ exception
 end;
 $$;
 
-select plan(131);
+select plan(132);
 
 -- ===========================================================================
 -- A. Objects
@@ -702,6 +702,32 @@ select ok (
     else true
   end,
   'emit_prayer_notification: a safe no-op while notification_outbox does not exist');
+
+-- The RPC path (toggle_prayed_for -> emit_prayer_notification) AND A8's
+-- trigger on public.intention_prayers both fire for the same prayer. The
+-- outbox dedupe_key must make them idempotent, otherwise the author of the
+-- intention would receive TWO push notifications.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a5a50000-0000-0000-0000-000000000405","role":"authenticated"}';
+select (public.toggle_prayed_for ('a5a50000-0000-0000-0000-000000000101') ->> 'prayed') as prayed;
+reset role;
+set local request.jwt.claims = '{}';
+
+select ok (
+  case
+    when to_regclass ('public.notification_outbox') is not null
+    then (select count(*) from public.intention_prayers
+           where intention_id = 'a5a50000-0000-0000-0000-000000000101') = 1
+     and (select count(*) from public.notification_outbox o
+           where o.user_id = 'a5a50000-0000-0000-0000-000000000402'
+             and o.notification_type = 'prayed_for_you'
+             and o.dedupe_key in (
+               select 'prayed:' || ip.id::text
+                 from public.intention_prayers ip
+                where ip.intention_id = 'a5a50000-0000-0000-0000-000000000101')) = 1
+    else true
+  end,
+  'the "prayed for you" notification is emitted exactly ONCE per prayer (the RPC path and A8''s trigger are de-duplicated)');
 
 -- ===========================================================================
 -- Verdict
