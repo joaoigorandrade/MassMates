@@ -4,6 +4,7 @@ import SwiftUI
 struct NightlyExamenModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: NightlyExamenViewModel
 
@@ -57,6 +58,7 @@ struct NightlyExamenModalView: View {
                 Capsule()
                     .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
                     .frame(height: 2.5)
+                    .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: viewModel.currentStepIndex)
             }
         }
         .frame(width: 140)
@@ -90,14 +92,19 @@ struct NightlyExamenModalView: View {
 
     @ViewBuilder
     private var activeStepView: some View {
-        switch viewModel.currentStepIndex {
-        case 1, 2:
-            NightlyExamenStepCardsView(viewModel: viewModel)
-        case 3, 4:
-            NightlyExamenReviewAndClosingView(viewModel: viewModel)
-        default:
-            NightlyExamenFooterSectionView(viewModel: viewModel)
+        Group {
+            switch viewModel.currentStepIndex {
+            case 1, 2:
+                NightlyExamenStepCardsView(viewModel: viewModel)
+            case 3, 4:
+                NightlyExamenReviewAndClosingView(viewModel: viewModel)
+            default:
+                NightlyExamenFooterSectionView(viewModel: viewModel)
+            }
         }
+        .id(viewModel.currentStepIndex)
+        .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+        .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: viewModel.currentStepIndex)
     }
 
     private var bottomActionBar: some View {
@@ -139,6 +146,7 @@ struct NightlyExamenModalView: View {
                 Text(viewModel.currentStepIndex == 5 ? "Concluir" : "Próximo")
                 Image(systemName: viewModel.currentStepIndex == 5 ? "checkmark" : "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
             }
             .font(MassMatesFont.headline)
             .foregroundStyle(theme.onTint)

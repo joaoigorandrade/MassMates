@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingFlowView: View {
     // MARK: - Dependencies & State
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable private var viewModel: OnboardingViewModel
 
     // MARK: - Init
@@ -14,7 +15,9 @@ struct OnboardingFlowView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                 stepBody
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             }
+            .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: viewModel.currentStep)
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.bottom, MassMatesSpacing.xl)
             .padding(.top, MassMatesSpacing.xs)

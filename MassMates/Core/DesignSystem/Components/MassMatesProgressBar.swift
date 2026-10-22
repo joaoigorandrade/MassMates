@@ -20,7 +20,10 @@ struct MassMatesProgressBar: View {
                 Capsule()
                     .fill(theme.tint)
                     .frame(width: max(proxy.size.width * progress, progress > 0 ? MassMatesLayout.progressBarHeight : 0))
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: progress)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.8),
+                        value: progress
+                    )
             }
         }
         .frame(height: MassMatesLayout.progressBarHeight)

@@ -32,6 +32,7 @@ struct CheckInCelebrationCardView: View {
             doneButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sensoryFeedback(.success, trigger: showCheckBadge)
         .task { await animateCelebration() }
     }
 
@@ -70,9 +71,11 @@ struct CheckInCelebrationCardView: View {
         VStack(spacing: 2) {
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill").font(.system(size: 20)).foregroundStyle(theme.tint)
+                    .symbolEffect(.bounce, value: showCheckBadge)
                 Text("\(activeStreakDays)")
                     .font(.system(size: 46, weight: .medium, design: .rounded))
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .contentTransition(.numericText())
             }
             Text("dias seguidos")
                 .font(MassMatesFont.caption)
@@ -86,7 +89,7 @@ struct CheckInCelebrationCardView: View {
                 Spacer()
                 Circle().fill(MassMatesPalette.success).frame(width: 28, height: 28)
                     .overlay(Image(systemName: "checkmark").font(.system(size: 13, weight: .bold)).foregroundStyle(.white))
-                    .scaleEffect(showCheckBadge ? 1.0 : 0.001)
+                    .scaleEffect(showCheckBadge ? 1.0 : (reduceMotion ? 1.0 : 0.001))
                     .opacity(showCheckBadge ? 1.0 : 0.0)
             }
             Spacer()
@@ -133,8 +136,8 @@ struct CheckInCelebrationCardView: View {
             showCheckBadge = true
             return
         }
-        withAnimation(.easeOut(duration: 0.8)) { ringProgress = 1.0 }
-        try? await Task.sleep(for: .milliseconds(650))
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) { ringProgress = 1.0 }
+        try? await Task.sleep(for: .milliseconds(450))
         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { showCheckBadge = true }
     }
 }

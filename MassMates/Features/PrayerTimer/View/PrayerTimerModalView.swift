@@ -4,6 +4,7 @@ import SwiftUI
 struct PrayerTimerModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: PrayerTimerViewModel
 
@@ -15,19 +16,16 @@ struct PrayerTimerModalView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: 0) {
-            topBar
-                .padding(.horizontal, MassMatesLayout.screenMargin)
-                .padding(.top, MassMatesSpacing.md)
+            topBar.padding(.horizontal, MassMatesLayout.screenMargin).padding(.top, MassMatesSpacing.md)
             Spacer(minLength: MassMatesSpacing.sm)
             activeModeContent
             Spacer(minLength: MassMatesSpacing.sm)
-            bottomBar
-                .padding(.horizontal, MassMatesLayout.screenMargin)
-                .padding(.bottom, MassMatesSpacing.lg)
+            bottomBar.padding(.horizontal, MassMatesLayout.screenMargin).padding(.bottom, MassMatesSpacing.lg)
         }
         .frame(maxWidth: MassMatesLayout.readingMaxWidth)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: viewModel.mode)
         .sheet(isPresented: $viewModel.isSoundMenuPresented) {
             ambientSoundSheet
                 .presentationDetents([.height(260)])
@@ -71,7 +69,7 @@ struct PrayerTimerModalView: View {
     private func modeSelectorItem(title: String, target: PrayerTimerMode) -> some View {
         let isSelected = viewModel.mode == target
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) { viewModel.mode = target }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { viewModel.mode = target }
         } label: {
             HStack(spacing: 4) {
                 Text(title)
@@ -90,6 +88,7 @@ struct PrayerTimerModalView: View {
             Image(systemName: "waveform")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(viewModel.isSoundMenuPresented ? theme.tint : MassMatesPalette.textSecondary)
+                .symbolEffect(.bounce, value: viewModel.isSoundMenuPresented)
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
@@ -98,10 +97,13 @@ struct PrayerTimerModalView: View {
 
     @ViewBuilder
     private var activeModeContent: some View {
-        switch viewModel.mode {
-        case .mentalPrayer: MentalPrayerSectionView(viewModel: viewModel)
-        case .rosary: RosaryCompanionView(viewModel: viewModel)
+        Group {
+            switch viewModel.mode {
+            case .mentalPrayer: MentalPrayerSectionView(viewModel: viewModel)
+            case .rosary: RosaryCompanionView(viewModel: viewModel)
+            }
         }
+        .transition(reduceMotion ? .opacity : AnyTransition(.blurReplace))
     }
 
     private var bottomBar: some View {
@@ -157,8 +159,7 @@ struct PrayerTimerModalView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(MassMatesLayout.screenMargin)
-        .background(MassMatesPalette.bg.ignoresSafeArea())
+        .padding(MassMatesLayout.screenMargin).background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     private func runCountdownLoop() async {
@@ -171,7 +172,5 @@ struct PrayerTimerModalView: View {
 }
 
 #Preview("Prayer Timer Modal — 5 Seasons (Light / Dark / AX3)") {
-    LiturgicalSeasonPreviewMatrix { _ in
-        PrayerTimerModalView(viewModel: PrayerTimerViewModel())
-    }
+    LiturgicalSeasonPreviewMatrix { _ in PrayerTimerModalView(viewModel: PrayerTimerViewModel()) }
 }

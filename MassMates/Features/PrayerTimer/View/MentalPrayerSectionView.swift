@@ -3,6 +3,7 @@ import SwiftUI
 struct MentalPrayerSectionView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var viewModel: PrayerTimerViewModel
 
     // MARK: - Init
@@ -29,11 +30,12 @@ struct MentalPrayerSectionView: View {
                 .trim(from: 0, to: viewModel.progress)
                 .stroke(theme.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.progress)
             VStack(spacing: MassMatesSpacing.xxs) {
                 Text(viewModel.formattedRemainingTime)
                     .font(MassMatesFont.timerNumeral)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .contentTransition(.numericText())
                 Text("Silêncio interior")
                     .font(MassMatesFont.caption)
                     .tracking(1.4)
@@ -42,6 +44,16 @@ struct MentalPrayerSectionView: View {
             }
         }
         .frame(width: 240, height: 240)
+        .phaseAnimator([0.0, 1.0]) { view, phase in
+            view
+                .scaleEffect(viewModel.isRunning && !reduceMotion ? 1.0 + (0.015 * phase) : 1.0)
+                .shadow(
+                    color: theme.tint.opacity(viewModel.isRunning && !reduceMotion ? 0.18 * phase : 0),
+                    radius: 10 * phase
+                )
+        } animation: { _ in
+            .easeInOut(duration: 2.4)
+        }
     }
 
     private var durationChipsRow: some View {
@@ -84,6 +96,7 @@ struct MentalPrayerSectionView: View {
                 Image(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(theme.onTint)
+                    .contentTransition(.symbolEffect(.replace))
                     .offset(x: viewModel.isRunning ? 0 : 2)
             }
         }

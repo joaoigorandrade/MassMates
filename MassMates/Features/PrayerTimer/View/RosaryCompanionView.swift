@@ -3,6 +3,7 @@ import SwiftUI
 struct RosaryCompanionView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var viewModel: PrayerTimerViewModel
 
     // MARK: - Init
@@ -38,6 +39,8 @@ struct RosaryCompanionView: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .padding(.horizontal, MassMatesSpacing.sm)
+                .id(formattedMysteryTitle)
+                .transition(reduceMotion ? .opacity : AnyTransition(.blurReplace))
             Text(viewModel.currentDecade.fruitOfMystery)
                 .font(MassMatesFont.scriptureEmphasis)
                 .foregroundStyle(MassMatesPalette.textSecondary)
@@ -66,6 +69,7 @@ struct RosaryCompanionView: View {
                     Text("\(viewModel.activeHailMaryNumber)")
                         .font(MassMatesFont.numeral)
                         .foregroundStyle(MassMatesPalette.textPrimary)
+                        .contentTransition(.numericText())
                     Text("/ 10")
                         .font(MassMatesFont.body)
                         .foregroundStyle(MassMatesPalette.textTertiary)
@@ -101,6 +105,12 @@ struct RosaryCompanionView: View {
                     .overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
             }
         }
+        .phaseAnimator([1.0, 1.15]) { view, phase in
+            view.scaleEffect(isCurrent && !reduceMotion ? phase : 1.0)
+        } animation: { _ in
+            .easeInOut(duration: 1.2)
+        }
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7), value: active)
     }
 
     private var beadSubLabel: String {

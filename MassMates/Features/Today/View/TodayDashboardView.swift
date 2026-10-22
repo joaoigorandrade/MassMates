@@ -83,7 +83,7 @@ struct TodayDashboardView: View {
             } label: {
                 ruleOfLifeRing(data: data)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(MassMatesPressableButtonStyle())
             .accessibilityLabel("Regra de Vida: \(data.progress.completedCount) de \(data.progress.totalCount) concluídas")
 
             Button {
@@ -98,7 +98,7 @@ struct TodayDashboardView: View {
                 .padding(.horizontal, MassMatesSpacing.sm)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(MassMatesPressableButtonStyle())
         }
     }
 
@@ -109,11 +109,12 @@ struct TodayDashboardView: View {
                 .trim(from: 0, to: max(0.01, data.progress.ruleCompletionRatio))
                 .stroke(viewModel.currentTheme.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: data.progress.ruleCompletionRatio)
+                .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.85), value: data.progress.ruleCompletionRatio)
             VStack(spacing: 2) {
                 Text("\(data.progress.completedCount)/\(data.progress.totalCount)")
                     .font(.system(size: 36, weight: .medium, design: .rounded))
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .contentTransition(.numericText())
                 Text("Regra de Vida").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
             }
         }

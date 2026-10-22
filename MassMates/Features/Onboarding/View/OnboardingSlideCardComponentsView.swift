@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingPaginationDotsView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let count: Int
     private let currentIndex: Int
     private let onSelectIndex: (Int) -> Void
@@ -21,14 +22,15 @@ struct OnboardingPaginationDotsView: View {
                 Button {
                     onSelectIndex(idx)
                 } label: {
-                    Circle()
+                    Capsule()
                         .fill(idx == currentIndex ? theme.tint : MassMatesPalette.line)
-                        .frame(width: 8, height: 8)
+                        .frame(width: idx == currentIndex ? 20 : 8, height: 8)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Página \(idx + 1) de \(count)")
             }
         }
+        .animation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Passos da introdução")
     }
@@ -38,6 +40,8 @@ struct OnboardingPaginationDotsView: View {
 
 struct OnboardingSacredHeroFrameView: View {
     // MARK: - Dependencies & State
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPulsing: Bool = false
     private let symbol: String
 
     // MARK: - Init
@@ -60,11 +64,19 @@ struct OnboardingSacredHeroFrameView: View {
             Circle()
                 .fill(MassMatesPalette.surfaceMuted.opacity(0.6))
                 .frame(width: 64, height: 64)
+                .scaleEffect(isPulsing && !reduceMotion ? 1.06 : 1.0)
             Image(systemName: symbol)
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .scaleEffect(isPulsing && !reduceMotion ? 1.04 : 1.0)
         }
         .frame(width: 64, height: 64)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        }
         .accessibilityHidden(true)
     }
 

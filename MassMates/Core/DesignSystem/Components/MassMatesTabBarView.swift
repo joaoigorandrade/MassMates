@@ -7,6 +7,7 @@ struct MassMatesTabBarView: View {
     private let onCenterAction: () -> Void
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Init
     init(
@@ -25,6 +26,7 @@ struct MassMatesTabBarView: View {
             centerActionButton
             tabItemView(tab: .myPath, title: "Meu Caminho", icon: "person.crop.circle")
         }
+        .sensoryFeedback(.selection, trigger: tabNavigator.selectedTab)
         .frame(height: 56)
         .padding(.horizontal, MassMatesSpacing.xs)
         .background(barBackground.ignoresSafeArea(edges: .bottom))
@@ -51,6 +53,8 @@ struct MassMatesTabBarView: View {
             VStack(spacing: 3) {
                 Image(systemName: iconName)
                     .font(.system(size: 20, weight: isSelected ? .semibold : .regular))
+                    .symbolEffect(.bounce, value: reduceMotion ? false : isSelected)
+                    .contentTransition(.symbolEffect(.replace))
                 Text(title)
                     .font(MassMatesFont.caption)
                     .fontWeight(isSelected ? .semibold : .regular)
@@ -89,7 +93,7 @@ struct MassMatesTabBarView: View {
                     y: 4
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
         .frame(maxWidth: .infinity)
         .offset(y: -14)
         .accessibilityLabel("Novo check-in espiritual")

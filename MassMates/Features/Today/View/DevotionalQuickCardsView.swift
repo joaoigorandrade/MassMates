@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DevotionalQuickCardsView: View {
     // MARK: - Dependencies & State
+    @State private var feedbackTrigger = false
     private let reading: DailyLiturgicalReading
     private let onOpenGospel: () -> Void
     private let onOpenTimer: (PrayerTimerMode) -> Void
@@ -27,22 +28,27 @@ struct DevotionalQuickCardsView: View {
             hairlineDivider
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
+        .sensoryFeedback(.impact(weight: .light), trigger: feedbackTrigger)
     }
 
     // MARK: - Subviews / Private Helpers
     private var gospelRow: some View {
-        Button(action: onOpenGospel) {
+        Button {
+            feedbackTrigger.toggle()
+            onOpenGospel()
+        } label: {
             devotionalRow(
                 title: "Evangelho do dia",
                 subtitle: gospelSubtitle
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityLabel("Evangelho do dia, \(gospelSubtitle)")
     }
 
     private var prayerAndRosaryRow: some View {
         Button {
+            feedbackTrigger.toggle()
             onOpenTimer(.rosary)
         } label: {
             devotionalRow(
@@ -50,7 +56,7 @@ struct DevotionalQuickCardsView: View {
                 subtitle: nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityLabel("Oração & Terço")
     }
 

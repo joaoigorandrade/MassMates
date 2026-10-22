@@ -41,7 +41,10 @@ struct StreakRingView: View {
                 style: StrokeStyle(lineWidth: MassMatesLayout.streakRingStroke, lineCap: .round)
             )
             .rotationEffect(.degrees(-90))
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: progress)
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.85),
+                value: progress
+            )
     }
 
     private var centerContent: some View {
@@ -49,9 +52,11 @@ struct StreakRingView: View {
             Image(systemName: "flame.fill")
                 .font(.system(size: flameSize))
                 .foregroundStyle(flameColor)
+                .symbolEffect(.bounce, value: reduceMotion ? 0 : streakDays)
             Text("\(streakDays)")
                 .font(numeralFont)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .contentTransition(.numericText())
         }
     }
 

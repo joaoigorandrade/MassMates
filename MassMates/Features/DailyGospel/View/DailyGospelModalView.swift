@@ -4,6 +4,7 @@ import SwiftUI
 struct DailyGospelModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: DailyGospelViewModel
     @State private var isShowingLectio = false
@@ -18,19 +19,28 @@ struct DailyGospelModalView: View {
         VStack(spacing: 0) {
             if isShowingLectio {
                 lectioView
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             } else {
-                DailyGospelSubHeaderView(viewModel: viewModel) {
-                    navigator?.dismiss()
-                }
                 pagedReadingView
-                bottomBar
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .leading), removal: .push(from: .trailing)))
             }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
+        .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: isShowingLectio)
     }
 
     // MARK: - Subviews / Private Helpers
     private var pagedReadingView: some View {
+        VStack(spacing: 0) {
+            DailyGospelSubHeaderView(viewModel: viewModel) {
+                navigator?.dismiss()
+            }
+            readingTabView
+            bottomBar
+        }
+    }
+
+    private var readingTabView: some View {
         TabView(selection: $viewModel.selectedSection) {
             ForEach(DailyReadingSection.allCases) { section in
                 ScrollView(showsIndicators: false) {
@@ -112,37 +122,48 @@ struct DailyGospelModalView: View {
 
     private var bottomBar: some View {
         HStack {
-            HStack(spacing: MassMatesSpacing.xs) {
-                ForEach(DailyReadingSection.allCases) { section in
-                    let isCurrent = viewModel.selectedSection == section
-                    Capsule()
-                        .fill(isCurrent ? theme.tint : MassMatesPalette.line)
-                        .frame(width: isCurrent ? 18 : 6, height: 6)
-                        .animation(.easeInOut(duration: 0.2), value: viewModel.selectedSection)
-                }
-            }
+            pageIndicators
             Spacer()
-            Button {
-                withAnimation(.easeInOut(duration: 0.25)) { isShowingLectio = true }
-            } label: {
-                HStack(spacing: MassMatesSpacing.xxs) {
-                    Text("Lectio Divina")
-                    Text("→")
-                }
-                .font(MassMatesFont.callout)
-                .fontWeight(.medium)
-                .foregroundStyle(theme.tint)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
+            lectioButton
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .frame(height: MassMatesLayout.minRowHeight)
     }
 
+    private var pageIndicators: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(DailyReadingSection.allCases) { section in
+                let isCurrent = viewModel.selectedSection == section
+                Capsule()
+                    .fill(isCurrent ? theme.tint : MassMatesPalette.line)
+                    .frame(width: isCurrent ? 18 : 6, height: 6)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75),
+                        value: viewModel.selectedSection
+                    )
+            }
+        }
+    }
+
+    private var lectioButton: some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) { isShowingLectio = true }
+        } label: {
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Text("Lectio Divina")
+                Text("→")
+            }
+            .font(MassMatesFont.callout)
+            .fontWeight(.medium)
+            .foregroundStyle(theme.tint)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+        }
+        .buttonStyle(MassMatesPressableButtonStyle())
+    }
+
     private var lectioView: some View {
         LectioDivinaAccordionSectionView(viewModel: viewModel) {
-            withAnimation(.easeInOut(duration: 0.25)) { isShowingLectio = false }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) { isShowingLectio = false }
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupFeedPostCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let post: GroupFeedPost
     private let comments: [GroupFeedComment]
     private let showsComments: Bool
@@ -65,6 +66,7 @@ struct GroupFeedPostCardView: View {
                         onSubmitComment: onSubmitComment, onDeleteComment: onDeleteComment,
                         onComposerFocus: onComposerFocus
                     )
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98, anchor: .top)))
                 }
             }
         }
@@ -78,12 +80,8 @@ struct GroupFeedPostCardView: View {
         HStack(spacing: MassMatesSpacing.xs) {
             avatarView
             VStack(alignment: .leading, spacing: 2) {
-                Text(post.authorName)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text(post.relativeTimeLabel)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                Text(post.authorName).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Text(post.relativeTimeLabel).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             }
             Spacer()
             practiceChip
@@ -155,7 +153,7 @@ struct GroupFeedPostCardView: View {
     }
 
     private func toggleCommentsDrawer() {
-        withAnimation(.easeInOut(duration: 0.2)) { isDrawerExpanded.toggle() }
+        withAnimation(reduceMotion ? .none : .snappy(duration: 0.25)) { isDrawerExpanded.toggle() }
         if isDrawerExpanded { onComposerFocus() }
     }
 }

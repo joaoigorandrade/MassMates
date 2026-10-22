@@ -3,6 +3,7 @@ import SwiftUI
 struct GroupIdentityBannerView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hasCopiedInviteCode: Bool = false
     private let group: CommunityGroup
     private let scoringMode: GroupScoringMode
@@ -60,6 +61,7 @@ struct GroupIdentityBannerView: View {
             HStack(spacing: MassMatesSpacing.xxs) {
                 Image(systemName: hasCopiedInviteCode ? "checkmark" : "key.fill")
                     .font(.system(size: 9, weight: .semibold))
+                    .symbolEffect(.bounce, value: hasCopiedInviteCode)
                 Text(hasCopiedInviteCode ? "Copiado" : group.inviteCode)
                     .font(MassMatesFont.caption)
             }
@@ -73,6 +75,7 @@ struct GroupIdentityBannerView: View {
             )
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: hasCopiedInviteCode)
         .accessibilityLabel("Código de convite: \(group.inviteCode)")
     }
 
@@ -92,6 +95,7 @@ struct GroupIdentityBannerView: View {
                 }
             }
         }
+        .animation(reduceMotion ? .none : .snappy(duration: 0.2), value: selectedSubTab)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(MassMatesPalette.line)
@@ -102,7 +106,7 @@ struct GroupIdentityBannerView: View {
     private func tabButton(_ tab: GroupDetailSubTab) -> some View {
         let isSelected = selectedSubTab == tab
         return Button {
-            withAnimation(.snappy(duration: 0.2)) {
+            withAnimation(reduceMotion ? .none : .snappy(duration: 0.2)) {
                 onSelectSubTab(tab)
             }
         } label: {

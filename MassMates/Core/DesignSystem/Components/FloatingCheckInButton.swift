@@ -4,6 +4,7 @@ struct FloatingCheckInButton: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @State private var tapTrigger = false
     private let action: () -> Void
 
     // MARK: - Init
@@ -13,7 +14,10 @@ struct FloatingCheckInButton: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        Button(action: action) {
+        Button {
+            tapTrigger.toggle()
+            action()
+        } label: {
             Image(systemName: "plus")
                 .font(MassMatesFont.title)
                 .foregroundStyle(theme.onTint)
@@ -31,7 +35,8 @@ struct FloatingCheckInButton: View {
                     y: 6
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
+        .sensoryFeedback(.impact(weight: .light), trigger: tapTrigger)
         .accessibilityLabel("Novo check-in espiritual")
     }
 

@@ -4,6 +4,7 @@ import SwiftUI
 struct LectioDivinaAccordionSectionView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable var viewModel: DailyGospelViewModel
     var onDismiss: (() -> Void)?
@@ -80,32 +81,41 @@ struct LectioDivinaAccordionSectionView: View {
         let isExpanded = step.map { viewModel.isStepExpanded($0) } ?? false
         return Button {
             if let step {
-                withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectLectioStep(step) }
+                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                    viewModel.selectLectioStep(step)
+                }
             }
         } label: {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-                HStack(alignment: .firstTextBaseline, spacing: MassMatesSpacing.xs) {
-                    Text("\(index)")
-                        .font(MassMatesFont.callout)
-                        .fontWeight(.medium)
-                        .foregroundStyle(theme.tint)
-                        .frame(width: 20, alignment: .leading)
-                    Text(item.stage)
-                        .font(MassMatesFont.scriptureEmphasis)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text("—")
-                        .font(MassMatesFont.scripture)
-                        .foregroundStyle(MassMatesPalette.textTertiary)
-                    Text(item.prompt)
-                        .font(MassMatesFont.scripture)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                stepHeader(index: index, item: item)
+                if isExpanded, let step {
+                    stepGuidanceCard(for: step)
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
                 }
-                if isExpanded, let step { stepGuidanceCard(for: step) }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func stepHeader(index: Int, item: (stage: String, prompt: String)) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: MassMatesSpacing.xs) {
+            Text("\(index)")
+                .font(MassMatesFont.callout)
+                .fontWeight(.medium)
+                .foregroundStyle(theme.tint)
+                .frame(width: 20, alignment: .leading)
+            Text(item.stage)
+                .font(MassMatesFont.scriptureEmphasis)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+            Text("—")
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+            Text(item.prompt)
+                .font(MassMatesFont.scripture)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func stepGuidanceCard(for step: LectioDivinaStep) -> some View {

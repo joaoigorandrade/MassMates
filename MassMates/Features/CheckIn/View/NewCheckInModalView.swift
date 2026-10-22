@@ -1,14 +1,12 @@
 import Navigation
 import SwiftUI
 
-enum CheckInWizardStep: Equatable {
-    case practice
-    case fruitAndDestination
-}
+enum CheckInWizardStep: Equatable { case practice, fruitAndDestination }
 
 struct NewCheckInModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator private var navigator: Navigator<AppRoute>?
     @Bindable private var viewModel: NewCheckInViewModel
     @State private var currentStep: CheckInWizardStep = .practice
@@ -25,15 +23,17 @@ struct NewCheckInModalView: View {
         VStack(spacing: 0) {
             Capsule().fill(MassMatesPalette.line).frame(width: 36, height: 4).padding(.vertical, 8)
             if let result = viewModel.submissionResult {
-                CheckInCelebrationCardView(result: result, activeStreakDays: activeStreakDays) {
-                    navigator?.dismiss()
-                }
+                CheckInCelebrationCardView(result: result, activeStreakDays: activeStreakDays) { navigator?.dismiss() }
             } else if currentStep == .practice {
                 practiceStep
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             } else {
                 fruitAndDestinationStep
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             }
         }
+        .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: currentStep)
+        .sensoryFeedback(.selection, trigger: viewModel.selectedPractice)
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .padding(.bottom, MassMatesSpacing.md)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -63,8 +63,8 @@ struct NewCheckInModalView: View {
                 availableGroups: viewModel.availableGroups,
                 selectedGroupIds: viewModel.selectedGroupIds,
                 activeStreakDays: activeStreakDays,
-                onSelectMode: { mode in viewModel.selectDestinationMode(mode) },
-                onToggleGroup: { id in viewModel.toggleGroupSelection(id) }
+                onSelectMode: { viewModel.selectDestinationMode($0) },
+                onToggleGroup: { viewModel.toggleGroupSelection($0) }
             )
             Spacer()
             confirmActionSection
@@ -76,9 +76,7 @@ struct NewCheckInModalView: View {
             columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
             spacing: 10
         ) {
-            ForEach(SpiritualPractice.allCases) { practice in
-                practiceTile(practice)
-            }
+            ForEach(SpiritualPractice.allCases) { practiceTile($0) }
         }
     }
 
@@ -89,6 +87,7 @@ struct NewCheckInModalView: View {
                 HStack {
                     Image(systemName: practice.checkInIconName).font(.system(size: 18))
                         .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
+                        .symbolEffect(.bounce, value: isSelected)
                     Spacer()
                     if isSelected {
                         Circle().fill(theme.tint).frame(width: 8, height: 8)
@@ -104,6 +103,8 @@ struct NewCheckInModalView: View {
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button)
                 .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 1.5 : 1))
+            .scaleEffect(isSelected && !reduceMotion ? 1.02 : 1.0)
+            .animation(reduceMotion ? .none : .snappy(duration: 0.2), value: isSelected)
         }
         .buttonStyle(.plain)
     }
@@ -111,7 +112,9 @@ struct NewCheckInModalView: View {
     private func stepTopBar(stepText: String, showBack: Bool) -> some View {
         HStack {
             if showBack {
-                Button { currentStep = .practice } label: {
+                Button {
+                    withAnimation(reduceMotion ? .none : .snappy(duration: 0.28)) { currentStep = .practice }
+                } label: {
                     Image(systemName: "chevron.left").font(MassMatesFont.caption.weight(.semibold))
                         .foregroundStyle(MassMatesPalette.textSecondary).frame(width: 32, height: 32)
                 }
@@ -130,15 +133,15 @@ struct NewCheckInModalView: View {
     private func titleHeader(_ title: String, subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.system(size: 24, weight: .semibold, design: .serif)).foregroundStyle(MassMatesPalette.textPrimary)
-            if let subtitle {
-                Text(subtitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
-            }
+            if let subtitle { Text(subtitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary) }
         }
     }
 
     private var continueActionSection: some View {
         VStack(spacing: 6) {
-            Button { currentStep = .fruitAndDestination } label: {
+            Button {
+                withAnimation(reduceMotion ? .none : .snappy(duration: 0.28)) { currentStep = .fruitAndDestination }
+            } label: {
                 Text("Continuar").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
                     .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                     .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
@@ -169,7 +172,5 @@ struct NewCheckInModalView: View {
 }
 
 #Preview("New Check-In Modal — 5 Seasons (Light / Dark / AX3)") {
-    LiturgicalSeasonPreviewMatrix { _ in
-        NewCheckInModalView(viewModel: NewCheckInViewModel())
-    }
+    LiturgicalSeasonPreviewMatrix { _ in NewCheckInModalView(viewModel: NewCheckInViewModel()) }
 }

@@ -1,5 +1,20 @@
 import SwiftUI
 
+struct MassMatesPressableButtonStyle: ButtonStyle {
+    // MARK: - Dependencies & State
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // MARK: - Body / Public API
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.975 : 1.0)
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.7),
+                value: configuration.isPressed
+            )
+    }
+}
+
 struct MassMatesPrimaryButton: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
@@ -29,7 +44,7 @@ struct MassMatesPrimaryButton: View {
                 .background(theme.tint)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
     }
 
     // MARK: - Subviews / Private Helpers
@@ -71,7 +86,7 @@ struct MassMatesSecondaryButton: View {
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
     }
 
     // MARK: - Subviews / Private Helpers

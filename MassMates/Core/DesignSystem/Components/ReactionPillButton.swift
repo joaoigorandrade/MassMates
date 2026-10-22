@@ -34,13 +34,18 @@ struct ReactionPillButton: View {
                 .background(isActive ? theme.tintSoft : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .overlay(borderOverlay)
-                .scaleEffect(isActive && !reduceMotion ? 1.04 : 1.0)
+                .phaseAnimator([false, true], trigger: isActive) { content, phase in
+                    content.scaleEffect(phase && !reduceMotion ? 1.08 : 1.0)
+                } animation: { _ in
+                    reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.65)
+                }
                 .animation(
                     reduceMotion ? nil : .easeInOut(duration: 0.2),
                     value: isActive
                 )
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: isActive)
         .accessibilityLabel("\(title), \(count)")
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
@@ -51,6 +56,7 @@ struct ReactionPillButton: View {
             Image(systemName: systemImage)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(isActive ? theme.tint : MassMatesPalette.textSecondary)
+                .symbolEffect(.bounce, value: reduceMotion ? false : isActive)
             Text(title)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(isActive ? theme.tint : MassMatesPalette.textPrimary)
@@ -58,6 +64,7 @@ struct ReactionPillButton: View {
                 Text("\(count)")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(isActive ? theme.tint : MassMatesPalette.textSecondary)
+                    .contentTransition(.numericText())
             }
         }
     }

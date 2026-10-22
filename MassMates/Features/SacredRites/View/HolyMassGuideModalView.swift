@@ -4,6 +4,7 @@ import SwiftUI
 struct HolyMassGuideModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: HolyMassGuideViewModel
 
@@ -70,6 +71,7 @@ struct HolyMassGuideModalView: View {
             Image(systemName: viewModel.isSilentModeActive ? "bell.slash" : "bell")
                 .font(.system(size: 15))
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .symbolEffect(.bounce, value: viewModel.isSilentModeActive)
                 .frame(width: 36, height: 36)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.circle)
@@ -100,12 +102,17 @@ struct HolyMassGuideModalView: View {
 
     @ViewBuilder
     private var selectedRiteContent: some View {
-        switch viewModel.selectedSection {
-        case .initialRites: HolyMassInitialRitesView()
-        case .liturgyOfTheWord: HolyMassWordRitesView()
-        case .eucharisticLiturgy: HolyMassEucharisticAndFinalRitesView()
-        case .communionAndFinalRites: HolyMassCommunionAndFinalRitesView()
+        Group {
+            switch viewModel.selectedSection {
+            case .initialRites: HolyMassInitialRitesView()
+            case .liturgyOfTheWord: HolyMassWordRitesView()
+            case .eucharisticLiturgy: HolyMassEucharisticAndFinalRitesView()
+            case .communionAndFinalRites: HolyMassCommunionAndFinalRitesView()
+            }
         }
+        .id(viewModel.selectedSection)
+        .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+        .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: viewModel.selectedSection)
     }
 
     private var dockedBottomNavigation: some View {
@@ -131,7 +138,7 @@ struct HolyMassGuideModalView: View {
 
     private var previousRiteButton: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) { viewModel.goToPreviousSection() }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { viewModel.goToPreviousSection() }
         } label: {
             Text("← Anterior")
                 .font(MassMatesFont.headline).fontWeight(.regular).foregroundStyle(MassMatesPalette.textSecondary)
@@ -145,13 +152,15 @@ struct HolyMassGuideModalView: View {
     private var nextRiteButton: some View {
         Button {
             if viewModel.canGoToNextSection {
-                withAnimation(.easeInOut(duration: 0.2)) { viewModel.goToNextSection() }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { viewModel.goToNextSection() }
             } else {
                 viewModel.celebrateMassCheckIn()
             }
         } label: {
             Text(viewModel.canGoToNextSection ? "Próximo →" : viewModel.registerMassButtonTitle)
                 .font(MassMatesFont.headline).foregroundStyle(theme.onTint)
+                .id(viewModel.canGoToNextSection)
+                .transition(reduceMotion ? .opacity : AnyTransition(.blurReplace))
                 .padding(.horizontal, MassMatesSpacing.lg).frame(height: 50)
                 .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }

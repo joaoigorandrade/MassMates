@@ -3,6 +3,7 @@ import SwiftUI
 struct TodayHeaderView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let seasonTitle: String
     private let saintOrFeast: String
     private let streakDays: Int
@@ -66,6 +67,7 @@ struct TodayHeaderView: View {
                 Circle()
                     .fill(theme.tint)
                     .frame(width: 6, height: 6)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: theme.season)
                 Text(seasonPillText)
                     .font(.system(size: 11, weight: .medium))
                     .tracking(0.6)
@@ -83,6 +85,7 @@ struct TodayHeaderView: View {
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+                .contentTransition(reduceMotion ? .identity : .opacity)
             Spacer(minLength: MassMatesSpacing.sm)
             streakCounterButton
         }
@@ -96,12 +99,14 @@ struct TodayHeaderView: View {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 18))
                     .foregroundStyle(theme.tint)
+                    .symbolEffect(.bounce, value: streakDays)
                 Text("\(streakDays)")
                     .font(MassMatesFont.numeral)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .contentTransition(.numericText())
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(streakDays) dias em oração")
     }
