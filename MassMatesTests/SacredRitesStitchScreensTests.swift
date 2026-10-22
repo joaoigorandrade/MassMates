@@ -121,4 +121,41 @@ struct SacredRitesStitchScreensTests {
         #expect(vm.homilyNoteText.isEmpty)
         #expect(vm.diarySavedMessage != nil)
     }
+
+    // MARK: - CheckInEngine & SpiritualDiary Integration Tests
+
+    @Test("Holy Mass Guide saves homily note to CheckInEngine and SpiritualDiary")
+    func holyMassGuideSavesToDiary() {
+        let engine = LocalCheckInEngineService()
+        let vm = HolyMassGuideViewModel(checkInEngine: engine)
+        vm.homilyNoteText = "Coração manso e humilde"
+        vm.saveDiaryNote()
+        let entries = engine.privateDiaryEntries()
+        #expect(entries.count == 1)
+        #expect(entries.first?.practice == .holyMass)
+        #expect(entries.first?.reflectionOrNotes == "Coração manso e humilde")
+    }
+
+    @Test("Confession Prep completion submits private check-in to SpiritualDiary")
+    func confessionPrepSavesToDiary() {
+        let engine = LocalCheckInEngineService()
+        let vm = ConfessionPrepViewModel(checkInEngine: engine)
+        vm.completeSacramentAndDestroyNotes(penanceNotes: "Rezar o Terço da Misericórdia")
+        let entries = engine.privateDiaryEntries()
+        #expect(entries.count == 1)
+        #expect(entries.first?.practice == .confession)
+        #expect(entries.first?.confessorOrPenanceNotes == "Rezar o Terço da Misericórdia")
+    }
+
+    @Test("Nightly Examen saves reflection to CheckInEngine and SpiritualDiary")
+    func nightlyExamenSavesToDiary() {
+        let engine = LocalCheckInEngineService()
+        let vm = NightlyExamenViewModel(checkInEngine: engine)
+        vm.gratitudeJournalText = "Paz na família"
+        vm.saveToPrivateJournal()
+        let entries = engine.privateDiaryEntries()
+        #expect(entries.count == 1)
+        #expect(entries.first?.practice == .confession)
+        #expect(entries.first?.reflectionOrNotes?.contains("Paz na família") == true)
+    }
 }

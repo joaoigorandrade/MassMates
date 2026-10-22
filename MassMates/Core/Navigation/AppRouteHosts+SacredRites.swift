@@ -8,6 +8,7 @@ enum SacredRiteKind: Sendable, Equatable {
 
 struct SacredRiteRouteHostView: View {
     // MARK: - Dependencies & State
+    @Environment(\.sharedCheckInEngine) private var checkInEngine
     private let kind: SacredRiteKind
     private let season: LiturgicalColor
 
@@ -27,10 +28,20 @@ struct SacredRiteRouteHostView: View {
     // MARK: - Subviews / Private Helpers
     @ViewBuilder
     private var content: some View {
+        let engine = checkInEngine ?? LocalCheckInEngineService()
         switch kind {
-        case .nightlyExamen: NightlyExamenModalView()
-        case .confessionPreparation: ConfessionPreparationModalView()
-        case .holyMassGuide: HolyMassGuideModalView()
+        case .nightlyExamen:
+            NightlyExamenModalView(
+                viewModel: NightlyExamenViewModel(checkInEngine: engine)
+            )
+        case .confessionPreparation:
+            ConfessionPreparationModalView(
+                viewModel: ConfessionPrepViewModel(checkInEngine: engine)
+            )
+        case .holyMassGuide:
+            HolyMassGuideModalView(
+                viewModel: HolyMassGuideViewModel(checkInEngine: engine)
+            )
         }
     }
 }

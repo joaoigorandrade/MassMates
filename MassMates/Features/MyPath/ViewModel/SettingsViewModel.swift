@@ -7,6 +7,7 @@ final class SettingsViewModel {
     // MARK: - Dependencies & State
     private let settingsService: any SettingsAndRemindersManaging
     private let milestonesService: any ProfileMilestonesManaging
+    private let notificationService: any LiturgicalNotificationScheduling
     private let onOpenDiaryBackupCallback: @MainActor () -> Void
 
     private(set) var reminders: [LiturgicalReminderItem] = []
@@ -21,6 +22,7 @@ final class SettingsViewModel {
     init(
         settingsService: any SettingsAndRemindersManaging = LocalMyPathService(),
         milestonesService: (any ProfileMilestonesManaging)? = nil,
+        notificationService: any LiturgicalNotificationScheduling = LocalLiturgicalNotificationService(),
         onOpenDiaryBackup: @escaping @MainActor () -> Void = {}
     ) {
         let resolvedMilestones = milestonesService
@@ -28,6 +30,7 @@ final class SettingsViewModel {
             ?? LocalMyPathService()
         self.settingsService = settingsService
         self.milestonesService = resolvedMilestones
+        self.notificationService = notificationService
         self.onOpenDiaryBackupCallback = onOpenDiaryBackup
         self.reminders = settingsService.reminders()
         self.selectedLanguage = settingsService.selectedLanguage()
@@ -40,6 +43,11 @@ final class SettingsViewModel {
     // MARK: - Body / Public API
     func toggleReminder(_ id: String) {
         reminders = settingsService.toggleReminder(id)
+        if let toggled = reminders.first(where: { $0.id == id }) {
+            Task {
+                await notificationService.syncReminderSchedule(toggled)
+            }
+        }
     }
 
     func selectLanguage(_ language: AppLanguage) {

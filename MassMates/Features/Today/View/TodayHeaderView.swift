@@ -100,7 +100,7 @@ struct TodayHeaderView: View {
             HStack(spacing: MassMatesSpacing.sm) {
                 StreakRingView(
                     streakDays: progress.activeStreakDays,
-                    progress: max(progress.ruleCompletionRatio, 0.8),
+                    progress: progress.ruleCompletionRatio,
                     size: 64
                 )
                 streakCopyStack

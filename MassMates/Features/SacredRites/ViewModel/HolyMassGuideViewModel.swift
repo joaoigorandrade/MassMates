@@ -5,6 +5,8 @@ import Observation
 @Observable
 final class HolyMassGuideViewModel {
     // MARK: - Dependencies & State
+    private let checkInEngine: (any CheckInSubmitting)?
+    private let onSaveHomilyFruit: (@MainActor (String) -> Void)?
     var selectedSection: HolyMassRiteSection
     var isSilentModeActive: Bool
     var isMassCheckedIn: Bool
@@ -14,12 +16,16 @@ final class HolyMassGuideViewModel {
 
     // MARK: - Init
     init(
+        checkInEngine: (any CheckInSubmitting)? = nil,
+        onSaveHomilyFruit: (@MainActor (String) -> Void)? = nil,
         selectedSection: HolyMassRiteSection = .initialRites,
         isSilentModeActive: Bool = true,
         isMassCheckedIn: Bool = false,
         isHomilyDiaryExpanded: Bool = false,
         homilyNoteText: String = ""
     ) {
+        self.checkInEngine = checkInEngine
+        self.onSaveHomilyFruit = onSaveHomilyFruit
         self.selectedSection = selectedSection
         self.isSilentModeActive = isSilentModeActive
         self.isMassCheckedIn = isMassCheckedIn
@@ -57,9 +63,23 @@ final class HolyMassGuideViewModel {
         isHomilyDiaryExpanded.toggle()
     }
 
-    func saveDiaryNote() {
+    func saveDiaryNote(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) {
         let trimmed = homilyNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        let targetEngine = overrideEngine ?? self.checkInEngine
+        if let targetEngine {
+            let draft = CheckInSubmissionDraft(
+                practice: .holyMass,
+                fruitOfPrayer: trimmed,
+                destinationMode: .privateDiaryOnly
+            )
+            do {
+                _ = try targetEngine.submitCheckIn(draft, at: Date())
+            } catch {
+                diarySavedMessage = error.userMessage
+            }
+        }
+        onSaveHomilyFruit?(trimmed)
         homilyNoteText = ""
         isHomilyDiaryExpanded = false
         diarySavedMessage = "Sua reflexão foi guardada sob o sigilo do seu Diário Espiritual."

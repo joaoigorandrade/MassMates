@@ -87,8 +87,8 @@ struct GuardianAngelCardView: View {
                     .foregroundStyle(MassMatesPalette.textPrimary)
             }
             personalIntentionBox
-            if state.isCycleRevealed, let revealed = state.anonymousNudgeStatusText {
-                Text(revealed)
+            if let nudge = state.anonymousNudgeStatusText {
+                Text(nudge)
                     .font(MassMatesFont.caption)
                     .foregroundStyle(theme.tint)
             }

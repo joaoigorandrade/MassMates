@@ -17,7 +17,11 @@ struct RosaryCompanionView: View {
             mysteryMeditationCard
             tactileBeadCounterCard
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.lastHapticEvent)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: viewModel.advanceBead)
+        .sensoryFeedback(trigger: viewModel.lastHapticEvent) { _, new in
+            sensoryFeedback(for: new)
+        }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -40,9 +44,7 @@ struct RosaryCompanionView: View {
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textTertiary)
                 }
-                Text(viewModel.mysterySet.title)
-                    .font(MassMatesFont.title)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text(viewModel.mysterySet.title).font(MassMatesFont.title).foregroundStyle(MassMatesPalette.textPrimary)
                 Text(viewModel.mysterySet.descriptionText)
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
@@ -56,17 +58,13 @@ struct RosaryCompanionView: View {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
                 HStack {
                     Text("\(viewModel.currentDecade.number)º MISTÉRIO")
-                        .font(MassMatesFont.caption)
-                        .tracking(0.6)
-                        .foregroundStyle(theme.tint)
+                        .font(MassMatesFont.caption).tracking(0.6).foregroundStyle(theme.tint)
                     Spacer()
                     Text("Dezena \(viewModel.currentDecade.number) de 5")
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textTertiary)
+                        .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
                 }
                 Text(viewModel.currentDecade.title)
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 meditationQuoteBox
             }
@@ -76,14 +74,12 @@ struct RosaryCompanionView: View {
     private var meditationQuoteBox: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Text(viewModel.currentDecade.meditation)
-                .font(MassMatesFont.scriptureEmphasis)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+                .font(MassMatesFont.scriptureEmphasis).foregroundStyle(MassMatesPalette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Text("— \(viewModel.currentDecade.scriptureReference)")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             }
         }
         .padding(MassMatesSpacing.sm)
@@ -101,9 +97,8 @@ struct RosaryCompanionView: View {
                 }
                 beadVisualTrack
                 blindTouchAdvanceButton
-                Text("Com resposta tátil háptica para rezar de olhos fechados.")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                Text("Toque em qualquer lugar da tela com os olhos fechados.")
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
                     .multilineTextAlignment(.center)
             }
         }
@@ -137,9 +132,7 @@ struct RosaryCompanionView: View {
             }
         }
         .overlay {
-            if isCurrent {
-                Circle().stroke(theme.tintSoft, lineWidth: 4).frame(width: 32, height: 32)
-            }
+            if isCurrent { Circle().stroke(theme.tintSoft, lineWidth: 4).frame(width: 32, height: 32) }
         }
     }
 
@@ -157,7 +150,17 @@ struct RosaryCompanionView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Contador tátil do terço: \(viewModel.currentBeadLabel)")
-        .accessibilityHint("Toque duas vezes para avançar para a próxima conta")
+        .accessibilityHint("Toque em qualquer lugar da tela para avançar")
+    }
+
+    private func sensoryFeedback(for event: BeadHapticEvent) -> SensoryFeedback? {
+        switch event {
+        case .ourFather: .impact(weight: .heavy)
+        case .hailMary: .impact(weight: .light)
+        case .decadeCompleted: .impact(weight: .medium)
+        case .rosaryCompleted: .success
+        case .none: nil
+        }
     }
 }
 

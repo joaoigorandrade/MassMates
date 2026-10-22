@@ -122,6 +122,7 @@ struct DailyGospelModalView: View {
                 systemImage: viewModel.hasCompletedFruitRegistration ? "checkmark" : "checkmark.circle"
             ) {
                 viewModel.completeAndReflect()
+                navigator?.present(.newCheckIn(preselectedPractice: .dailyGospel, season: theme.season))
             }
             Text("Marca a prática na sua Regra de Vida e abre o registro de fruto.")
                 .font(MassMatesFont.caption)

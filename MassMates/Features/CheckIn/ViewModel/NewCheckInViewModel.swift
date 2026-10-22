@@ -14,6 +14,7 @@ final class NewCheckInViewModel {
     var fruitOfPrayer: String = ""
     var photoCaption: String = ""
     var confessorOrPenanceNotes: String = ""
+    var selectedPhotoData: Data? = nil
     private(set) var destinationMode: CheckInDestinationMode
     private(set) var selectedGroupIds: Set<String>
     private(set) var submissionResult: CheckInSubmissionResult?
@@ -88,7 +89,8 @@ final class NewCheckInViewModel {
             photoCaption: photoCaption,
             confessorOrPenanceNotes: confessorOrPenanceNotes,
             destinationMode: destinationMode,
-            selectedGroupIds: selectedGroupIds
+            selectedGroupIds: selectedGroupIds,
+            photoData: selectedPhotoData
         )
         do {
             let result = try checkInService.submitCheckIn(draft, at: timestamp)

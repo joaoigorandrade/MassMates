@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 @MainActor
 protocol OnboardingStateReading {
@@ -15,6 +16,7 @@ protocol OnboardingCompleting {
 }
 
 @MainActor
+@Observable
 final class LocalOnboardingService: OnboardingStateReading, OnboardingCompleting {
     // MARK: - Dependencies & State
     private let ruleOfLifeUpdating: (any RuleOfLifeUpdating)?

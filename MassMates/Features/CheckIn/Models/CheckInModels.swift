@@ -36,6 +36,7 @@ struct CheckInSubmissionDraft: Sendable, Equatable {
     var confessorOrPenanceNotes: String
     var destinationMode: CheckInDestinationMode
     var selectedGroupIds: Set<String>
+    var photoData: Data?
 
     init(
         practice: SpiritualPractice = .rosary,
@@ -43,7 +44,8 @@ struct CheckInSubmissionDraft: Sendable, Equatable {
         photoCaption: String = "",
         confessorOrPenanceNotes: String = "",
         destinationMode: CheckInDestinationMode = .selectedGroups,
-        selectedGroupIds: Set<String> = []
+        selectedGroupIds: Set<String> = [],
+        photoData: Data? = nil
     ) {
         self.practice = practice
         self.fruitOfPrayer = fruitOfPrayer
@@ -51,6 +53,7 @@ struct CheckInSubmissionDraft: Sendable, Equatable {
         self.confessorOrPenanceNotes = confessorOrPenanceNotes
         self.destinationMode = practice.isStrictlyPrivate ? .privateDiaryOnly : destinationMode
         self.selectedGroupIds = practice.isStrictlyPrivate ? [] : selectedGroupIds
+        self.photoData = photoData
     }
 }
 

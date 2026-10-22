@@ -38,6 +38,7 @@ protocol WidgetQuickAccessManaging {
 @MainActor
 final class LocalMyPathService: ProfileMilestonesManaging, SettingsAndRemindersManaging, WidgetQuickAccessManaging {
     // MARK: - Dependencies & State
+    private let notificationService: any LiturgicalNotificationScheduling
     private var storedHeatmap: [ConsistencyHeatmapDay]
     private var storedMilestones: SpiritualMilestonesSummary
     private var storedReminders: [LiturgicalReminderItem]
@@ -54,8 +55,10 @@ final class LocalMyPathService: ProfileMilestonesManaging, SettingsAndRemindersM
         milestones: SpiritualMilestonesSummary = LocalMyPathService.defaultMilestones(),
         reminders: [LiturgicalReminderItem] = LocalMyPathService.defaultReminders(),
         language: AppLanguage = .portugueseBR,
-        personalizedAdConsent: Bool = false
+        personalizedAdConsent: Bool = false,
+        notificationService: any LiturgicalNotificationScheduling = LocalLiturgicalNotificationService()
     ) {
+        self.notificationService = notificationService
         self.storedHeatmap = heatmap
         self.storedMilestones = milestones
         self.storedReminders = reminders
@@ -105,6 +108,10 @@ final class LocalMyPathService: ProfileMilestonesManaging, SettingsAndRemindersM
     func toggleReminder(_ id: String) -> [LiturgicalReminderItem] {
         guard let index = storedReminders.firstIndex(where: { $0.id == id }) else { return storedReminders }
         storedReminders[index].isEnabled.toggle()
+        let reminder = storedReminders[index]
+        Task {
+            await notificationService.syncReminderSchedule(reminder)
+        }
         return storedReminders
     }
 
@@ -147,33 +154,7 @@ final class LocalMyPathService: ProfileMilestonesManaging, SettingsAndRemindersM
     }
 
     // MARK: - Subviews / Private Helpers
-    static func defaultHeatmapDays() -> [ConsistencyHeatmapDay] {
-        let counts = [2, 3, 1, 2, 0, 2, 3, 1, 2, 3, 2, 1, 3, 2, 0, 1, 2, 3, 2, 1, 2, 3, 1, 0, 2, 3, 2, 3]
-        return counts.enumerated().map { idx, count in
-            ConsistencyHeatmapDay(id: "day-\(idx + 1)", dateLabel: "Dia \(idx + 1)", dayNumber: idx + 1, practiceCount: count, intensityLevel: min(count, 3))
-        }
-    }
-
-    static func defaultMilestones() -> SpiritualMilestonesSummary {
-        SpiritualMilestonesSummary(
-            rosariesPrayed: 48,
-            massesAttended: 22,
-            mentalPrayerHours: 16,
-            activeStreakDays: 12,
-            canClaimStreakMercyThisMonth: true,
-            lastStreakMercyClaimedAt: nil,
-            unlockedSaintIcons: [.classicLiturgical, .ourLadyOfAparecida],
-            activeAppIcon: .classicLiturgical
-        )
-    }
-
-    static func defaultReminders() -> [LiturgicalReminderItem] {
-        [
-            LiturgicalReminderItem(id: "rem-morning", kind: .morningOffering, title: "Oferta da Manhã", subtitle: "Consagração do dia ao acordar", timeLabel: "07:00", isEnabled: true),
-            LiturgicalReminderItem(id: "rem-angelus-12", kind: .angelusNoon, title: "Angelus / Regina Caeli (Meio-dia)", subtitle: "Pausa mariana às 12h", timeLabel: "12:00", isEnabled: true),
-            LiturgicalReminderItem(id: "rem-angelus-18", kind: .angelusEvening, title: "Angelus / Regina Caeli (Entardecer)", subtitle: "Sino da tarde às 18h", timeLabel: "18:00", isEnabled: true),
-            LiturgicalReminderItem(id: "rem-rosary", kind: .dailyRosary, title: "Santo Terço Diário", subtitle: "Meditação dos mistérios do dia", timeLabel: "20:00", isEnabled: true),
-            LiturgicalReminderItem(id: "rem-examen", kind: .eveningExamen, title: "Exame de Consciência Noturno", subtitle: "Gratidão e recolhimento antes de dormir", timeLabel: "21:30", isEnabled: false)
-        ]
-    }
+    static func defaultHeatmapDays() -> [ConsistencyHeatmapDay] { ConsistencyHeatmapDay.defaults }
+    static func defaultMilestones() -> SpiritualMilestonesSummary { SpiritualMilestonesSummary.defaults }
+    static func defaultReminders() -> [LiturgicalReminderItem] { LiturgicalReminderItem.defaults }
 }

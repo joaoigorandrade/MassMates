@@ -5,6 +5,8 @@ import Observation
 @Observable
 final class NightlyExamenViewModel {
     // MARK: - Dependencies & State
+    private let checkInEngine: (any CheckInSubmitting)?
+    private let onSaveJournalReflection: (@MainActor (String) -> Void)?
     let gratitudeChips: [IgnatianGratitudeChip]
     let attentionPrompts: [ConscienceAttentionPrompt]
     let virtueOptions: [ExamenVirtueOption]
@@ -21,6 +23,8 @@ final class NightlyExamenViewModel {
 
     // MARK: - Init
     init(
+        checkInEngine: (any CheckInSubmitting)? = nil,
+        onSaveJournalReflection: (@MainActor (String) -> Void)? = nil,
         gratitudeChips: [IgnatianGratitudeChip] = IgnatianGratitudeChip.defaults,
         attentionPrompts: [ConscienceAttentionPrompt] = ConscienceAttentionPrompt.defaults,
         virtueOptions: [ExamenVirtueOption] = ExamenVirtueOption.defaults,
@@ -35,6 +39,8 @@ final class NightlyExamenViewModel {
         isExamenConcluded: Bool = false,
         isSavedToLocalJournal: Bool = false
     ) {
+        self.checkInEngine = checkInEngine
+        self.onSaveJournalReflection = onSaveJournalReflection
         self.gratitudeChips = gratitudeChips
         self.attentionPrompts = attentionPrompts
         self.virtueOptions = virtueOptions
@@ -120,11 +126,46 @@ final class NightlyExamenViewModel {
         isExamenConcluded = true
     }
 
-    func saveToPrivateJournal() {
+    func saveToPrivateJournal(checkInEngine overrideEngine: (any CheckInSubmitting)? = nil) {
+        let targetEngine = overrideEngine ?? self.checkInEngine
+        let reflection = composeExamenReflection()
+        let penance = privateConfessionNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let targetEngine {
+            let draft = CheckInSubmissionDraft(
+                practice: .confession,
+                fruitOfPrayer: reflection,
+                confessorOrPenanceNotes: penance,
+                destinationMode: .privateDiaryOnly
+            )
+            do {
+                _ = try targetEngine.submitCheckIn(draft, at: Date())
+            } catch {
+                // Keep journal saved locally even if group validation fails
+            }
+        }
+        onSaveJournalReflection?(reflection)
         isSavedToLocalJournal = true
     }
 
     // MARK: - Subviews / Private Helpers
+    private func composeExamenReflection() -> String {
+        var parts: [String] = []
+        let gratitude = gratitudeJournalText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !gratitude.isEmpty {
+            parts.append("Gratidão: \(gratitude)")
+        } else if !selectedGratitudeIDs.isEmpty {
+            let names = gratitudeChips.filter { selectedGratitudeIDs.contains($0.id) }.map(\.title).joined(separator: ", ")
+            parts.append("Gratidão: \(names)")
+        }
+        if let evaluation = selectedEvaluation {
+            parts.append("Resolução do dia: \(evaluation.title)")
+        }
+        if let virtue = virtueOptions.first(where: { $0.id == selectedVirtueID }) {
+            parts.append("Virtude para amanhã: \(virtue.title)")
+        }
+        return parts.isEmpty ? "Exame de Consciência da Noite concluído com serenidade." : parts.joined(separator: "\n")
+    }
+
     private func calculateActiveStep() -> Int {
         if selectedVirtueID != nil { return 5 }
         if isConfessionNoteExpanded || !privateConfessionNote.isEmpty { return 4 }

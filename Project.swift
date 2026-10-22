@@ -40,7 +40,28 @@ let project = Project(
             dependencies: [
                 .package(product: "Navigation", type: .runtime),
                 .package(product: "Networking", type: .runtime),
+                .target(name: "MassMatesWidgets"),
             ]
+        ),
+        .target(
+            name: "MassMatesWidgets",
+            destinations: .iOS,
+            product: .appExtension,
+            bundleId: "joaoigor.MassMates.Widgets",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(
+                with: [
+                    "CFBundleDisplayName": "MassMates Widgets",
+                    "NSExtension": [
+                        "NSExtensionPointIdentifier": "com.apple.widgetkit-extension",
+                    ],
+                ]
+            ),
+            sources: [
+                "MassMatesWidgets/**/*.swift",
+                "MassMates/Features/PrayerTimer/Models/PrayerLiveActivityAttributes.swift",
+            ],
+            dependencies: []
         ),
         .target(
             name: "MassMatesTests",

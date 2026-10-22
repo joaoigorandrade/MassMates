@@ -13,12 +13,54 @@ struct CreateGroupRulesAndLimitsView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sharingRequirementCard
             rulesAndIntercessionCard
             pilgrimLimitCard
         }
     }
 
     // MARK: - Subviews / Private Helpers
+    private var sharingRequirementCard: some View {
+        MassMatesCard {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
+                Text("Exigência de Partilha")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Defina como os irmãos registram seus frutos de oração.")
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                ForEach(GroupSharingRequirement.allCases) { requirement in
+                    sharingRequirementOptionRow(requirement)
+                }
+            }
+        }
+    }
+
+    private func sharingRequirementOptionRow(_ requirement: GroupSharingRequirement) -> some View {
+        let isSelected = viewModel.draft.sharingRequirement == requirement
+        return Button {
+            viewModel.draft.sharingRequirement = requirement
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textTertiary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(requirement.title)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(requirement.badgeText)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(MassMatesSpacing.sm)
+            .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
+            .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var rulesAndIntercessionCard: some View {
         MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {

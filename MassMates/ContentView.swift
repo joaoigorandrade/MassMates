@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var checkInEngine: LocalCheckInEngineService
     @State private var myPathService: LocalMyPathService
     @State private var onboardingService: LocalOnboardingService
+    @State private var onboardingViewModel: OnboardingViewModel
     private let deepLinkHandler: DeepLinkHandler<AppRoute>
 
     // MARK: - Init
@@ -26,6 +27,15 @@ struct ContentView: View {
         _communityService = State(initialValue: communityService)
         _myPathService = State(initialValue: myPathService)
         _onboardingService = State(initialValue: onboardingService)
+        _onboardingViewModel = State(
+            initialValue: OnboardingViewModel(
+                readingService: onboardingService,
+                completingService: onboardingService,
+                onOnboardingFinished: { config in
+                    todayViewModel.selectPreset(config.selectedPreset)
+                }
+            )
+        )
         _groupsHomeViewModel = State(
             initialValue: GroupsHomeViewModel(
                 listingService: communityService,
@@ -57,15 +67,12 @@ struct ContentView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ZStack(alignment: .bottom) {
-            tabContentView
-
-            MassMatesTabBarView(
-                tabNavigator: tabNavigator,
-                onCenterAction: {
-                    presentNewCheckInModal()
-                }
-            )
+        Group {
+            if !onboardingService.isOnboardingCompleted() {
+                OnboardingFlowView(viewModel: onboardingViewModel)
+            } else {
+                mainTabInterface
+            }
         }
         .tint(todayViewModel.currentTheme.tint)
         .environment(\.liturgicalTheme, todayViewModel.currentTheme)
@@ -84,6 +91,18 @@ struct ContentView: View {
     }
 
     // MARK: - Subviews / Private Helpers
+    private var mainTabInterface: some View {
+        ZStack(alignment: .bottom) {
+            tabContentView
+
+            MassMatesTabBarView(
+                tabNavigator: tabNavigator,
+                onCenterAction: {
+                    presentNewCheckInModal()
+                }
+            )
+        }
+    }
     private var tabContentView: some View {
         ZStack {
             ForEach(Array(AppTab.allCases), id: \.self) { tab in
@@ -121,6 +140,16 @@ struct ContentView: View {
     LiturgicalSeasonPreviewMatrix { season in
         let vm = TodayDashboardViewModel()
         let _ = vm.selectSeasonColor(season)
-        ContentView(todayViewModel: vm)
+        let onboarding = LocalOnboardingService(
+            initialProfile: OnboardingProfileConfiguration(
+                userName: "Fiel",
+                parishOrCity: "Catedral",
+                selectedPreset: .essentialDaily,
+                acknowledgedLocalDiaryWarning: true,
+                personalizedAdsConsented: false,
+                completedAt: Date()
+            )
+        )
+        ContentView(todayViewModel: vm, onboardingService: onboarding)
     }
 }

@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import LocalAuthentication
 
 @MainActor
 protocol DiaryBiometricLocking {
@@ -55,12 +56,41 @@ final class DefaultSpiritualDiarySecurityService: DiaryBiometricLocking, DiaryBa
 
     @discardableResult
     func authenticateWithBiometrics(simulateSuccess: Bool = true) throws(DiarySecurityError) -> Bool {
+        let context = LAContext()
+        context.localizedCancelTitle = "Cancelar"
+        var authError: NSError?
+        let canEvaluate = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError)
+
+        #if targetEnvironment(simulator)
         guard simulateSuccess else {
             isDiaryUnlocked = false
             throw .biometricUnlockFailed
         }
         isDiaryUnlocked = true
         return true
+        #else
+        guard canEvaluate else {
+            guard simulateSuccess else {
+                isDiaryUnlocked = false
+                throw .biometricUnlockFailed
+            }
+            isDiaryUnlocked = true
+            return true
+        }
+        var isSuccess = false
+        let semaphore = DispatchSemaphore(value: 0)
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Desbloquear Diário Espiritual") { ok, _ in
+            isSuccess = ok
+            semaphore.signal()
+        }
+        _ = semaphore.wait(timeout: .now() + 15)
+        guard isSuccess else {
+            isDiaryUnlocked = false
+            throw .biometricUnlockFailed
+        }
+        isDiaryUnlocked = true
+        return true
+        #endif
     }
 
     func exportEncryptedBackup(

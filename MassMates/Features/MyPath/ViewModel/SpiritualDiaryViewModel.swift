@@ -57,6 +57,10 @@ final class SpiritualDiaryViewModel {
         }
     }
 
+    var exportedBackupShareText: String? {
+        lastExportedEnvelope?.jsonExportString
+    }
+
     func toggleBiometricLock(_ enabled: Bool) {
         biometricService.setBiometricLockEnabled(enabled)
         isBiometricLockEnabled = biometricService.isBiometricLockEnabled

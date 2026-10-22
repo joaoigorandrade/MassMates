@@ -38,6 +38,21 @@ struct SpiritualDiaryFooterView: View {
                 MassMatesSecondaryButton(title: "Exportar Diário Criptografado (PDF / Markdown)", systemImage: "doc.text.fill") {
                     _ = viewModel.exportEncryptedBackup()
                 }
+                if let shareText = viewModel.exportedBackupShareText {
+                    ShareLink(
+                        item: shareText,
+                        subject: Text("Backup Criptografado MassMates"),
+                        message: Text("Envelope AES-GCM do Diário Espiritual protegido.")
+                    ) {
+                        Label("Compartilhar Envelope Criptografado", systemImage: "square.and.arrow.up")
+                            .font(MassMatesFont.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(theme.tintSoft)
+                            .foregroundStyle(theme.tint)
+                            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                    }
+                }
                 MassMatesTextButton(title: viewModel.isBiometricLockEnabled ? "Trancar Agora (Face ID)" : "Ativar Face ID") {
                     viewModel.isBiometricLockEnabled ? viewModel.lockDiaryNow() : viewModel.toggleBiometricLock(true)
                 }

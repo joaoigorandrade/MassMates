@@ -6,6 +6,7 @@ import Observation
 final class PrayerTimerViewModel {
     // MARK: - Dependencies & State
     private let lockScreenSynchronizer: any PrayerLockScreenSynchronizing
+    private let audioPlayer: any PrayerAudioPlaying
     private let onCompletePractice: (SpiritualPractice) -> Void
 
     var mode: PrayerTimerMode
@@ -20,7 +21,6 @@ final class PrayerTimerViewModel {
     var lastHapticEvent: BeadHapticEvent = .none
     var selectedAmbientSound: AmbientSoundOption = .monasteryChimes
     var isSoundMenuPresented = false
-
     private var targetEndDate: Date?
 
     // MARK: - Init
@@ -29,6 +29,7 @@ final class PrayerTimerViewModel {
         initialMinutes: Int = 15,
         referenceDate: Date = Date(),
         lockScreenSynchronizer: any PrayerLockScreenSynchronizing = DefaultPrayerLockScreenSynchronizer(),
+        audioPlayer: any PrayerAudioPlaying = DefaultPrayerAudioService(),
         onCompletePractice: @escaping (SpiritualPractice) -> Void = { _ in }
     ) {
         self.mode = initialMode
@@ -37,30 +38,25 @@ final class PrayerTimerViewModel {
         self.remainingSeconds = seconds
         self.mysterySet = RosaryMysterySet.forDate(referenceDate)
         self.lockScreenSynchronizer = lockScreenSynchronizer
+        self.audioPlayer = audioPlayer
         self.onCompletePractice = onCompletePractice
     }
 
     // MARK: - Body / Public API
     var progress: Double {
         guard totalSeconds > 0 else { return 0 }
-        let elapsed = Double(totalSeconds - remainingSeconds)
-        return min(max(elapsed / Double(totalSeconds), 0), 1)
+        return min(max(Double(totalSeconds - remainingSeconds) / Double(totalSeconds), 0), 1)
     }
 
     var formattedRemainingTime: String {
-        let minutes = remainingSeconds / 60
-        let seconds = remainingSeconds % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+        String(format: "%02d:%02d", remainingSeconds / 60, remainingSeconds % 60)
     }
 
-    var decades: [RosaryDecade] {
-        RosaryCatalog.decades(for: mysterySet)
-    }
+    var decades: [RosaryDecade] { RosaryCatalog.decades(for: mysterySet) }
 
     var currentDecade: RosaryDecade {
         let list = decades
-        let safeIndex = min(max(currentDecadeIndex, 0), list.count - 1)
-        return list[safeIndex]
+        return list[min(max(currentDecadeIndex, 0), list.count - 1)]
     }
 
     var currentBeadLabel: String {
@@ -86,6 +82,7 @@ final class PrayerTimerViewModel {
         isRunning = false
         isSessionFinished = false
         targetEndDate = nil
+        audioPlayer.stopAmbientSound()
         syncLockScreen()
     }
 
@@ -101,6 +98,8 @@ final class PrayerTimerViewModel {
             isRunning = false
             isSessionFinished = true
             self.targetEndDate = nil
+            if isChimeEnabled { audioPlayer.playChime() }
+            audioPlayer.stopAmbientSound()
         }
         syncLockScreen()
     }
@@ -110,12 +109,13 @@ final class PrayerTimerViewModel {
         isSessionFinished = false
         remainingSeconds = totalSeconds
         targetEndDate = nil
+        audioPlayer.stopAmbientSound()
         syncLockScreen()
     }
 
     func advanceBead() {
         guard !isSessionFinished else { return }
-        if currentBeadIndex < 11 {
+        guard currentBeadIndex >= 11 else {
             currentBeadIndex += 1
             lastHapticEvent = currentBeadIndex == 1 ? .ourFather : .hailMary(currentBeadIndex - 1)
             return
@@ -130,6 +130,8 @@ final class PrayerTimerViewModel {
     func selectAmbientSound(_ option: AmbientSoundOption) {
         selectedAmbientSound = option
         isSoundMenuPresented = false
+        if isChimeEnabled { audioPlayer.playChime() }
+        if isRunning { audioPlayer.playAmbientSound(option) }
     }
 
     func toggleSoundMenu() {
@@ -142,6 +144,8 @@ final class PrayerTimerViewModel {
         isSessionFinished = false
         isRunning = true
         targetEndDate = now.addingTimeInterval(TimeInterval(remainingSeconds))
+        if isChimeEnabled { audioPlayer.playChime() }
+        audioPlayer.playAmbientSound(selectedAmbientSound)
         syncLockScreen()
     }
 
@@ -151,6 +155,7 @@ final class PrayerTimerViewModel {
         }
         isRunning = false
         self.targetEndDate = nil
+        audioPlayer.stopAmbientSound()
         syncLockScreen()
     }
 
@@ -166,12 +171,9 @@ final class PrayerTimerViewModel {
     }
 
     private func syncLockScreen() {
-        let state = LockScreenPrayerState(
-            isActive: isRunning,
-            modeTitle: mode.title,
-            targetEndDate: targetEndDate,
-            remainingSeconds: remainingSeconds
-        )
-        lockScreenSynchronizer.updateLockScreen(state)
+        lockScreenSynchronizer.updateLockScreen(LockScreenPrayerState(
+            isActive: isRunning, modeTitle: mode.title,
+            targetEndDate: targetEndDate, remainingSeconds: remainingSeconds
+        ))
     }
 }
