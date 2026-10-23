@@ -103,8 +103,10 @@ struct MassMatesTabBarView: View {
                     color: colorScheme == .dark ? Color.black.opacity(0.3) : theme.tint.opacity(0.28),
                     radius: 10, x: 0, y: 4
                 )
+                .contentShape(Circle())
         }
         .buttonStyle(MassMatesPressableButtonStyle())
+        .contentShape(Circle())
         .frame(maxWidth: .infinity)
         .offset(y: -14)
         .accessibilityLabel("Novo check-in espiritual")

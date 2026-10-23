@@ -54,6 +54,25 @@ extension GroupDetailView {
         )
     }
 
+    var quickWitnessCard: some View {
+        MassMatesCard {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+                Text("Partilhar fruto da oração com o grupo").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Picker("Prática", selection: $viewModel.quickPostPractice) {
+                    ForEach(Self.publicPractices) { practice in
+                        Text(practice.title).tag(practice)
+                    }
+                }
+                TextField("Fruto da oração (opcional)", text: $viewModel.quickPostFruit)
+                    .padding(MassMatesSpacing.sm).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                if let error = viewModel.errorMessage {
+                    Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
+                }
+                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane") { Task { await viewModel.submitQuickWitness() } }
+            }
+        }
+    }
+
     private var emptyFeedPlaceholder: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             Text("Nenhuma partilha no momento.")

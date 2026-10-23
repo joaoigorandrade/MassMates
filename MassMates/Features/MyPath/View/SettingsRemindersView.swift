@@ -1,8 +1,11 @@
+import Navigation
 import SwiftUI
 
 struct SettingsRemindersView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     private let viewModel: SettingsViewModel
     private let onBack: () -> Void
 
@@ -17,7 +20,9 @@ struct SettingsRemindersView: View {
         VStack(spacing: 0) {
             topNavigationArea
             hairline
-            remindersList
+            ScrollView(showsIndicators: false) {
+                remindersList
+            }
             Spacer(minLength: 0)
             bottomNoteSection
         }
@@ -29,19 +34,22 @@ struct SettingsRemindersView: View {
     private var topNavigationArea: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                Button(action: handleBack) {
+                    HStack(spacing: MassMatesSpacing.xxs) {
+                        Image(systemName: "chevron.left").font(MassMatesFont.headline)
+                        Text("Ajustes").font(MassMatesFont.callout)
+                    }
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Voltar")
                 Spacer()
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
 
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Lembretes")
+                Text("Lembretes e Horários")
                     .font(MassMatesFont.display)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Text("Toques discretos para recolhimento e oração diária.")
@@ -65,23 +73,54 @@ struct SettingsRemindersView: View {
     private func reminderRow(item: LiturgicalReminderItem) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: MassMatesSpacing.sm) {
-                Text(item.title)
-                    .font(MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                    Text(item.subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                }
                 Spacer()
-                Text(item.timeLabel)
-                    .font(MassMatesFont.callout.monospacedDigit())
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+                DatePicker("", selection: bindingForReminderTime(item), displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                    .datePickerStyle(.compact)
+                    .tint(theme.tint)
+                    .accessibilityLabel("Horário de \(item.title)")
+
                 Toggle("", isOn: Binding(
                     get: { item.isEnabled },
                     set: { _ in viewModel.toggleReminder(item.id) }
                 ))
                 .labelsHidden()
                 .tint(theme.tint)
+                .accessibilityLabel("Ativar \(item.title)")
             }
             .frame(minHeight: MassMatesLayout.minRowHeight)
             .padding(.horizontal, MassMatesLayout.screenMargin)
             hairline
+        }
+    }
+
+    private func bindingForReminderTime(_ item: LiturgicalReminderItem) -> Binding<Date> {
+        Binding(
+            get: { Self.dateFromTimeLabel(item.timeLabel) },
+            set: { viewModel.updateReminderTime(item.id, timeLabel: Self.timeLabelFromDate($0)) }
+        )
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter(); f.locale = Locale(identifier: "pt_BR"); f.dateFormat = "HH:mm"; return f
+    }()
+
+    private static func dateFromTimeLabel(_ label: String) -> Date {
+        timeFormatter.date(from: label) ?? Date()
+    }
+
+    private static func timeLabelFromDate(_ date: Date) -> String {
+        timeFormatter.string(from: date)
+    }
+
+    private func handleBack() {
+        onBack()
+        if let navigator, navigator.canPop() {
+            navigator.pop()
         }
     }
 

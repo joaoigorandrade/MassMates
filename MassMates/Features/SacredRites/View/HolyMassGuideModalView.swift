@@ -3,8 +3,10 @@ import SwiftUI
 
 struct HolyMassGuideModalView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onCompleteSpiritualPractice) private var onCompletePractice
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: HolyMassGuideViewModel
 
@@ -42,7 +44,7 @@ struct HolyMassGuideModalView: View {
 
     private var closeButton: some View {
         Button {
-            navigator?.dismiss()
+            if let navigator { navigator.dismiss() } else { dismiss() }
         } label: {
             Image(systemName: "xmark")
                 .font(.system(size: 15, weight: .semibold))
@@ -56,16 +58,11 @@ struct HolyMassGuideModalView: View {
 
     private var liturgicalSectionCaption: some View {
         Text("\(viewModel.selectedSection.title.uppercased()) · \(viewModel.currentSectionIndex + 1) DE \(HolyMassRiteSection.allCases.count)")
-            .font(MassMatesFont.caption)
-            .tracking(0.8)
-            .fontWeight(.medium)
-            .foregroundStyle(MassMatesPalette.textSecondary)
+            .font(MassMatesFont.caption).tracking(0.8).fontWeight(.medium).foregroundStyle(MassMatesPalette.textSecondary)
     }
 
     private var silentModeButton: some View {
-        Button {
-            viewModel.toggleSilentMode()
-        } label: {
+        Button { viewModel.toggleSilentMode() } label: {
             Image(systemName: viewModel.isSilentModeActive ? "bell.slash" : "bell")
                 .font(.system(size: 15))
                 .foregroundStyle(MassMatesPalette.textSecondary)
@@ -81,21 +78,23 @@ struct HolyMassGuideModalView: View {
         HStack(spacing: 4) {
             ForEach(HolyMassRiteSection.allCases) { section in
                 Capsule()
-                    .fill(isSectionPassedOrCurrent(section) ? theme.tint : MassMatesPalette.line)
+                    .fill(isSectionPassed(section) ? theme.tint : MassMatesPalette.line)
                     .frame(height: 3)
             }
         }
     }
 
-    private func isSectionPassedOrCurrent(_ section: HolyMassRiteSection) -> Bool {
-        guard let idx = HolyMassRiteSection.allCases.firstIndex(of: section) else { return false }
-        return idx <= viewModel.currentSectionIndex
+    private func isSectionPassed(_ section: HolyMassRiteSection) -> Bool {
+        (HolyMassRiteSection.allCases.firstIndex(of: section) ?? 0) <= viewModel.currentSectionIndex
     }
 
     private var viewportContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
                 selectedRiteContent
+                if viewModel.selectedSection == .communionAndFinalRites {
+                    HolyMassCheckInCardView(viewModel: viewModel)
+                }
             }
             .padding(.horizontal, MassMatesLayout.readingMargin)
             .padding(.top, MassMatesSpacing.md)
@@ -159,6 +158,7 @@ struct HolyMassGuideModalView: View {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { viewModel.goToNextSection() }
             } else {
                 viewModel.celebrateMassCheckIn()
+                onCompletePractice(.holyMass)
             }
         } label: {
             Text(viewModel.canGoToNextSection ? "Próximo →" : viewModel.registerMassButtonTitle)

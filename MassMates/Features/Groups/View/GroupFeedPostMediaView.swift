@@ -4,6 +4,7 @@ import SwiftUI
 /// and optional witness photo with 12px corner radius.
 struct GroupFeedPostMediaView: View, Equatable {
     // MARK: - Dependencies & State
+    @State private var isShowingFullPhoto: Bool = false
     private let caption: String?
     private let fruitOfPrayer: String?
     private let witnessPhotoURL: URL?
@@ -48,29 +49,61 @@ struct GroupFeedPostMediaView: View, Equatable {
     }
 
     private func witnessPhotoView(_ url: URL) -> some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxHeight: 180)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                    .overlay(photoBorder)
-            case .failure:
-                EmptyView()
-            case .empty:
-                Rectangle()
-                    .fill(MassMatesPalette.surfaceMuted)
-                    .frame(height: 180)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                    .overlay(photoBorder)
-            @unknown default:
-                EmptyView()
+        Button {
+            isShowingFullPhoto = true
+        } label: {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxHeight: 180)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                        .overlay(photoBorder)
+                case .failure:
+                    EmptyView()
+                case .empty:
+                    Rectangle()
+                        .fill(MassMatesPalette.surfaceMuted)
+                        .frame(height: 180)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                        .overlay(photoBorder)
+                @unknown default:
+                    EmptyView()
+                }
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Ver foto do testemunho")
+        .sheet(isPresented: $isShowingFullPhoto) {
+            fullPhotoSheet(url)
+        }
+    }
+
+    private func fullPhotoSheet(_ url: URL) -> some View {
+        NavigationStack {
+            ZStack {
+                MassMatesPalette.bg.ignoresSafeArea()
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFit().padding()
+                    default:
+                        ProgressView()
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fechar") { isShowingFullPhoto = false }
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                }
+            }
+        }
+        .presentationCornerRadius(MassMatesRadius.sheet)
     }
 
     private var photoBorder: some View {

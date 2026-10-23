@@ -1,8 +1,12 @@
+import Navigation
 import SwiftUI
 
 struct SettingsIndexView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
+    @State private var showingDeleteAlert: Bool = false
     private let viewModel: SettingsViewModel
     private let onNavigate: (SettingsScreen) -> Void
     private let onDismiss: () -> Void
@@ -35,13 +39,14 @@ struct SettingsIndexView: View {
     private var topNavigationArea: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Button(action: onDismiss) {
+                Button(action: handleDismiss) {
                     Image(systemName: "xmark")
                         .font(MassMatesFont.headline)
                         .foregroundStyle(MassMatesPalette.textPrimary)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Fechar")
                 Spacer()
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
@@ -57,9 +62,9 @@ struct SettingsIndexView: View {
 
     private var rowsSection: some View {
         VStack(spacing: 0) {
-            navigationRow(icon: "bell", title: "Lembretes litúrgicos", subtitle: "Angelus 12h e 18h", dest: .reminders)
-            navigationRow(icon: "paintpalette", title: "Aparência & idioma", subtitle: nil, dest: .appearance)
-            navigationRow(icon: "shield", title: "Privacidade & conta", subtitle: nil, dest: .privacy)
+            navigationRow(icon: "bell", title: "Lembretes e Horários", subtitle: "Angelus 12h e 18h · Oração diária", dest: .reminders)
+            navigationRow(icon: "shield", title: "Privacidade e Criptografia", subtitle: "Face ID · Backup local · Conta", dest: .privacy)
+            navigationRow(icon: "paintpalette", title: "Aparência e Liturgia", subtitle: "Cores litúrgicas · Ícone · Idioma", dest: .appearance)
         }
     }
 
@@ -91,11 +96,23 @@ struct SettingsIndexView: View {
     private var bottomActionSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             Text("MassMates 1.0").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
-            Button { viewModel.tapDeleteAccountStep() } label: {
+            Button { showingDeleteAlert = true } label: {
                 Text(deleteTitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
                     .frame(height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Apagar minha conta")
+            .alert("Apagar Minha Conta", isPresented: $showingDeleteAlert) {
+                Button("Cancelar", role: .cancel) { viewModel.cancelAccountDeletion() }
+                Button("Confirmar Exclusão", role: .destructive) {
+                    viewModel.tapDeleteAccountStep()
+                    if viewModel.accountDeletionState == .awaitingSecondTapConfirmation {
+                        viewModel.tapDeleteAccountStep()
+                    }
+                }
+            } message: {
+                Text("Esta ação apagará permanentemente sua conta e todos os dados locais. Não pode ser desfeita.")
+            }
             if viewModel.accountDeletionState == .awaitingSecondTapConfirmation {
                 Text("Toque novamente para confirmar. Não pode ser desfeito.")
                     .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
@@ -106,9 +123,18 @@ struct SettingsIndexView: View {
 
     private var deleteTitle: String {
         switch viewModel.accountDeletionState {
-        case .idle: "Excluir conta"
+        case .idle: "Apagar minha conta"
         case .awaitingSecondTapConfirmation: "Confirmar exclusão definitiva"
         case .permanentlyDeleted: "Conta excluída"
+        }
+    }
+
+    private func handleDismiss() {
+        onDismiss()
+        if let navigator {
+            navigator.dismiss()
+        } else {
+            dismiss()
         }
     }
 

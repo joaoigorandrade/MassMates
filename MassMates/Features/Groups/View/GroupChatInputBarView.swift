@@ -19,7 +19,8 @@ struct GroupChatInputBarView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        MassMatesCard {
+        let isDraftEmpty = messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 TextField("Escrever mensagem fraterna...", text: $messageDraft)
                     .padding(MassMatesSpacing.sm)
@@ -31,8 +32,11 @@ struct GroupChatInputBarView: View {
                         .foregroundStyle(MassMatesPalette.danger)
                 }
                 MassMatesPrimaryButton(title: "Enviar no Chat", systemImage: "paperplane.fill") {
+                    guard !isDraftEmpty else { return }
                     onSendMessage()
                 }
+                .disabled(isDraftEmpty)
+                .opacity(isDraftEmpty ? 0.5 : 1.0)
             }
         }
     }

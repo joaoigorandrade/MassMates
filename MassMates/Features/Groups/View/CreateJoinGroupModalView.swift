@@ -8,6 +8,7 @@ enum CreateGroupStep: Sendable, Equatable {
 
 struct CreateJoinGroupModalView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: CreateJoinGroupViewModel
@@ -70,7 +71,7 @@ struct CreateJoinGroupModalView: View {
 
     private var closeButton: some View {
         Button {
-            navigator?.dismiss()
+            if let navigator { navigator.dismiss() } else { dismiss() }
         } label: {
             Image(systemName: "xmark")
                 .font(MassMatesFont.callout)
@@ -151,7 +152,9 @@ struct CreateJoinGroupModalView: View {
     private var activeContent: some View {
         switch (viewModel.selectedTab, creationStep) {
         case (.joinByCode, _):
-            JoinGroupByCodeTabView(viewModel: viewModel) { navigator?.dismiss() }
+            JoinGroupByCodeTabView(viewModel: viewModel) {
+                if let navigator { navigator.dismiss() } else { dismiss() }
+            }
         case (.createNew, .identity):
             CreateGroupFormTabView(viewModel: viewModel, onAdvance: {
                 withAnimation(.easeInOut(duration: 0.2)) { creationStep = .rules }
@@ -160,7 +163,9 @@ struct CreateJoinGroupModalView: View {
             CreateGroupRulesAndLimitsView(
                 viewModel: viewModel,
                 onBack: { withAnimation(.easeInOut(duration: 0.2)) { creationStep = .identity } },
-                onCreated: { navigator?.dismiss() }
+                onCreated: {
+                    if let navigator { navigator.dismiss() } else { dismiss() }
+                }
             )
         }
     }

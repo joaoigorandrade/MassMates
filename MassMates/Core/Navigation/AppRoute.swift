@@ -1,8 +1,8 @@
 import Foundation
-import Navigation
+@preconcurrency import Navigation
 import SwiftUI
 
-enum AppRoute: ModalRoute, URLRoutable {
+enum AppRoute: @preconcurrency ModalRoute, URLRoutable {
     case dailyGospel(reading: DailyLiturgicalReading, season: LiturgicalColor)
     case prayerTimer(mode: PrayerTimerMode, season: LiturgicalColor)
     case ruleOfLife(season: LiturgicalColor)
@@ -23,8 +23,14 @@ enum AppRoute: ModalRoute, URLRoutable {
         .sheet
     }
 
+    @MainActor
     @ViewBuilder
     var destination: some View {
+        AppRouteDestinationHost(route: self)
+    }
+
+    @ViewBuilder
+    var unwrappedDestination: some View {
         switch self {
         case .dailyGospel(let reading, let season):
             DailyGospelRouteHostView(reading: reading, season: season)
@@ -86,6 +92,16 @@ enum AppRoute: ModalRoute, URLRoutable {
         default:
             return nil
         }
+    }
+}
+
+private struct AppRouteDestinationHost: View {
+    @EnvironmentObject private var navigator: Navigator<AppRoute>
+    let route: AppRoute
+
+    var body: some View {
+        route.unwrappedDestination
+            .optionalNavigator(navigator)
     }
 }
 

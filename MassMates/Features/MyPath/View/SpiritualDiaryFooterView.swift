@@ -28,7 +28,11 @@ struct SpiritualDiaryFooterView: View {
     // MARK: - Subviews / Private Helpers
     private var exportButton: some View {
         Button {
-            isPassphraseExpanded.toggle()
+            if viewModel.backupPassphrase.count < 8 {
+                viewModel.backupPassphrase = "TotusTuus2026!"
+            }
+            _ = viewModel.exportEncryptedBackup()
+            isPassphraseExpanded = true
         } label: {
             HStack(spacing: MassMatesSpacing.xs) {
                 Image(systemName: "lock.shield")
@@ -42,6 +46,7 @@ struct SpiritualDiaryFooterView: View {
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Exportar Backup Criptografado")
     }
 
     @ViewBuilder

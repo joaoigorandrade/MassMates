@@ -4,6 +4,7 @@ import SwiftUI
 struct TodayDashboardView: View {
     // MARK: - Dependencies & State
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: TodayDashboardViewModel
     private let onOpenRuleOfLife: (() -> Void)?
@@ -58,7 +59,7 @@ struct TodayDashboardView: View {
                     saintOrFeast: data.liturgicalDay.saintOrFeast,
                     streakDays: data.progress.activeStreakDays,
                     onSelectSeason: { season in viewModel.selectSeasonColor(season) },
-                    onOpenStreak: { navigator?.present(.ruleOfLife(season: data.activeSeasonColor)) }
+                    onOpenStreak: { triggerRuleOfLife(season: data.activeSeasonColor) }
                 )
                 .equatable()
                 .padding(.top, MassMatesSpacing.xs)
@@ -133,18 +134,25 @@ struct TodayDashboardView: View {
     }
 
     private var quietSponsoredBanner: some View {
-        HStack(spacing: MassMatesSpacing.xs) {
-            Text("PATROCINADO").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
-            Text("·").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.line)
-            Text("Edições CNBB · Bíblia Sagrada Edição Pastoral")
-                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
-            Spacer()
-            Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
+        Button {
+            guard let url = URL(string: "https://www.edicoescnbb.com.br") else { return }
+            openURL(url)
+        } label: {
+            HStack(spacing: MassMatesSpacing.xs) {
+                Text("PATROCINADO").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
+                Text("·").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.line)
+                Text("Edições CNBB · Bíblia Sagrada Edição Pastoral")
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, MassMatesLayout.screenMargin)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, MassMatesLayout.screenMargin)
+        .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Patrocinado: Edições CNBB, Bíblia Sagrada Edição Pastoral")
+        .accessibilityLabel("Patrocinado: Edições CNBB, Bíblia Sagrada Edição Pastoral. Abrir site")
     }
 }
 

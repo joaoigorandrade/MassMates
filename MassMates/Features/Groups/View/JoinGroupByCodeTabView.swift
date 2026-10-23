@@ -42,11 +42,8 @@ struct JoinGroupByCodeTabView: View {
     }
 
     private var digitCellsContainer: some View {
-        ZStack {
-            cellsRow
-            hiddenTextField
-        }
-        .contentShape(Rectangle()).onTapGesture { isFieldFocused = true }
+        ZStack { cellsRow; hiddenTextField }
+            .contentShape(Rectangle()).onTapGesture { isFieldFocused = true }
     }
 
     private var cellsRow: some View {
@@ -142,8 +139,7 @@ struct JoinGroupByCodeTabView: View {
             }
             Spacer()
         }
-        .padding(MassMatesSpacing.sm)
-        .background(MassMatesPalette.surfaceMuted)
+        .padding(MassMatesSpacing.sm).background(MassMatesPalette.surfaceMuted)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
         .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.photo).strokeBorder(MassMatesPalette.line, lineWidth: 1))
     }
@@ -152,8 +148,7 @@ struct JoinGroupByCodeTabView: View {
         VStack(spacing: MassMatesSpacing.xs) {
             Image(systemName: "person.3.fill")
                 .font(MassMatesFont.callout).foregroundStyle(theme.tint)
-                .frame(width: 32, height: 32)
-                .background(theme.tintSoft).clipShape(Circle())
+                .frame(width: 32, height: 32).background(theme.tintSoft).clipShape(Circle())
             Text("Grupos ajudam a preservar a oração diária e a fidelidade aos hábitos santos.")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
                 .multilineTextAlignment(.center).frame(maxWidth: 260)

@@ -58,6 +58,7 @@ struct DiscoverChallengesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerBar
+            Text("Desafios Sazonais").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
             captionLabel
             challengesList
             Spacer()
@@ -68,14 +69,18 @@ struct DiscoverChallengesView: View {
     private var headerBar: some View {
         HStack(spacing: MassMatesSpacing.xs) {
             Button(action: onBack) {
-                Image(systemName: "chevron.left").font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(MassMatesPalette.textPrimary).frame(width: 36, height: 36, alignment: .leading)
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
+                    Text("Voltar aos meus grupos").font(MassMatesFont.callout)
+                }
+                .foregroundStyle(theme.tint)
+                .frame(minHeight: 36)
             }
             .buttonStyle(.plain)
-            Text("Desafios Sazonais").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
+            .accessibilityLabel("Voltar aos meus grupos")
             Spacer()
         }
-        .padding(.bottom, MassMatesSpacing.xs)
+        .padding(.bottom, MassMatesSpacing.xxs)
     }
 
     private var captionLabel: some View {
@@ -119,25 +124,29 @@ struct DiscoverChallengeRowView: View, Equatable {
     // MARK: - Body / Public API
     var body: some View {
         HStack(spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: MassMatesSpacing.xs) {
-                    Text(challenge.group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
-                    if challenge.group.sponsorName != nil {
-                        Text("Patrocinado").font(.system(size: 9, weight: .semibold)).foregroundStyle(MassMatesPalette.textSecondary)
-                            .padding(.horizontal, 4).padding(.vertical, 1).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: 3))
+            Button(action: onOpen) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: MassMatesSpacing.xs) {
+                        Text(challenge.group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+                        if challenge.group.sponsorName != nil {
+                            Text("Patrocinado").font(.system(size: 9, weight: .semibold)).foregroundStyle(MassMatesPalette.textSecondary)
+                                .padding(.horizontal, 4).padding(.vertical, 1).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: 3))
+                        }
                     }
+                    Text("\(challenge.durationLabel) · \(challenge.group.memberCount) membros")
+                        .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                 }
-                Text("\(challenge.durationLabel) · \(challenge.group.memberCount) membros")
-                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             Spacer()
             Button(action: challenge.isJoined ? onOpen : onJoin) {
-                Text(challenge.isJoined ? "Ver" : "Participar").font(MassMatesFont.caption).fontWeight(.semibold)
+                Text(challenge.isJoined ? "Ver" : "Entrar no desafio").font(MassMatesFont.caption).fontWeight(.semibold)
                     .foregroundStyle(challenge.isJoined ? MassMatesPalette.textPrimary : theme.onTint)
                     .padding(.horizontal, MassMatesSpacing.sm).padding(.vertical, MassMatesSpacing.xs)
                     .background(challenge.isJoined ? MassMatesPalette.surfaceMuted : theme.tint).clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plain).accessibilityLabel(challenge.isJoined ? "Ver desafio" : "Entrar no desafio")
         }
         .frame(height: 64)
     }
@@ -146,28 +155,20 @@ struct DiscoverChallengeRowView: View, Equatable {
 }
 
 struct GroupsCapacityCardView: View {
-    // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    private let capacity: GroupSlotCapacity
-    private let onUnlockSlot: () -> Void
+    let capacity: GroupSlotCapacity
+    var onUnlockSlot: () -> Void = {}
 
-    // MARK: - Init
-    init(capacity: GroupSlotCapacity, onUnlockSlot: @escaping () -> Void = {}) {
-        self.capacity = capacity
-        self.onUnlockSlot = onUnlockSlot
-    }
-
-    // MARK: - Body / Public API
     var body: some View {
         HStack {
             Text("\(capacity.personalGroupCount) de \(capacity.maxAllowedPersonalGroups) vagas")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             Spacer()
-            if !capacity.hasRewardedSlotUnlocked { Button("Desbloquear", action: onUnlockSlot).font(MassMatesFont.caption).foregroundStyle(theme.tint) }
+            if !capacity.hasRewardedSlotUnlocked {
+                Button("Desbloquear", action: onUnlockSlot).font(MassMatesFont.caption).foregroundStyle(theme.tint)
+            }
         }
     }
-
-    // MARK: - Subviews / Private Helpers
 }
 
 #Preview("Groups Home Cards — 5 Seasons (Light / Dark / AX3)") {

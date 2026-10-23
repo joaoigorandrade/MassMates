@@ -39,7 +39,8 @@ struct GroupPrayerWallTabView: View {
 
     // MARK: - Subviews / Private Helpers
     private var composerCard: some View {
-        MassMatesCard {
+        let isDraftEmpty = newIntentionDraft.trimmingCharacters(in: .whitespaces).isEmpty
+        return MassMatesCard {
             VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
                 Text("Confiar intenção à comunidade • \(theme.season.defaultSeasonName)")
                     .font(MassMatesFont.headline)
@@ -55,9 +56,13 @@ struct GroupPrayerWallTabView: View {
                 }
                 MassMatesPrimaryButton(
                     title: "Publicar no Mural de Intenções",
-                    systemImage: "hands.sparkles",
-                    action: onSubmitIntention
-                )
+                    systemImage: "hands.sparkles"
+                ) {
+                    guard !isDraftEmpty else { return }
+                    onSubmitIntention()
+                }
+                .disabled(isDraftEmpty)
+                .opacity(isDraftEmpty ? 0.5 : 1.0)
             }
         }
     }
@@ -136,7 +141,10 @@ struct GroupPrayerIntentionRowView: View, Equatable {
                 systemImage: "hands.sparkles",
                 count: intention.prayedCount,
                 isActive: intention.hasCurrentUserPrayed,
-                action: onTogglePrayed
+                action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onTogglePrayed()
+                }
             )
             Spacer()
         }

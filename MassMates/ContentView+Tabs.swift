@@ -37,10 +37,14 @@ extension ContentView {
         let navigator = tabNavigator.navigator(for: tab)
         return NavigationStackWrapper(navigator: navigator) {
             tab.tabContent
+                .optionalNavigator(navigator)
                 .safeAreaInset(edge: .bottom) {
-                    Color.clear.frame(height: 64)
+                    Color.clear
+                        .frame(height: 64)
+                        .allowsHitTesting(false)
                 }
         }
+        .optionalNavigator(navigator)
         .environmentObject(navigator)
         .opacity(tabNavigator.selectedTab == tab ? 1 : 0)
         .allowsHitTesting(tabNavigator.selectedTab == tab)

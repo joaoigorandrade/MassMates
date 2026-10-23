@@ -77,7 +77,7 @@ struct SacredRitesHomeView: View {
                 title: "Regra de Vida e Práticas",
                 subtitle: "Personalize suas práticas espirituais diárias e semanais.",
                 icon: "slider.horizontal.3",
-                action: { navigator?.present(.onboarding(season: theme.season)) }
+                action: { navigator?.present(.ruleOfLife(season: theme.season)) }
             )
 
             riteCard(

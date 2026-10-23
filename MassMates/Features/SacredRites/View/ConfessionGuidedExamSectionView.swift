@@ -18,6 +18,7 @@ struct ConfessionGuidedExamSectionView: View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
             commandmentHeader(title: step.title, summary: step.summary)
             checklistRows(items: step.items)
+            customNoteInputRow
             meditativeFooter
         }
     }
@@ -75,6 +76,28 @@ struct ConfessionGuidedExamSectionView: View {
             } else {
                 Circle().stroke(MassMatesPalette.line, lineWidth: 1.5).frame(width: 22, height: 22)
             }
+        }
+    }
+
+    private var customNoteInputRow: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            TextField("Anotar outra falta para este mandamento...", text: $viewModel.customSinInput)
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .frame(height: 40)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .onSubmit { viewModel.addCustomSinNote() }
+            Button { viewModel.addCustomSinNote() } label: {
+                Image(systemName: "plus")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(theme.onTint)
+                    .frame(width: 40, height: 40)
+                    .background(theme.tint)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            }
+            .buttonStyle(.plain)
         }
     }
 

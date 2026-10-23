@@ -1,8 +1,12 @@
+import Navigation
 import SwiftUI
 
 struct SettingsPrivacyView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
+    @State private var showingDeleteAlert: Bool = false
     private let viewModel: SettingsViewModel
     private let onBack: () -> Void
 
@@ -29,19 +33,22 @@ struct SettingsPrivacyView: View {
     private var topNavigationArea: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                Button(action: handleBack) {
+                    HStack(spacing: MassMatesSpacing.xxs) {
+                        Image(systemName: "chevron.left").font(MassMatesFont.headline)
+                        Text("Ajustes").font(MassMatesFont.callout)
+                    }
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Voltar")
                 Spacer()
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
 
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Privacidade")
+                Text("Privacidade e Criptografia")
                     .font(MassMatesFont.display)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Text("Sua oração e seus dados pertencem a você.")
@@ -111,13 +118,25 @@ struct SettingsPrivacyView: View {
                     .padding(.horizontal, MassMatesSpacing.md)
                     .padding(.bottom, MassMatesSpacing.xs)
             }
-            Button { viewModel.tapDeleteAccountStep() } label: {
+            Button { showingDeleteAlert = true } label: {
                 Text(deleteTitle)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.danger)
                     .frame(height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Apagar minha conta")
+            .alert("Apagar Minha Conta", isPresented: $showingDeleteAlert) {
+                Button("Cancelar", role: .cancel) { viewModel.cancelAccountDeletion() }
+                Button("Confirmar Exclusão", role: .destructive) {
+                    viewModel.tapDeleteAccountStep()
+                    if viewModel.accountDeletionState == .awaitingSecondTapConfirmation {
+                        viewModel.tapDeleteAccountStep()
+                    }
+                }
+            } message: {
+                Text("Esta ação é definitiva e apagará todos os seus registros locais e conta.")
+            }
             Text("Dois toques. Não pode ser desfeito.")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
@@ -127,9 +146,16 @@ struct SettingsPrivacyView: View {
 
     private var deleteTitle: String {
         switch viewModel.accountDeletionState {
-        case .idle: "Excluir conta e dados"
+        case .idle: "Apagar minha conta"
         case .awaitingSecondTapConfirmation: "Confirmar exclusão definitiva"
         case .permanentlyDeleted: "Conta excluída"
+        }
+    }
+
+    private func handleBack() {
+        onBack()
+        if let navigator, navigator.canPop() {
+            navigator.pop()
         }
     }
 

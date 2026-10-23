@@ -10,9 +10,7 @@ final class PrayerTimerViewModel {
     private let onCompletePractice: (SpiritualPractice) -> Void
 
     var mode: PrayerTimerMode {
-        didSet {
-            if isRunning { pauseTimer(now: Date()) }
-        }
+        didSet { if isRunning { pauseTimer(now: Date()) } }
     }
     var totalSeconds: Int
     var remainingSeconds: Int
@@ -81,13 +79,9 @@ final class PrayerTimerViewModel {
 
     func selectDuration(minutes: Int) {
         let seconds = max(minutes, 1) * 60
-        totalSeconds = seconds
-        remainingSeconds = seconds
-        isRunning = false
-        isSessionFinished = false
-        targetEndDate = nil
-        audioPlayer.stopAmbientSound()
-        syncLockScreen()
+        totalSeconds = seconds; remainingSeconds = seconds
+        isRunning = false; isSessionFinished = false; targetEndDate = nil
+        audioPlayer.stopAmbientSound(); syncLockScreen()
     }
 
     func toggleTimer(now: Date = Date()) {
@@ -99,9 +93,7 @@ final class PrayerTimerViewModel {
         let remaining = max(Int(ceil(targetEndDate.timeIntervalSince(now))), 0)
         remainingSeconds = remaining
         if remaining == 0 {
-            isRunning = false
-            isSessionFinished = true
-            self.targetEndDate = nil
+            isRunning = false; isSessionFinished = true; self.targetEndDate = nil
             if isChimeEnabled { audioPlayer.playChime() }
             audioPlayer.stopAmbientSound()
             onCompletePractice(mode == .rosary ? .rosary : .mentalPrayer)
@@ -110,12 +102,9 @@ final class PrayerTimerViewModel {
     }
 
     func resetTimer() {
-        isRunning = false
-        isSessionFinished = false
-        remainingSeconds = totalSeconds
-        targetEndDate = nil
-        audioPlayer.stopAmbientSound()
-        syncLockScreen()
+        isRunning = false; isSessionFinished = false
+        remainingSeconds = totalSeconds; targetEndDate = nil
+        audioPlayer.stopAmbientSound(); syncLockScreen()
     }
 
     func advanceBead() {
@@ -128,50 +117,53 @@ final class PrayerTimerViewModel {
         advanceToNextDecade()
     }
 
+    func previousDecade() {
+        guard currentDecadeIndex > 0 else { return }
+        currentDecadeIndex -= 1; currentBeadIndex = 0
+        lastHapticEvent = .decadeCompleted(currentDecadeIndex)
+    }
+
+    func nextDecade() { advanceToNextDecade() }
+
+    func selectBead(_ index: Int) {
+        guard (0...11).contains(index) else { return }
+        currentBeadIndex = index
+        lastHapticEvent = index == 0 ? .ourFather : .hailMary(index)
+    }
+
     func completeSessionCheckIn() {
         onCompletePractice(mode.associatedPractice)
     }
 
     func selectAmbientSound(_ option: AmbientSoundOption) {
-        selectedAmbientSound = option
-        isSoundMenuPresented = false
+        selectedAmbientSound = option; isSoundMenuPresented = false
         if isChimeEnabled { audioPlayer.playChime() }
         if isRunning { audioPlayer.playAmbientSound(option) }
     }
 
-    func toggleSoundMenu() {
-        isSoundMenuPresented.toggle()
-    }
+    func toggleSoundMenu() { isSoundMenuPresented.toggle() }
 
     // MARK: - Subviews / Private Helpers
     private func startTimer(now: Date) {
         if remainingSeconds == 0 { remainingSeconds = totalSeconds }
-        isSessionFinished = false
-        isRunning = true
+        isSessionFinished = false; isRunning = true
         targetEndDate = now.addingTimeInterval(TimeInterval(remainingSeconds))
         if isChimeEnabled { audioPlayer.playChime() }
-        audioPlayer.playAmbientSound(selectedAmbientSound)
-        syncLockScreen()
+        audioPlayer.playAmbientSound(selectedAmbientSound); syncLockScreen()
     }
 
     private func pauseTimer(now: Date) {
-        if let targetEndDate {
-            remainingSeconds = max(Int(ceil(targetEndDate.timeIntervalSince(now))), 0)
-        }
-        isRunning = false
-        self.targetEndDate = nil
-        audioPlayer.stopAmbientSound()
-        syncLockScreen()
+        if let targetEndDate { remainingSeconds = max(Int(ceil(targetEndDate.timeIntervalSince(now))), 0) }
+        isRunning = false; self.targetEndDate = nil
+        audioPlayer.stopAmbientSound(); syncLockScreen()
     }
 
     private func advanceToNextDecade() {
         if currentDecadeIndex < 4 {
-            currentDecadeIndex += 1
-            currentBeadIndex = 0
+            currentDecadeIndex += 1; currentBeadIndex = 0
             lastHapticEvent = .decadeCompleted(currentDecadeIndex)
         } else {
-            isSessionFinished = true
-            lastHapticEvent = .rosaryCompleted
+            isSessionFinished = true; lastHapticEvent = .rosaryCompleted
             onCompletePractice(.rosary)
         }
     }

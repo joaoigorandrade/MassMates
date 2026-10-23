@@ -1,8 +1,11 @@
+import Navigation
 import SwiftUI
 
 struct MyPathProfileView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: MyPathViewModel
     @State private var showingGraceAndMercy = false
     private let onOpenDiaryOverride: (() -> Void)?
@@ -114,18 +117,32 @@ struct MyPathProfileView: View {
     private var graceAndMercyView: some View {
         MyPathGraceAndMercyView(
             canClaimStreakMercy: viewModel.milestones.canClaimStreakMercyThisMonth,
+            activeSaintIcon: viewModel.milestones.activeAppIcon,
+            unlockedSaintIcons: viewModel.milestones.unlockedSaintIcons,
             onBack: { withAnimation(.easeInOut(duration: 0.2)) { showingGraceAndMercy = false } },
             onClaimStreakMercy: { Task { _ = await viewModel.claimStreakMercy() } },
-            onUnlockSaintTheme: { viewModel.unlockOrSelectSaintIcon(.stTherese) }
+            onSelectSaintTheme: { viewModel.unlockOrSelectSaintIcon($0) }
         )
     }
 
     private func triggerOpenDiary() {
-        if let onOpenDiaryOverride { onOpenDiaryOverride() } else { viewModel.requestOpenDiary() }
+        if let onOpenDiaryOverride {
+            onOpenDiaryOverride()
+        } else if let navigator {
+            navigator.present(.spiritualDiary(season: theme.season))
+        } else {
+            viewModel.requestOpenDiary()
+        }
     }
 
     private func triggerOpenSettings() {
-        if let onOpenSettingsOverride { onOpenSettingsOverride() } else { viewModel.requestOpenSettings() }
+        if let onOpenSettingsOverride {
+            onOpenSettingsOverride()
+        } else if let navigator {
+            navigator.present(.settings(season: theme.season))
+        } else {
+            viewModel.requestOpenSettings()
+        }
     }
 
     private func triggerOpenGraceAndMercy() {

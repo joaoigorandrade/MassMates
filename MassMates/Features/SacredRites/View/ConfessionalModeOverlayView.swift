@@ -1,8 +1,12 @@
+import Navigation
 import SwiftUI
 
 struct ConfessionalModeOverlayView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.onCompleteSpiritualPractice) private var onCompletePractice
+    @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: ConfessionPrepViewModel
 
     // MARK: - Init
@@ -23,10 +27,14 @@ struct ConfessionalModeOverlayView: View {
                 .padding(.vertical, MassMatesSpacing.xs)
             }
             MassMatesPrimaryButton(
-                title: "Absolvição Recebida (Destruir Notas)",
+                title: "Apagar Notas e Concluir",
                 systemImage: "checkmark.seal.fill"
             ) {
-                Task { await viewModel.completeSacramentAndDestroyNotes() }
+                Task {
+                    await viewModel.completeSacramentAndDestroyNotes()
+                    onCompletePractice(.confession)
+                    if let navigator { navigator.dismiss() } else { dismiss() }
+                }
             }
         }
         .padding(MassMatesLayout.readingMargin)
@@ -50,12 +58,16 @@ struct ConfessionalModeOverlayView: View {
             Button {
                 viewModel.closeConfessionalMode()
             } label: {
-                Image(systemName: "xmark")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                HStack(spacing: MassMatesSpacing.xxs) {
+                    Image(systemName: "xmark")
+                    Text("Sair do Modo Confessionário")
+                }
+                .font(MassMatesFont.caption.weight(.medium))
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .padding(.horizontal, MassMatesSpacing.sm)
+                .frame(height: 36)
+                .background(MassMatesPalette.surfaceMuted)
+                .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             }
             .buttonStyle(.plain)
         }

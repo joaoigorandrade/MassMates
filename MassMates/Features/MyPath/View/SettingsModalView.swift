@@ -4,7 +4,8 @@ import SwiftUI
 struct SettingsModalView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    @OptionalNavigator private var navigator: Navigator<AppRoute>?
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: SettingsViewModel
     @State private var currentScreen: SettingsScreen = .index
 
@@ -62,7 +63,11 @@ struct SettingsModalView: View {
     }
 
     private func dismissModal() {
-        navigator?.dismiss()
+        if let navigator {
+            navigator.dismiss()
+        } else {
+            dismiss()
+        }
     }
 }
 

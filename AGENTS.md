@@ -55,6 +55,7 @@
   4. `// MARK: - Subviews / Private Helpers`
 
 ## 6. Tuist, Makefile & Token-Efficient Build Protocol (Zero-Error, Zero-Log-Bloat)
+- **Subagents must not build or run tests**
 - **Single Source of Truth:** `Project.swift`, `Tuist.swift`, and `Makefile` own project configuration and build execution.
   - BANNED: Manually editing `.xcodeproj/project.pbxproj` or `.xcworkspace`, or running raw `xcodebuild` without `-quiet`.
 - **When to Generate vs Build (MANDATORY `make` targets):**

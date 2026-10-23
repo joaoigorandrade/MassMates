@@ -51,6 +51,7 @@ struct CheckInCelebrationCardView: View, Equatable {
                     .frame(width: 32, height: 32)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(.circle)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Fechar")
@@ -130,6 +131,7 @@ struct CheckInCelebrationCardView: View, Equatable {
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                 .background(theme.tint)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

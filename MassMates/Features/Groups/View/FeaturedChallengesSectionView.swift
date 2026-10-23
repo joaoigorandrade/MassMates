@@ -13,6 +13,7 @@ struct FeaturedChallengesSectionView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var joinedIds: Set<String>
     private let challenges: [FeaturedChallenge]
     private let showsBackButton: Bool
@@ -59,7 +60,15 @@ struct FeaturedChallengesSectionView: View {
     // MARK: - Subviews / Private Helpers
     private var backBar: some View {
         Button {
-            if let onBack { onBack() } else { dismiss() }
+            if let onBack {
+                onBack()
+            } else if let navigator, navigator.canPop() {
+                navigator.pop()
+            } else if let navigator {
+                navigator.dismiss()
+            } else {
+                dismiss()
+            }
         } label: {
             Image(systemName: "chevron.left")
                 .font(.system(size: 20, weight: .semibold))

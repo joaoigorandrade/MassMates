@@ -3,8 +3,11 @@ import SwiftUI
 
 struct NightlyExamenModalView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.sharedCheckInEngine) private var checkInEngine
+    @Environment(\.onCompleteSpiritualPractice) private var onCompletePractice
     @OptionalNavigator<AppRoute> private var navigator
     @State private var viewModel: NightlyExamenViewModel
 
@@ -33,13 +36,12 @@ struct NightlyExamenModalView: View {
             Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
-        .padding(.top, MassMatesSpacing.sm)
-        .padding(.bottom, MassMatesSpacing.xs)
+        .padding(.top, MassMatesSpacing.sm).padding(.bottom, MassMatesSpacing.xs)
     }
 
     private var closeButton: some View {
         Button {
-            navigator?.dismiss()
+            if let navigator { navigator.dismiss() } else { dismiss() }
         } label: {
             Image(systemName: "xmark")
                 .font(.system(size: 15, weight: .semibold))
@@ -55,10 +57,15 @@ struct NightlyExamenModalView: View {
     private var progressSegments: some View {
         HStack(spacing: MassMatesSpacing.xxs) {
             ForEach(1...5, id: \.self) { step in
-                Capsule()
-                    .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
-                    .frame(height: 2.5)
-                    .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: viewModel.currentStepIndex)
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) { viewModel.goToStep(step) }
+                } label: {
+                    Capsule()
+                        .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
+                        .frame(height: 3)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
             }
         }
         .frame(width: 140)
@@ -72,23 +79,17 @@ struct NightlyExamenModalView: View {
                 activeStepView
             }
             .padding(.horizontal, MassMatesLayout.readingMargin)
-            .padding(.top, MassMatesSpacing.sm)
-            .padding(.bottom, MassMatesSpacing.xl)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            .padding(.top, MassMatesSpacing.sm).padding(.bottom, MassMatesSpacing.xl)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading).frame(maxWidth: .infinity)
         }
     }
 
     private var stepHeader: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Text("PASSO \(viewModel.currentStepIndex) DE 5 · \(viewModel.stepTitle.uppercased())")
-                .font(MassMatesFont.caption)
-                .tracking(0.8)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-
+                .font(MassMatesFont.caption).tracking(0.8).foregroundStyle(MassMatesPalette.textSecondary)
             Text(viewModel.stepTitle)
-                .font(MassMatesFont.displayMobile)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+                .font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
         }
     }
 
@@ -96,12 +97,9 @@ struct NightlyExamenModalView: View {
     private var activeStepView: some View {
         Group {
             switch viewModel.currentStepIndex {
-            case 1, 2:
-                NightlyExamenStepCardsView(viewModel: viewModel)
-            case 3, 4:
-                NightlyExamenReviewAndClosingView(viewModel: viewModel)
-            default:
-                NightlyExamenFooterSectionView(viewModel: viewModel)
+            case 1, 2: NightlyExamenStepCardsView(viewModel: viewModel)
+            case 3, 4: NightlyExamenReviewAndClosingView(viewModel: viewModel)
+            default: NightlyExamenFooterSectionView(viewModel: viewModel)
             }
         }
         .id(viewModel.currentStepIndex)
@@ -119,22 +117,16 @@ struct NightlyExamenModalView: View {
             privacyAssurance
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
-        .padding(.top, MassMatesSpacing.xs)
-        .padding(.bottom, MassMatesSpacing.md)
+        .padding(.top, MassMatesSpacing.xs).padding(.bottom, MassMatesSpacing.md)
         .background(MassMatesPalette.bg)
     }
 
     private var secondaryNavButton: some View {
         Button {
-            if viewModel.currentStepIndex > 1 {
-                viewModel.goToPreviousStep()
-            } else {
-                viewModel.goToNextStep()
-            }
+            if viewModel.currentStepIndex > 1 { viewModel.goToPreviousStep() } else { viewModel.goToNextStep() }
         } label: {
             Text(viewModel.currentStepIndex > 1 ? "Anterior" : "Pular")
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
         }
         .buttonStyle(.plain)
@@ -142,30 +134,32 @@ struct NightlyExamenModalView: View {
 
     private var primaryNextButton: some View {
         Button {
-            viewModel.goToNextStep()
+            if viewModel.currentStepIndex == 5 {
+                Task {
+                    await viewModel.saveToPrivateJournal(checkInEngine: checkInEngine)
+                    onCompletePractice(.confession)
+                    if let navigator { navigator.dismiss() } else { dismiss() }
+                }
+            } else {
+                viewModel.goToNextStep()
+            }
         } label: {
             HStack(spacing: MassMatesSpacing.xs) {
-                Text(viewModel.currentStepIndex == 5 ? "Concluir" : "Próximo")
+                Text(viewModel.currentStepIndex == 5 ? "Concluir Exame da Noite" : "Próximo")
                 Image(systemName: viewModel.currentStepIndex == 5 ? "checkmark" : "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .contentTransition(.symbolEffect(.replace))
             }
-            .font(MassMatesFont.headline)
-            .foregroundStyle(theme.onTint)
-            .padding(.horizontal, MassMatesSpacing.xl)
-            .frame(height: 50)
-            .background(theme.tint)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .font(MassMatesFont.headline).foregroundStyle(theme.onTint)
+            .padding(.horizontal, MassMatesSpacing.xl).frame(height: 50)
+            .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)
     }
 
     private var privacyAssurance: some View {
         HStack(spacing: MassMatesSpacing.xxs) {
-            Image(systemName: "lock.fill")
-                .font(.system(size: 11))
-            Text("Somente neste dispositivo · 100% confidencial")
-                .font(MassMatesFont.caption)
+            Image(systemName: "lock.fill").font(.system(size: 11))
+            Text("Somente neste dispositivo · 100% confidencial").font(MassMatesFont.caption)
         }
         .foregroundStyle(MassMatesPalette.textTertiary)
     }

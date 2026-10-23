@@ -87,6 +87,8 @@ struct TodayHeaderView: View, Equatable {
                     .tracking(0.6)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Tempo litúrgico: \(seasonPillText)")
@@ -119,6 +121,7 @@ struct TodayHeaderView: View, Equatable {
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .contentTransition(.numericText())
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityElement(children: .combine)

@@ -3,6 +3,7 @@ import SwiftUI
 struct HolyMassCheckInCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.sharedCheckInEngine) private var sharedCheckInEngine
     @Environment(\.onCompleteSpiritualPractice) private var onCompletePractice
     @Bindable private var viewModel: HolyMassGuideViewModel
 
@@ -132,7 +133,7 @@ struct HolyMassCheckInCardView: View {
                 .padding(MassMatesSpacing.sm)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
-            Button { Task { await viewModel.saveDiaryNote() } } label: {
+            Button { Task { await viewModel.saveDiaryNote(checkInEngine: sharedCheckInEngine) } } label: {
                 Label("Salvar no Diário", systemImage: "square.and.arrow.down")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(theme.onTint)

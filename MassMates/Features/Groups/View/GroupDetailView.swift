@@ -8,7 +8,7 @@ struct GroupDetailView: View {
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable var viewModel: GroupDetailViewModel
 
-    private static let publicPractices = SpiritualPractice.allCases.filter { !$0.isStrictlyPrivate }
+    static let publicPractices = SpiritualPractice.allCases.filter { !$0.isStrictlyPrivate }
 
     // MARK: - Init
     init(viewModel: GroupDetailViewModel) {
@@ -49,39 +49,72 @@ struct GroupDetailView: View {
     // MARK: - Subviews / Private Helpers
     private var navigationBar: some View {
         HStack {
-            Button {
-                if let navigator { navigator.dismiss() } else { dismiss() }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Voltar")
+            backButton
             Spacer()
             Text("MassMates").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
-            Menu {
-                if let inviteLabel = viewModel.inviteShareLabel {
-                    Text(inviteLabel)
-                }
-                Button("Moderação & Segurança", systemImage: "shield.lefthalf.filled") {
-                    viewModel.isShowingModerationPanel.toggle()
-                }
-                if viewModel.canShareInvite {
-                    Button("Redefinir Código de Convite", systemImage: "arrow.clockwise") { Task { await viewModel.resetInviteCode() } }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
-            }
-            .accessibilityLabel("Mais opções")
+            shareInviteButton
+            optionsMenu
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .frame(height: 44)
+    }
+
+    private var backButton: some View {
+        Button {
+            if let navigator, navigator.canPop() {
+                navigator.pop()
+            } else if let navigator {
+                navigator.dismiss()
+            } else {
+                dismiss()
+            }
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(MassMatesFont.headline)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Voltar")
+    }
+
+    private var shareInviteButton: some View {
+        Group {
+            if let url = viewModel.group.inviteLinkURL, !viewModel.group.inviteCode.isEmpty {
+                ShareLink(item: url, subject: Text(viewModel.group.name), message: Text("Participe do grupo \(viewModel.group.name) no MassMates:")) {
+                    Image(systemName: "square.and.arrow.up").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                }
+            } else {
+                Button {
+                    let text = viewModel.group.inviteCode.isEmpty ? (viewModel.inviteShareLabel ?? "") : viewModel.group.inviteCode
+                    UIPasteboard.general.string = text
+                } label: {
+                    Image(systemName: "square.and.arrow.up").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Compartilhar convite")
+    }
+
+    private var optionsMenu: some View {
+        Menu {
+            if !viewModel.group.inviteCode.isEmpty {
+                Button("Copiar Código de Convite", systemImage: "doc.on.doc") { UIPasteboard.general.string = viewModel.group.inviteCode }
+            }
+            if let inviteLabel = viewModel.inviteShareLabel { Text(inviteLabel) }
+            Button("Moderação & Segurança", systemImage: "shield.lefthalf.filled") { viewModel.isShowingModerationPanel.toggle() }
+            if viewModel.canShareInvite {
+                Button("Redefinir Código de Convite", systemImage: "arrow.clockwise") { Task { await viewModel.resetInviteCode() } }
+            }
+        } label: {
+            Image(systemName: "ellipsis").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+        }
+        .accessibilityLabel("Mais opções")
     }
 
     @ViewBuilder
@@ -132,26 +165,6 @@ struct GroupDetailView: View {
             )
         }
     }
-
-    private var quickWitnessCard: some View {
-        MassMatesCard {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                Text("Partilhar fruto da oração com o grupo").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                Picker("Prática", selection: $viewModel.quickPostPractice) {
-                    ForEach(Self.publicPractices) { practice in
-                        Text(practice.title).tag(practice)
-                    }
-                }
-                TextField("Fruto da oração (opcional)", text: $viewModel.quickPostFruit)
-                    .padding(MassMatesSpacing.sm).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.button))
-                if let error = viewModel.errorMessage {
-                    Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
-                }
-                MassMatesPrimaryButton(title: "Publicar no Feed Fraterno", systemImage: "paperplane") { Task { await viewModel.submitQuickWitness() } }
-            }
-        }
-    }
-
 }
 
 #Preview("Group Detail — 5 Seasons (Light / Dark / AX3)") {

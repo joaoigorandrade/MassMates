@@ -41,24 +41,15 @@ struct CreateGroupFormTabView: View {
     private var avatarPickerSection: some View {
         HStack {
             Spacer()
-            Button {
-                // Photo picker intent
-            } label: {
+            Button {} label: {
                 ZStack {
-                    Circle()
-                        .fill(MassMatesPalette.surfaceMuted)
-                        .frame(width: 64, height: 64)
-                        .overlay(
-                            Circle()
-                                .strokeBorder(MassMatesPalette.line, lineWidth: 1)
-                        )
-                    Image(systemName: "camera")
-                        .font(.system(size: 22, weight: .regular))
+                    Circle().fill(MassMatesPalette.surfaceMuted).frame(width: 64, height: 64)
+                        .overlay(Circle().strokeBorder(MassMatesPalette.line, lineWidth: 1))
+                    Image(systemName: "camera").font(.system(size: 22, weight: .regular))
                         .foregroundStyle(MassMatesPalette.textSecondary)
                 }
             }
-            .buttonStyle(.plain)
-            .frame(width: 64, height: 64)
+            .buttonStyle(.plain).frame(width: 64, height: 64)
             Spacer()
         }
     }

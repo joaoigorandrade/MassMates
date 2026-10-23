@@ -58,7 +58,7 @@ final class HolyMassGuideViewModel {
     }
 
     var registerMassButtonTitle: String {
-        isMassCheckedIn ? "Missa Registrada!" : "Registrar Presença na Santa Missa"
+        isMassCheckedIn ? "Missa Registrada!" : "Registrar Santa Missa"
     }
 
     var registerMassButtonIcon: String {

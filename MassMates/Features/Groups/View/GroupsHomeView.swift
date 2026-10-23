@@ -3,6 +3,7 @@ import SwiftUI
 
 struct GroupsHomeView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: GroupsHomeViewModel

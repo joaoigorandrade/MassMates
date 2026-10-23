@@ -96,6 +96,9 @@ final class NewCheckInViewModel {
             return
         }
         destinationMode = mode
+        if mode == .selectedGroups && selectedGroupIds.isEmpty && !availableGroups.isEmpty {
+            selectedGroupIds = Set(availableGroups.map(\.id))
+        }
         errorMessage = nil
     }
 

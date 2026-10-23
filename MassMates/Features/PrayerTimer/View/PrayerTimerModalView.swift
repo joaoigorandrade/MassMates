@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PrayerTimerModalView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
@@ -27,13 +28,9 @@ struct PrayerTimerModalView: View {
         .background(MassMatesPalette.bg.ignoresSafeArea())
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: viewModel.mode)
         .sheet(isPresented: $viewModel.isSoundMenuPresented) {
-            ambientSoundSheet
-                .presentationDetents([.height(260)])
-                .presentationCornerRadius(MassMatesRadius.sheet)
+            ambientSoundSheet.presentationDetents([.height(260)]).presentationCornerRadius(MassMatesRadius.sheet)
         }
-        .task(id: viewModel.isRunning) {
-            await runCountdownLoop()
-        }
+        .task(id: viewModel.isRunning) { await runCountdownLoop() }
     }
 
     // MARK: - Subviews / Private Helpers
@@ -48,14 +45,11 @@ struct PrayerTimerModalView: View {
     }
 
     private var closeButton: some View {
-        Button { navigator?.dismiss() } label: {
-            Image(systemName: "xmark")
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 44, height: 44)
+        Button { dismissModal() } label: {
+            Image(systemName: "xmark").font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary).frame(width: 44, height: 44)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Fechar")
+        .buttonStyle(.plain).accessibilityLabel("Fechar")
     }
 
     private var modeSegmentedSelector: some View {
@@ -128,15 +122,21 @@ struct PrayerTimerModalView: View {
     private var endPrayerButton: some View {
         Button {
             viewModel.completeSessionCheckIn()
-            navigator?.dismiss()
+            dismissModal()
         } label: {
-            Text("Encerrar")
+            Text("Concluir")
                 .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .fontWeight(.medium)
+                .foregroundStyle(theme.tint)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(MassMatesPressableButtonStyle())
+        .accessibilityLabel("Concluir oração")
+    }
+
+    private func dismissModal() {
+        if let navigator { navigator.dismiss() } else { dismiss() }
     }
 
     private var ambientSoundSheet: some View {

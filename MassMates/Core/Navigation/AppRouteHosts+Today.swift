@@ -22,7 +22,7 @@ struct RuleOfLifeRouteHostView: View {
         RuleOfLifeSectionView(
             progress: progress,
             onSelectPreset: { preset in todayViewModel?.selectPreset(preset) },
-            onTogglePractice: { practice in todayViewModel?.markPracticeCompleted(practice) }
+            onTogglePractice: { practice in todayViewModel?.togglePractice(practice) }
         )
         .environment(\.liturgicalTheme, Theme(season: season))
         .presentationCornerRadius(MassMatesRadius.sheet)

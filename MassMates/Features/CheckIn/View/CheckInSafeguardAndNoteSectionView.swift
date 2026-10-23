@@ -106,6 +106,8 @@ struct CheckInSafeguardAndNoteSectionView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remover foto")
@@ -121,6 +123,7 @@ struct CheckInSafeguardAndNoteSectionView: View {
                     .font(MassMatesFont.caption)
             }
             .foregroundStyle(MassMatesPalette.textSecondary)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Adicionar foto")

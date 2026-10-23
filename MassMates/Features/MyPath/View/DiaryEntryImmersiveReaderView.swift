@@ -5,21 +5,25 @@ struct DiaryEntryImmersiveReaderView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var currentEntry: PrivateDiaryCheckInEntry
     @State private var cachedParagraphs: [String]
     private let allEntries: [PrivateDiaryCheckInEntry]
     private let hasAttachedPhoto: Bool
+    private let onBack: (() -> Void)?
 
     // MARK: - Init
     init(
         entry: PrivateDiaryCheckInEntry = SpiritualDiaryViewModel.defaultSampleEntries()[0],
         allEntries: [PrivateDiaryCheckInEntry] = SpiritualDiaryViewModel.defaultSampleEntries(),
-        hasAttachedPhoto: Bool = true
+        hasAttachedPhoto: Bool = true,
+        onBack: (() -> Void)? = nil
     ) {
         self._currentEntry = State(initialValue: entry)
         self._cachedParagraphs = State(initialValue: Self.computeParagraphs(for: entry))
         self.allEntries = allEntries
         self.hasAttachedPhoto = hasAttachedPhoto
+        self.onBack = onBack
     }
 
     // MARK: - Body / Public API
@@ -47,12 +51,23 @@ struct DiaryEntryImmersiveReaderView: View {
     // MARK: - Subviews / Private Helpers
     private var topNavigationBar: some View {
         HStack {
-            Button { dismiss() } label: {
+            Button {
+                if let onBack {
+                    onBack()
+                } else if let navigator, navigator.canPop() {
+                    navigator.pop()
+                } else if let navigator {
+                    navigator.dismiss()
+                } else {
+                    dismiss()
+                }
+            } label: {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Voltar")
             Spacer()
             ShareLink(item: exportText) {
                 Image(systemName: "square.and.arrow.up")
@@ -108,7 +123,6 @@ struct DiaryEntryImmersiveReaderView: View {
     private static let metadataFormatter: DateFormatter = {
         let f = DateFormatter(); f.locale = Locale(identifier: "pt_BR"); f.dateFormat = "d 'de' MMMM"; return f
     }()
-
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter(); f.locale = Locale(identifier: "pt_BR"); f.dateFormat = "d MMM"; return f
     }()
@@ -119,16 +133,12 @@ struct DiaryEntryImmersiveReaderView: View {
     ]
 
     private static func computeParagraphs(for entry: PrivateDiaryCheckInEntry) -> [String] {
-        guard let notes = entry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return defaultParagraphs
-        }
+        guard let notes = entry.reflectionOrNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return defaultParagraphs }
         let split = notes.components(separatedBy: "\n\n").filter { !$0.isEmpty }
         return split.isEmpty ? [notes] : split
     }
 
-    private var formattedMetadata: String {
-        "\(Self.metadataFormatter.string(from: currentEntry.createdAt)) · \(currentEntry.practice.title)"
-    }
+    private var formattedMetadata: String { "\(Self.metadataFormatter.string(from: currentEntry.createdAt)) · \(currentEntry.practice.title)" }
 
     private var entryTitle: String {
         switch currentEntry.practice {
@@ -152,9 +162,7 @@ struct DiaryEntryImmersiveReaderView: View {
         return allEntries[idx - 1]
     }
 
-    private func shortDateLabel(for entry: PrivateDiaryCheckInEntry) -> String {
-        Self.shortDateFormatter.string(from: entry.createdAt).capitalized
-    }
+    private func shortDateLabel(for entry: PrivateDiaryCheckInEntry) -> String { Self.shortDateFormatter.string(from: entry.createdAt).capitalized }
 
     private func flip(to entry: PrivateDiaryCheckInEntry?) {
         guard let entry else { return }
@@ -162,9 +170,7 @@ struct DiaryEntryImmersiveReaderView: View {
         withAnimation(.easeInOut(duration: 0.25)) { currentEntry = entry }
     }
 
-    private var exportText: String {
-        "[\(formattedMetadata)] \(entryTitle)\n\n\(reflectionParagraphs.joined(separator: "\n\n"))"
-    }
+    private var exportText: String { "[\(formattedMetadata)] \(entryTitle)\n\n\(reflectionParagraphs.joined(separator: "\n\n"))" }
 }
 
 #Preview("Immersive Diary Entry Reader — 5 Seasons (Light / Dark / AX3)") {

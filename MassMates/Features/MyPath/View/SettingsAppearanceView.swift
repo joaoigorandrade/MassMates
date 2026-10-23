@@ -1,8 +1,11 @@
+import Navigation
 import SwiftUI
 
 struct SettingsAppearanceView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     private let viewModel: SettingsViewModel
     private let onBack: () -> Void
 
@@ -16,9 +19,13 @@ struct SettingsAppearanceView: View {
     var body: some View {
         VStack(spacing: 0) {
             topNavigationArea
-            themeSection.padding(.horizontal, MassMatesLayout.screenMargin).padding(.bottom, MassMatesSpacing.md)
-            appIconSection.padding(.horizontal, MassMatesLayout.screenMargin).padding(.bottom, MassMatesSpacing.md)
-            languageSection.padding(.horizontal, MassMatesLayout.screenMargin)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: MassMatesSpacing.md) {
+                    themeSection.padding(.horizontal, MassMatesLayout.screenMargin)
+                    appIconSection.padding(.horizontal, MassMatesLayout.screenMargin)
+                    languageSection.padding(.horizontal, MassMatesLayout.screenMargin)
+                }
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -29,17 +36,22 @@ struct SettingsAppearanceView: View {
     private var topNavigationArea: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                Button(action: handleBack) {
+                    HStack(spacing: MassMatesSpacing.xxs) {
+                        Image(systemName: "chevron.left").font(MassMatesFont.headline)
+                        Text("Ajustes").font(MassMatesFont.callout)
+                    }
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Voltar")
                 Spacer()
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
 
             VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-                Text("Aparência").font(MassMatesFont.display).foregroundStyle(MassMatesPalette.textPrimary)
+                Text("Aparência e Liturgia").font(MassMatesFont.display).foregroundStyle(MassMatesPalette.textPrimary)
                 Text("Personalize seu recolhimento e idioma.").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
@@ -120,6 +132,13 @@ struct SettingsAppearanceView: View {
                 .buttonStyle(.plain)
                 hairline
             }
+        }
+    }
+
+    private func handleBack() {
+        onBack()
+        if let navigator, navigator.canPop() {
+            navigator.pop()
         }
     }
 

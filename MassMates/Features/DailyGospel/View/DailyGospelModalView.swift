@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DailyGospelModalView: View {
     // MARK: - Dependencies & State
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @OptionalNavigator<AppRoute> private var navigator
@@ -32,10 +33,8 @@ struct DailyGospelModalView: View {
     // MARK: - Subviews / Private Helpers
     private var pagedReadingView: some View {
         VStack(spacing: 0) {
-            DailyGospelSubHeaderView(viewModel: viewModel) {
-                navigator?.dismiss()
-            }
-            .equatable()
+            DailyGospelSubHeaderView(viewModel: viewModel) { dismissModal() }
+                .equatable()
             readingTabView
             bottomBar
         }
@@ -73,8 +72,7 @@ struct DailyGospelModalView: View {
         case .gospel: viewModel.reading.gospelTitle
         }
         return VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Rectangle().fill(theme.tint).frame(width: 32, height: 1)
-                .padding(.bottom, 2)
+            Rectangle().fill(theme.tint).frame(width: 32, height: 1).padding(.bottom, 2)
             Text(reference).font(MassMatesFont.caption).tracking(1.0).foregroundStyle(MassMatesPalette.textSecondary)
             Text(title).font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
             if section == .gospel {
@@ -129,8 +127,7 @@ struct DailyGospelModalView: View {
             Spacer()
             lectioButton
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin)
-        .frame(height: MassMatesLayout.minRowHeight)
+        .padding(.horizontal, MassMatesLayout.readingMargin).frame(height: MassMatesLayout.minRowHeight)
     }
 
     private var pageIndicators: some View {
@@ -140,10 +137,7 @@ struct DailyGospelModalView: View {
                 Capsule()
                     .fill(isCurrent ? theme.tint : MassMatesPalette.line)
                     .frame(width: isCurrent ? 18 : 6, height: 6)
-                    .animation(
-                        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75),
-                        value: viewModel.selectedSection
-                    )
+                    .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: viewModel.selectedSection)
             }
         }
     }
@@ -156,9 +150,7 @@ struct DailyGospelModalView: View {
                 Text("Lectio Divina")
                 Text("→")
             }
-            .font(MassMatesFont.callout)
-            .fontWeight(.medium)
-            .foregroundStyle(theme.tint)
+            .font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
             .frame(minHeight: MassMatesLayout.minTapTarget)
         }
         .buttonStyle(MassMatesPressableButtonStyle())
@@ -168,6 +160,10 @@ struct DailyGospelModalView: View {
         LectioDivinaAccordionSectionView(viewModel: viewModel) {
             withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) { isShowingLectio = false }
         }
+    }
+
+    private func dismissModal() {
+        if let navigator { navigator.dismiss() } else { dismiss() }
     }
 }
 

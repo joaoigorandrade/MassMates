@@ -21,7 +21,7 @@ final class NightlyExamenViewModel {
     var selectedVirtueID: String?
     var isExamenConcluded: Bool = false
     var isSavedToLocalJournal: Bool = false
-    private var explicitStep: Int?
+    private var explicitStep: Int = 1
 
     // MARK: - Init
     init(
@@ -44,29 +44,28 @@ final class NightlyExamenViewModel {
     var currentStepIndex: Int {
         get {
             if isExamenConcluded { return 5 }
-            if let explicitStep { return explicitStep }
-            return calculateActiveStep()
+            return explicitStep
         }
         set { explicitStep = min(max(newValue, 1), 5) }
     }
 
     var stepCaption: String {
         switch currentStepIndex {
-        case 1: "PASSO 1 · PRESENÇA DE DEUS"
-        case 2: "PASSO 2 · AÇÃO DE GRAÇAS"
+        case 1: "PASSO 1 · GRATIDÃO"
+        case 2: "PASSO 2 · LUZ DO ESPÍRITO"
         case 3: "PASSO 3 · REVISÃO DO DIA"
-        case 4: "PASSO 4 · PERDÃO"
-        default: "PASSO 5 · RESOLUÇÃO DE AMANHÃ"
+        case 4: "PASSO 4 · PEDIDO DE PERDÃO"
+        default: "PASSO 5 · RESOLUÇÃO DE ESPERANÇA"
         }
     }
 
     var stepTitle: String {
         switch currentStepIndex {
-        case 1: "Presença de Deus"
-        case 2: "Ação de Graças"
+        case 1: "Gratidão"
+        case 2: "Luz do Espírito"
         case 3: "Revisão do Dia"
-        case 4: "Contrição & Perdão"
-        default: "Resolução de Amanhã"
+        case 4: "Pedido de Perdão"
+        default: "Resolução de Esperança"
         }
     }
 
@@ -103,7 +102,7 @@ final class NightlyExamenViewModel {
     func toggleConfessionNoteInput() { isConfessionNoteExpanded.toggle() }
     func selectVirtue(_ virtueID: String) {
         selectedVirtueID = virtueID
-        if explicitStep != nil { explicitStep = 5 }
+        explicitStep = 5
     }
     func concludeExamen() { isExamenConcluded = true }
 
@@ -122,6 +121,7 @@ final class NightlyExamenViewModel {
         }
         onSaveJournalReflection?(reflection)
         isSavedToLocalJournal = true
+        isExamenConcluded = true
     }
 
     // MARK: - Subviews / Private Helpers
@@ -146,7 +146,8 @@ final class NightlyExamenViewModel {
         if selectedVirtueID != nil { return 5 }
         if isConfessionNoteExpanded || !privateConfessionNote.isEmpty { return 4 }
         if selectedEvaluation != nil || !checkedAttentionIDs.isEmpty { return 3 }
-        if !selectedGratitudeIDs.isEmpty || !gratitudeJournalText.isEmpty { return 2 }
+        if selectedPresence != nil || isAmbientMusicPlaying { return 2 }
+        if !selectedGratitudeIDs.isEmpty || !gratitudeJournalText.isEmpty { return 1 }
         return 1
     }
 }

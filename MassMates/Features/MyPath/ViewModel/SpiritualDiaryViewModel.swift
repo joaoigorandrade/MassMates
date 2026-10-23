@@ -120,6 +120,28 @@ final class SpiritualDiaryViewModel {
         }
     }
 
+    @discardableResult
+    func addDiaryEntry(
+        practice: SpiritualPractice = .mentalPrayer,
+        reflection: String
+    ) async -> Bool {
+        let trimmed = reflection.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let draft = CheckInSubmissionDraft(
+            practice: practice,
+            fruitOfPrayer: trimmed,
+            destinationMode: .privateDiaryOnly
+        )
+        do {
+            _ = try await checkInService.submitCheckIn(draft, at: Date())
+            statusBannerMessage = "Novo registro salvo com serenidade no Diário."
+            return true
+        } catch {
+            securityErrorMessage = "Não foi possível registrar a reflexão."
+            return false
+        }
+    }
+
     // MARK: - Subviews / Private Helpers
     private func matchesFilter(_ entry: PrivateDiaryCheckInEntry, query: String) -> Bool {
         if let practiceFilter = selectedPracticeFilter, entry.practice != practiceFilter {

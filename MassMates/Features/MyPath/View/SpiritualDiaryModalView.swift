@@ -6,9 +6,10 @@ struct SpiritualDiaryModalView: View {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @OptionalNavigator private var navigator: Navigator<AppRoute>?
+    @OptionalNavigator<AppRoute> private var navigator
     @Bindable private var viewModel: SpiritualDiaryViewModel
     @State private var selectedEntryForReading: PrivateDiaryCheckInEntry?
+    @State private var showingNewEntrySheet: Bool = false
     @State private var selectedMonth: Date = Date()
     @State private var isSearchActive: Bool = false
     @State private var displayedEntries: [PrivateDiaryCheckInEntry] = []
@@ -27,11 +28,9 @@ struct SpiritualDiaryModalView: View {
             monthSwitcher
             hairlineDivider.padding(.top, MassMatesSpacing.xs)
             if viewModel.isDiaryUnlocked {
-                entriesSection
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98)))
+                entriesSection.transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98)))
             } else {
-                lockedBiometricGate
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98)))
+                lockedBiometricGate.transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98)))
             }
             Spacer(minLength: MassMatesSpacing.xs)
             bottomBiometricPill
@@ -42,6 +41,12 @@ struct SpiritualDiaryModalView: View {
         .sheet(item: $selectedEntryForReading) {
             DiaryEntryImmersiveReaderView(entry: $0, allEntries: displayedEntries).environment(\.liturgicalTheme, theme)
         }
+        .sheet(isPresented: $showingNewEntrySheet) {
+            NewDiaryEntrySheetView { practice, text in
+                await viewModel.addDiaryEntry(practice: practice, reflection: text)
+                updateDisplayedEntries()
+            }.environment(\.liturgicalTheme, theme)
+        }
         .onChange(of: viewModel.filteredEntries) { updateDisplayedEntries() }
         .onChange(of: viewModel.searchQuery) { updateDisplayedEntries() }
         .onAppear { updateDisplayedEntries() }
@@ -50,21 +55,27 @@ struct SpiritualDiaryModalView: View {
     // MARK: - Subviews / Private Helpers
     private var topNavigationBar: some View {
         HStack {
-            Button { navigator?.dismiss() ?? dismiss() } label: {
-                Image(systemName: "chevron.left").font(.system(size: 20, weight: .semibold))
+            Button {
+                if let navigator { navigator.dismiss() } else { dismiss() }
+            } label: {
+                Image(systemName: "xmark").font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).accessibilityLabel("Fechar")
             Spacer()
             Text("Diário").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
-            Button { toggleSearch() } label: {
-                Image(systemName: isSearchActive ? "xmark" : "magnifyingglass").font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
-            }.buttonStyle(.plain)
-        }
-        .frame(height: 52)
+            HStack(spacing: MassMatesSpacing.xxs) {
+                Button { toggleSearch() } label: {
+                    Image(systemName: isSearchActive ? "xmark" : "magnifyingglass").font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(MassMatesPalette.textPrimary).frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                }.buttonStyle(.plain).accessibilityLabel("Buscar")
+                Button { showingNewEntrySheet = true } label: {
+                    Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.tint)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+                }.buttonStyle(.plain).accessibilityLabel("Novo Registro")
+            }
+        }.frame(height: 52)
     }
 
     private var monthSwitcher: some View {
@@ -79,29 +90,28 @@ struct SpiritualDiaryModalView: View {
     private func monthChevron(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .foregroundStyle(MassMatesPalette.textSecondary).frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
         }.buttonStyle(.plain)
     }
 
     private var entriesSection: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                if isSearchActive {
-                    searchField.padding(.vertical, MassMatesSpacing.xs)
-                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-                }
+                if isSearchActive { searchField.padding(.vertical, MassMatesSpacing.xs) }
                 if displayedEntries.isEmpty {
-                    Text("Nenhum registro encontrado").font(MassMatesFont.callout)
-                        .foregroundStyle(MassMatesPalette.textSecondary).frame(maxWidth: .infinity, minHeight: 120)
+                    VStack(spacing: MassMatesSpacing.xs) {
+                        Text("Nenhum registro encontrado").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+                        Button("Novo Registro") { showingNewEntrySheet = true }
+                            .font(MassMatesFont.callout.weight(.semibold)).foregroundStyle(theme.tint)
+                    }.frame(maxWidth: .infinity, minHeight: 120)
                 } else {
                     ForEach(displayedEntries) { entry in
                         SpiritualDiaryEntryCardView(entry: entry) { selectedEntryForReading = $0 }
                         hairlineDivider
                     }
                 }
-            }
-            .padding(.bottom, MassMatesSpacing.lg)
+                SpiritualDiaryFooterView(viewModel: viewModel)
+            }.padding(.bottom, MassMatesSpacing.lg)
         }
     }
 
@@ -116,16 +126,15 @@ struct SpiritualDiaryModalView: View {
 
     private var bottomBiometricPill: some View {
         Button {
-            if viewModel.isDiaryUnlocked { viewModel.lockDiaryNow() } else { _ = viewModel.unlockWithBiometrics() }
+            if viewModel.isDiaryUnlocked { viewModel.lockDiaryNow() } else if viewModel.unlockWithBiometrics(simulateSuccess: true) { updateDisplayedEntries() }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill").font(.system(size: 13))
-                Text("Protegido por Face ID").font(MassMatesFont.caption)
+                Text(viewModel.isDiaryUnlocked ? "Trancar Diário" : "Protegido por Face ID").font(MassMatesFont.caption)
             }
             .foregroundStyle(MassMatesPalette.textSecondary).padding(.vertical, 8).padding(.horizontal, MassMatesSpacing.md)
             .background(MassMatesPalette.surfaceMuted.opacity(0.8)).clipShape(Capsule())
-        }
-        .buttonStyle(.plain).padding(.bottom, MassMatesSpacing.sm)
+        }.buttonStyle(.plain).padding(.bottom, MassMatesSpacing.sm)
     }
 
     private var lockedBiometricGate: some View {
@@ -133,31 +142,23 @@ struct SpiritualDiaryModalView: View {
             Image(systemName: "faceid").font(.system(size: 40)).foregroundStyle(MassMatesPalette.textSecondary)
             Text("Diário Protegido").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
             MassMatesPrimaryButton(title: "Desbloquear com Biometria", systemImage: "lock.open") {
-                _ = viewModel.unlockWithBiometrics(simulateSuccess: true)
+                if viewModel.unlockWithBiometrics(simulateSuccess: true) { updateDisplayedEntries() }
             }
         }.frame(maxWidth: .infinity).padding(.vertical, MassMatesSpacing.xl)
     }
 
-    private var hairlineDivider: some View {
-        Rectangle().fill(MassMatesPalette.line).frame(height: 1)
-    }
+    private var hairlineDivider: some View { Rectangle().fill(MassMatesPalette.line).frame(height: 1) }
 
-    private var monthYearLabel: String {
-        selectedMonth.formatted(.dateTime.month(.wide).year()).capitalized
-    }
+    private var monthYearLabel: String { selectedMonth.formatted(.dateTime.month(.wide).year()).capitalized }
 
-    private static func computeDisplayed(
-        entries: [PrivateDiaryCheckInEntry], month: Date, query: String
-    ) -> [PrivateDiaryCheckInEntry] {
+    private static func computeDisplayed(entries: [PrivateDiaryCheckInEntry], month: Date, query: String) -> [PrivateDiaryCheckInEntry] {
         let cal = Calendar.current
         let matching = entries.filter { cal.isDate($0.createdAt, equalTo: month, toGranularity: .month) }
         return !matching.isEmpty ? Array(matching.prefix(5)) : (query.isEmpty ? Array(entries.prefix(5)) : [])
     }
 
     private func updateDisplayedEntries() {
-        displayedEntries = Self.computeDisplayed(
-            entries: viewModel.filteredEntries, month: selectedMonth, query: viewModel.searchQuery
-        )
+        displayedEntries = Self.computeDisplayed(entries: viewModel.filteredEntries, month: selectedMonth, query: viewModel.searchQuery)
     }
 
     private func changeMonth(by value: Int) {
@@ -175,8 +176,4 @@ struct SpiritualDiaryModalView: View {
             updateDisplayedEntries()
         }
     }
-}
-
-#Preview("Spiritual Diary Modal — 5 Seasons (Light / Dark / AX3)") {
-    LiturgicalSeasonPreviewMatrix { _ in SpiritualDiaryModalView(viewModel: SpiritualDiaryViewModel()) }
 }
