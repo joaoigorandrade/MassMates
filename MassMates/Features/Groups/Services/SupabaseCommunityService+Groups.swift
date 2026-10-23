@@ -28,7 +28,7 @@ extension SupabaseCommunityService {
             groupCache[group.id] = group
             return group
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.createGroup(draft)
         }
     }
 
@@ -43,7 +43,7 @@ extension SupabaseCommunityService {
             groupCache[group.id] = group
             return group
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.joinGroup(byInviteInput: code)
         }
     }
 
@@ -57,14 +57,16 @@ extension SupabaseCommunityService {
             groupCache[group.id] = group
             return group
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.joinFeaturedChallenge(challengeId)
         }
     }
 
     func unlockRewardedGroupSlot() async throws -> GroupSlotCapacity {
-        // The extra slot is granted by the AdMob SSV callback, not by the
-        // client: the client only reads the live state.
-        try await slotCapacity()
+        do {
+            return try await slotCapacity()
+        } catch {
+            return try await fallback.unlockRewardedGroupSlot()
+        }
     }
 
     // MARK: - Subviews / Private Helpers

@@ -67,29 +67,14 @@ struct ConsistencyHeatmapCardView: View, Equatable {
     }
 
     private var heatmapGrid: some View {
-        HStack(alignment: .top, spacing: 4) {
-            weekdayLabelsColumn
-            columnsMatrix
-        }
-    }
-
-    private var weekdayLabelsColumn: some View {
         VStack(spacing: 3) {
-            ForEach(Self.weekdayLabels, id: \.self) { label in
-                Text(label)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .frame(height: 12)
-            }
-        }
-        .padding(.trailing, 2)
-    }
-
-    private var columnsMatrix: some View {
-        HStack(spacing: 3) {
-            ForEach(0..<12, id: \.self) { week in
-                VStack(spacing: 3) {
-                    ForEach(0..<7, id: \.self) { day in
+            ForEach(0..<7, id: \.self) { day in
+                HStack(spacing: 3) {
+                    Text(Self.weekdayLabels[day])
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(MassMatesPalette.textTertiary)
+                        .frame(width: 14, alignment: .leading)
+                    ForEach(0..<12, id: \.self) { week in
                         cellView(week: week, day: day)
                     }
                 }

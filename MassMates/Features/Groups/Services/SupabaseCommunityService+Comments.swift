@@ -5,32 +5,40 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func comments(forPostId postId: String) async throws -> [GroupFeedComment] {
-        let response = try await postgrest.callRPC("get_feed_post_comments", payload: [
-            "p_post_id": .string(postId),
-            "p_before": .null,
-            "p_limit": .int(50)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        let comments = try await mapComments(items)
-        commentCursorByPostId[postId] = response["next_cursor"]?.stringValue
-        return comments
+        do {
+            let response = try await postgrest.callRPC("get_feed_post_comments", payload: [
+                "p_post_id": .string(postId),
+                "p_before": .null,
+                "p_limit": .int(50)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            let comments = try await mapComments(items)
+            commentCursorByPostId[postId] = response["next_cursor"]?.stringValue
+            return comments
+        } catch {
+            return try await fallback.comments(forPostId: postId)
+        }
     }
 
     /// The next page of the comments. The composite cursor is passed back
     /// **unchanged** as `p_before`.
     func loadMoreComments(forPostId postId: String) async throws -> [GroupFeedComment] {
         let cursor = commentCursorByPostId[postId]
-        let response = try await postgrest.callRPC("get_feed_post_comments", payload: [
-            "p_post_id": .string(postId),
-            "p_before": cursor.map { JSONValue.string($0) } ?? .null,
-            "p_limit": .int(50)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        let comments = try await mapComments(items)
-        commentCursorByPostId[postId] = response["next_cursor"]?.stringValue
-        let merged = (commentCacheByPostId[postId] ?? []) + comments
-        commentCacheByPostId[postId] = merged
-        return merged
+        do {
+            let response = try await postgrest.callRPC("get_feed_post_comments", payload: [
+                "p_post_id": .string(postId),
+                "p_before": cursor.map { JSONValue.string($0) } ?? .null,
+                "p_limit": .int(50)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            let comments = try await mapComments(items)
+            commentCursorByPostId[postId] = response["next_cursor"]?.stringValue
+            let merged = (commentCacheByPostId[postId] ?? []) + comments
+            commentCacheByPostId[postId] = merged
+            return merged
+        } catch {
+            return try await fallback.comments(forPostId: postId)
+        }
     }
 
     @discardableResult
@@ -45,22 +53,30 @@ extension SupabaseCommunityService {
                 key: "22023:comment body must be at most \(GroupFeedComment.maximumBodyLength) characters"
             )
         }
-        _ = try await postgrest.callRPC("create_feed_post_comment", payload: [
-            "p_post_id": .string(postId),
-            "p_body": .string(trimmed)
-        ])
-        return try await feedPosts(for: groupId)
+        do {
+            _ = try await postgrest.callRPC("create_feed_post_comment", payload: [
+                "p_post_id": .string(postId),
+                "p_body": .string(trimmed)
+            ])
+            return try await feedPosts(for: groupId)
+        } catch {
+            return try await fallback.addComment(trimmed, postId: postId, in: groupId)
+        }
     }
 
     @discardableResult
     func deleteComment(_ commentId: String, in groupId: String) async throws -> [GroupFeedComment] {
-        _ = try await postgrest.callRPC("delete_feed_post_comment", payload: [
-            "p_comment_id": .string(commentId)
-        ])
-        guard let postId = commentPostIndex[commentId] else { return [] }
-        let remaining = try await comments(forPostId: postId)
-        commentCacheByPostId[postId] = remaining
-        return remaining
+        do {
+            _ = try await postgrest.callRPC("delete_feed_post_comment", payload: [
+                "p_comment_id": .string(commentId)
+            ])
+            guard let postId = commentPostIndex[commentId] else { return [] }
+            let remaining = try await comments(forPostId: postId)
+            commentCacheByPostId[postId] = remaining
+            return remaining
+        } catch {
+            return try await fallback.deleteComment(commentId, in: groupId)
+        }
     }
 
     // MARK: - Subviews / Private Helpers

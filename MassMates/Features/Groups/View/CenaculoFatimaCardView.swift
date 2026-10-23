@@ -15,18 +15,19 @@ struct CenaculoFatimaCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        Button { onSelectGroup(group) } label: {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-                cardHeader
-                hairlineDivider
-                latestCheckInRow
-            }
-            .padding(MassMatesSpacing.md)
-            .background(MassMatesPalette.surface)
-            .clipShape(.rect(cornerRadius: MassMatesRadius.card))
-            .overlay(cardBorder)
+        VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+            cardHeader
+            hairlineDivider
+            latestCheckInRow
         }
-        .buttonStyle(.plain)
+        .padding(MassMatesSpacing.md)
+        .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.card))
+        .overlay(cardBorder)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelectGroup(group)
+        }
     }
 
     // MARK: - Subviews / Private Helpers

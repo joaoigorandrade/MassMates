@@ -28,16 +28,17 @@ struct LectioDivinaAccordionSectionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-            Spacer(minLength: MassMatesSpacing.sm)
-            stepsSection
-            Spacer(minLength: MassMatesSpacing.sm)
-            bottomActionBar
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MassMatesSpacing.md) {
+                headerView
+                stepsSection
+                bottomActionBar
+            }
+            .padding(.horizontal, MassMatesLayout.readingMargin)
+            .padding(.bottom, MassMatesSpacing.xl)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin)
-        .frame(maxWidth: MassMatesLayout.readingMaxWidth)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 

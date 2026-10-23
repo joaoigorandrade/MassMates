@@ -36,7 +36,7 @@ struct SettingsIndexView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Button(action: onDismiss) {
-                    Image(systemName: "chevron.left")
+                    Image(systemName: "xmark")
                         .font(MassMatesFont.headline)
                         .foregroundStyle(MassMatesPalette.textPrimary)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
@@ -59,8 +59,7 @@ struct SettingsIndexView: View {
         VStack(spacing: 0) {
             navigationRow(icon: "bell", title: "Lembretes litúrgicos", subtitle: "Angelus 12h e 18h", dest: .reminders)
             navigationRow(icon: "paintpalette", title: "Aparência & idioma", subtitle: nil, dest: .appearance)
-            navigationRow(icon: "shield", title: "Privacidade & anúncios", subtitle: nil, dest: .privacy)
-            navigationRow(icon: "person", title: "Conta", subtitle: nil, dest: .privacy)
+            navigationRow(icon: "shield", title: "Privacidade & conta", subtitle: nil, dest: .privacy)
         }
     }
 

@@ -3,13 +3,17 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func prayerIntentions(for groupId: String) async throws -> [PrayerIntention] {
-        let response = try await postgrest.callRPC("get_prayer_intentions", payload: [
-            "p_group_id": .string(groupId),
-            "p_before": .null,
-            "p_limit": .int(30)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        return try await mapPrayerIntentions(items, groupId: groupId)
+        do {
+            let response = try await postgrest.callRPC("get_prayer_intentions", payload: [
+                "p_group_id": .string(groupId),
+                "p_before": .null,
+                "p_limit": .int(30)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            return try await mapPrayerIntentions(items, groupId: groupId)
+        } catch {
+            return try await fallback.prayerIntentions(for: groupId)
+        }
     }
 
     @discardableResult
@@ -26,7 +30,7 @@ extension SupabaseCommunityService {
             ])
             return try await prayerIntentions(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.createPrayerIntention(in: groupId, text: trimmed)
         }
     }
 
@@ -35,10 +39,14 @@ extension SupabaseCommunityService {
         _ intentionId: String,
         in groupId: String
     ) async throws -> [PrayerIntention] {
-        _ = try await postgrest.callRPC("toggle_prayed_for", payload: [
-            "p_intention_id": .string(intentionId)
-        ])
-        return try await prayerIntentions(for: groupId)
+        do {
+            _ = try await postgrest.callRPC("toggle_prayed_for", payload: [
+                "p_intention_id": .string(intentionId)
+            ])
+            return try await prayerIntentions(for: groupId)
+        } catch {
+            return try await fallback.togglePrayedForIntention(intentionId, in: groupId)
+        }
     }
 
     // MARK: - Subviews / Private Helpers

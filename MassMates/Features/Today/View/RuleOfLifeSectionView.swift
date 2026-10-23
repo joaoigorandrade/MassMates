@@ -61,7 +61,7 @@ struct RuleOfLifeSectionView: View {
             }
             .buttonStyle(.plain).accessibilityLabel("Voltar")
             Spacer()
-            Text("Regra de Vida").font(.system(size: 20, weight: .semibold, design: .serif)).foregroundStyle(MassMatesPalette.textPrimary)
+            Text("Regra de Vida").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
             Color.clear.frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
         }
@@ -70,7 +70,7 @@ struct RuleOfLifeSectionView: View {
 
     private var mainContentArea: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("FIDELIDADE DIÁRIA").font(.system(size: 12, weight: .medium)).tracking(0.8)
+            Text("FIDELIDADE DIÁRIA").font(MassMatesFont.caption).tracking(0.8)
                 .foregroundStyle(MassMatesPalette.textSecondary).padding(.bottom, MassMatesSpacing.md)
             progressSection
             checklistRows
@@ -82,9 +82,9 @@ struct RuleOfLifeSectionView: View {
     private var progressSection: some View {
         VStack(spacing: MassMatesSpacing.xs) {
             HStack {
-                Text("Progresso de hoje").font(.system(size: 14)).foregroundStyle(MassMatesPalette.textSecondary)
+                Text("Progresso de hoje").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                 Spacer()
-                Text("\(completedCount) de \(items.count)").font(.system(size: 14, weight: .medium)).foregroundStyle(theme.tint)
+                Text("\(completedCount) de \(items.count)").font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
             }
             MassMatesProgressBar(progress: progressRatio)
         }.padding(.bottom, MassMatesSpacing.lg)
@@ -104,7 +104,7 @@ struct RuleOfLifeSectionView: View {
         Button { toggleItem(item) } label: {
             HStack(spacing: MassMatesSpacing.sm) {
                 circularToggle(isCompleted: item.isCompleted)
-                Text(item.title).font(.system(size: 16)).foregroundStyle(MassMatesPalette.textPrimary)
+                Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
                 trailingLabel(for: item)
             }
@@ -128,15 +128,15 @@ struct RuleOfLifeSectionView: View {
     @ViewBuilder
     private func trailingLabel(for item: DailyRuleChecklistItem) -> some View {
         if item.isCompleted {
-            Text("Feito").font(.system(size: 12)).foregroundStyle(MassMatesPalette.textSecondary)
+            Text("Feito").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
         } else if let schedule = item.schedule, !schedule.isEmpty {
-            Text(schedule).font(.system(size: 13)).foregroundStyle(MassMatesPalette.textTertiary)
+            Text(schedule).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textTertiary)
         }
     }
 
     private var spiritualQuote: some View {
         Text("“A perseverança nas pequenas coisas é fruto do amor silencioso.”")
-            .font(.system(size: 14, weight: .regular, design: .serif).italic())
+            .font(MassMatesFont.scriptureEmphasis)
             .foregroundStyle(MassMatesPalette.textSecondary).multilineTextAlignment(.center).frame(maxWidth: .infinity)
             .padding(.top, MassMatesSpacing.xl).padding(.horizontal, MassMatesSpacing.xs)
     }
@@ -145,7 +145,7 @@ struct RuleOfLifeSectionView: View {
         Button {
             onEditRule?()
         } label: {
-            Text("Editar regra de vida").font(.system(size: 14, weight: .medium)).foregroundStyle(theme.tint)
+            Text("Editar regra de vida").font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
                 .padding(.vertical, MassMatesSpacing.xs).padding(.horizontal, MassMatesSpacing.md)
         }
         .buttonStyle(.plain).padding(.bottom, MassMatesSpacing.lg)

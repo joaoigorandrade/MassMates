@@ -32,7 +32,10 @@ enum DiarySecurityError: Error, Sendable, Equatable {
 enum LiturgicalReminderKind: String, CaseIterable, Identifiable, Sendable, Equatable, Codable {
     case morningOffering
     case angelusNoon
+    case mercyChaplet
     case angelusEvening
+    case familyRosary
+    case eveningExamenAndCompline
     case dailyRosary
     case eveningExamen
 
@@ -116,33 +119,13 @@ extension EncryptedDiaryBackupEnvelope {
 }
 
 extension ConsistencyHeatmapDay {
-    static let defaults: [ConsistencyHeatmapDay] = {
-        let counts = [2, 3, 1, 2, 0, 2, 3, 1, 2, 3, 2, 1, 3, 2, 0, 1, 2, 3, 2, 1, 2, 3, 1, 0, 2, 3, 2, 3]
-        return counts.enumerated().map { idx, count in
-            ConsistencyHeatmapDay(id: "day-\(idx + 1)", dateLabel: "Dia \(idx + 1)", dayNumber: idx + 1, practiceCount: count, intensityLevel: min(count, 3))
-        }
-    }()
+    static let defaults: [ConsistencyHeatmapDay] = ConsistencyHeatmapSampleData.realistic84Days
 }
 
 extension SpiritualMilestonesSummary {
-    static let defaults = SpiritualMilestonesSummary(
-        rosariesPrayed: 48,
-        massesAttended: 22,
-        mentalPrayerHours: 16,
-        activeStreakDays: 12,
-        canClaimStreakMercyThisMonth: true,
-        lastStreakMercyClaimedAt: nil,
-        unlockedSaintIcons: [.classicLiturgical, .ourLadyOfAparecida],
-        activeAppIcon: .classicLiturgical
-    )
+    static let defaults: SpiritualMilestonesSummary = ConsistencyHeatmapSampleData.realisticMilestones
 }
 
 extension LiturgicalReminderItem {
-    static let defaults: [LiturgicalReminderItem] = [
-        LiturgicalReminderItem(id: "rem-morning", kind: .morningOffering, title: "Oferecimento da manhã", subtitle: "Consagração do dia ao acordar", timeLabel: "06:30", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-angelus-12", kind: .angelusNoon, title: "Angelus", subtitle: "Pausa mariana às 12h", timeLabel: "12:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-angelus-18", kind: .angelusEvening, title: "Angelus", subtitle: "Sino da tarde às 18h", timeLabel: "18:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-rosary", kind: .dailyRosary, title: "Terço", subtitle: "Meditação dos mistérios do dia", timeLabel: "20:00", isEnabled: true),
-        LiturgicalReminderItem(id: "rem-examen", kind: .eveningExamen, title: "Exame da noite", subtitle: "Gratidão e recolhimento antes de dormir", timeLabel: "22:00", isEnabled: false)
-    ]
+    static let defaults: [LiturgicalReminderItem] = ConsistencyHeatmapSampleData.realisticReminders
 }

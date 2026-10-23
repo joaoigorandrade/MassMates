@@ -19,17 +19,22 @@ struct CreateGroupFormTabView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            avatarPickerSection
-            nameUnderlineSection
-            groupTypeSelectorSection
-            if viewModel.draft.type == .challenge {
-                CreateGroupChallengeWindowView(viewModel: viewModel)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                avatarPickerSection
+                nameUnderlineSection
+                parishUnderlineSection
+                groupTypeSelectorSection
+                if viewModel.draft.type == .challenge {
+                    CreateGroupChallengeWindowView(viewModel: viewModel)
+                }
+                advanceButton
+                    .padding(.top, MassMatesSpacing.xs)
             }
-            Spacer(minLength: 0)
-            advanceButton
+            .padding(.top, MassMatesSpacing.xs)
+            .padding(.bottom, MassMatesSpacing.xl)
         }
-        .padding(.top, MassMatesSpacing.xs)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Subviews / Private Helpers
@@ -70,6 +75,22 @@ struct CreateGroupFormTabView: View {
                 .padding(.vertical, MassMatesSpacing.xxs)
             Rectangle()
                 .fill(viewModel.draft.name.isEmpty ? MassMatesPalette.line : theme.tint)
+                .frame(height: 1)
+        }
+    }
+
+    private var parishUnderlineSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Text("Paróquia ou comunidade (opcional)")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+            TextField("ex: Paróquia Nossa Senhora do Carmo", text: $viewModel.draft.parishOrCommunity)
+                .font(MassMatesFont.body)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .autocorrectionDisabled()
+                .padding(.vertical, MassMatesSpacing.xxs)
+            Rectangle()
+                .fill(viewModel.draft.parishOrCommunity.isEmpty ? MassMatesPalette.line : theme.tint)
                 .frame(height: 1)
         }
     }
@@ -142,11 +163,14 @@ struct CreateGroupFormTabView: View {
 
     private var advanceButton: some View {
         let isNameEmpty = viewModel.draft.name.trimmingCharacters(in: .whitespaces).isEmpty
+        let isChallengeInvalid = viewModel.draft.type == .challenge && viewModel.draft.challengeWindowErrorMessage != nil
+        let isDisabled = isNameEmpty || isChallengeInvalid
         return MassMatesPrimaryButton(title: "Avançar", systemImage: "arrow.right") {
-            guard !isNameEmpty else { return }
+            guard !isDisabled else { return }
             onAdvance()
         }
-        .opacity(isNameEmpty ? 0.5 : 1.0)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1.0)
     }
 }
 

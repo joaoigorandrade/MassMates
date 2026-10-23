@@ -51,31 +51,32 @@ struct TodayDashboardView: View {
     }
 
     private func loadedContent(_ data: TodayDashboardData) -> some View {
-        VStack(spacing: 0) {
-            TodayHeaderView(
-                seasonTitle: data.activeSeasonTitle,
-                saintOrFeast: data.liturgicalDay.saintOrFeast,
-                streakDays: data.progress.activeStreakDays,
-                onSelectSeason: { season in viewModel.selectSeasonColor(season) },
-                onOpenStreak: { navigator?.present(.spiritualDiary(season: data.activeSeasonColor)) }
-            )
-            .equatable()
-            .padding(.top, MassMatesSpacing.sm)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MassMatesSpacing.md) {
+                TodayHeaderView(
+                    seasonTitle: data.activeSeasonTitle,
+                    saintOrFeast: data.liturgicalDay.saintOrFeast,
+                    streakDays: data.progress.activeStreakDays,
+                    onSelectSeason: { season in viewModel.selectSeasonColor(season) },
+                    onOpenStreak: { navigator?.present(.ruleOfLife(season: data.activeSeasonColor)) }
+                )
+                .equatable()
+                .padding(.top, MassMatesSpacing.xs)
 
-            Spacer(minLength: MassMatesSpacing.sm)
-            centralRuleOfLifeSection(data: data)
-            Spacer(minLength: MassMatesSpacing.sm)
+                centralRuleOfLifeSection(data: data)
+                    .padding(.vertical, MassMatesSpacing.xs)
 
-            DevotionalQuickCardsView(
-                reading: data.liturgicalDay.reading,
-                onOpenGospel: { navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor)) },
-                onOpenTimer: { mode in navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor)) }
-            )
-            .equatable()
+                DevotionalQuickCardsView(
+                    reading: data.liturgicalDay.reading,
+                    onOpenGospel: { navigator?.present(.dailyGospel(reading: data.liturgicalDay.reading, season: data.activeSeasonColor)) },
+                    onOpenTimer: { mode in navigator?.present(.prayerTimer(mode: mode, season: data.activeSeasonColor)) }
+                )
+                .equatable()
 
-            quietSponsoredBanner
+                quietSponsoredBanner
+            }
+            .padding(.bottom, MassMatesSpacing.xl)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func centralRuleOfLifeSection(data: TodayDashboardData) -> some View {
@@ -114,7 +115,7 @@ struct TodayDashboardView: View {
                 .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.85), value: data.progress.ruleCompletionRatio)
             VStack(spacing: 2) {
                 Text("\(data.progress.completedCount)/\(data.progress.totalCount)")
-                    .font(.system(size: 36, weight: .medium, design: .rounded))
+                    .font(MassMatesFont.numeral)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .contentTransition(.numericText())
                 Text("Regra de Vida").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
@@ -127,7 +128,7 @@ struct TodayDashboardView: View {
         if let onOpenRuleOfLife {
             onOpenRuleOfLife()
         } else {
-            navigator?.present(.spiritualDiary(season: season))
+            navigator?.present(.ruleOfLife(season: season))
         }
     }
 

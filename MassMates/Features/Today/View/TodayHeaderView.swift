@@ -58,6 +58,14 @@ struct TodayHeaderView: View, Equatable {
             titleAndStreakRow
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
+        .padding(.vertical, MassMatesSpacing.xs)
+        .background(
+            LinearGradient(
+                colors: [theme.tintSoft.opacity(0.5), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     // MARK: - Subviews / Private Helpers

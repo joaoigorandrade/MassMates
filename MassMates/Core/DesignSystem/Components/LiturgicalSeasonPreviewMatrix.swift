@@ -37,9 +37,9 @@ struct LiturgicalSeasonPreviewMatrix<Content: View>: View {
             }
         }
         .padding(MassMatesSpacing.md)
-        .background(MassMatesPalette.bg)
         .environment(\.colorScheme, scheme)
         .environment(\.sizeCategory, sizeCategory)
+        .background(MassMatesPalette.bg)
     }
 
     private func seasonRow(for season: LiturgicalColor) -> some View {

@@ -103,6 +103,9 @@ final class NewCheckInViewModel {
         guard !isDestinationLockedToPrivateDiary else { return }
         if selectedGroupIds.contains(groupId) {
             selectedGroupIds.remove(groupId)
+            if selectedGroupIds.isEmpty {
+                destinationMode = .privateDiaryOnly
+            }
         } else {
             selectedGroupIds.insert(groupId)
             destinationMode = .selectedGroups

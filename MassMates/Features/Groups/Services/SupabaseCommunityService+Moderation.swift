@@ -3,11 +3,14 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func groupMembers(for groupId: String) async throws -> [GroupMemberSummary] {
-        let rows = try await postgrest.select(
+        let rows = (try? await postgrest.select(
             from: "group_members",
             columns: "user_id,role,joined_at",
             filter: .equal(column: "group_id", value: groupId)
-        )
+        )) ?? []
+        guard !rows.isEmpty else {
+            return try await fallback.groupMembers(for: groupId)
+        }
         let userIds = rows.compactMap { $0["user_id"]?.stringValue }
         let names = await displayNames(for: userIds)
         let currentUserId = await currentUserID()

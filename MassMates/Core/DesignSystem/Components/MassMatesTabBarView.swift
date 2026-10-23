@@ -59,6 +59,7 @@ struct MassMatesTabBarView: View {
             tabItem(tab: .today, title: "Hoje", icon: "sun.max")
             tabItem(tab: .groups, title: "Grupos", icon: "person.2")
             centerActionButton
+            tabItem(tab: .sacredRites, title: "Ritos", icon: "book.closed")
             tabItem(tab: .myPath, title: "Meu Caminho", icon: "person.crop.circle")
         }
         .sensoryFeedback(.selection, trigger: tabNavigator.selectedTab)
@@ -69,6 +70,7 @@ struct MassMatesTabBarView: View {
             Rectangle()
                 .fill(MassMatesPalette.line)
                 .frame(height: 1)
+                .allowsHitTesting(false)
         }
     }
 

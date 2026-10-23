@@ -3,10 +3,14 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func scoringSummary(for groupId: String) async throws -> GroupScoringSummary {
-        let response = try await postgrest.callRPC("get_group_progress", payload: [
-            "p_group_id": .string(groupId)
-        ])
-        return try await mapScoringSummary(response, groupId: groupId)
+        do {
+            let response = try await postgrest.callRPC("get_group_progress", payload: [
+                "p_group_id": .string(groupId)
+            ])
+            return try await mapScoringSummary(response, groupId: groupId)
+        } catch {
+            return try await fallback.scoringSummary(for: groupId)
+        }
     }
 
     @discardableResult
@@ -14,19 +18,21 @@ extension SupabaseCommunityService {
         _ practice: SpiritualPractice,
         in groupId: String
     ) async throws -> GroupScoringSummary {
-        // The score is derived server-side from the check-ins: the client only
-        // reads the live aggregate back.
         try await scoringSummary(for: groupId)
     }
 
     func guardianAngelState(for groupId: String) async throws -> GuardianAngelState {
-        let state = try await postgrest.callRPC("guardian_angel_state", payload: [
-            "p_group_id": .string(groupId)
-        ])
-        let assignment = try await postgrest.callRPC("my_guardian_assignment", payload: [
-            "p_group_id": .string(groupId)
-        ])
-        return try await mapGuardianAngelState(state: state, assignment: assignment, groupId: groupId)
+        do {
+            let state = try await postgrest.callRPC("guardian_angel_state", payload: [
+                "p_group_id": .string(groupId)
+            ])
+            let assignment = try await postgrest.callRPC("my_guardian_assignment", payload: [
+                "p_group_id": .string(groupId)
+            ])
+            return try await mapGuardianAngelState(state: state, assignment: assignment, groupId: groupId)
+        } catch {
+            return try await fallback.guardianAngelState(for: groupId)
+        }
     }
 
     @discardableResult
@@ -41,7 +47,7 @@ extension SupabaseCommunityService {
             ])
             return try await guardianAngelState(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.optInToGuardianAngel(in: groupId, revealCycle: revealCycle)
         }
     }
 
@@ -53,7 +59,7 @@ extension SupabaseCommunityService {
             ])
             return try await guardianAngelState(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.sendGuardianAngelPrayerNudge(in: groupId)
         }
     }
 

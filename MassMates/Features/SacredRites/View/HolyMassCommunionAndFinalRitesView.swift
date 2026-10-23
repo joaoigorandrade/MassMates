@@ -42,8 +42,8 @@ struct HolyMassCommunionAndFinalRitesView: View, Equatable {
 
     private var peaceDialogueBlock: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
-            dialogueTurnView(speaker: "Celebrante", text: "A paz do Senhor esteja sempre convosco.", isAssembly: false)
-            dialogueTurnView(speaker: "Assembleia", text: "O amor de Cristo nos uniu.", isAssembly: true)
+            dialogueTurnView(speaker: "Celebrante", text: "A paz do Senhor esteja sempre convosco.", latin: "Pax Dómini sit semper vobíscum.", isAssembly: false)
+            dialogueTurnView(speaker: "Assembleia", text: "O amor de Cristo nos uniu.", latin: "Et cum spíritu tuo.", isAssembly: true)
         }
     }
 
@@ -90,6 +90,9 @@ struct HolyMassCommunionAndFinalRitesView: View, Equatable {
                 .font(Font.system(size: 19, weight: .semibold, design: .serif))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineSpacing(6)
+            Text("«Dómine, non sum dignus, ut intres sub tectum meum, sed tantum dic verbo et sanábitur ánima mea.»")
+                .font(MassMatesFont.customScripture(size: 14, italic: true))
+                .foregroundStyle(MassMatesPalette.textTertiary)
         }
     }
 
@@ -106,12 +109,12 @@ struct HolyMassCommunionAndFinalRitesView: View, Equatable {
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .lineSpacing(6)
             }
-            dialogueTurnView(speaker: "Celebrante", text: "Ide em paz e o Senhor vos acompanhe.", isAssembly: false)
-            dialogueTurnView(speaker: "Assembleia", text: "Graças a Deus.", isAssembly: true)
+            dialogueTurnView(speaker: "Celebrante", text: "Ide em paz e o Senhor vos acompanhe.", latin: "Ite, missa est.", isAssembly: false)
+            dialogueTurnView(speaker: "Assembleia", text: "Graças a Deus.", latin: "Deo grátias.", isAssembly: true)
         }
     }
 
-    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+    private func dialogueTurnView(speaker: String, text: String, latin: String? = nil, isAssembly: Bool) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
                 .font(MassMatesFont.caption)
@@ -121,6 +124,11 @@ struct HolyMassCommunionAndFinalRitesView: View, Equatable {
                 .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineSpacing(6)
+            if let latin {
+                Text(latin)
+                    .font(MassMatesFont.customScripture(size: 14, italic: true))
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
         }
     }
 

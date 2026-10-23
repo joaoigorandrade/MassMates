@@ -3,19 +3,13 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func pinnedNotice(for groupId: String) async throws -> GroupPinnedNotice {
-        let rows = try await postgrest.select(
+        let rows = (try? await postgrest.select(
             from: "pinned_notices",
             columns: "id,group_id,author_id,body,created_at",
             filter: .equal(column: "group_id", value: groupId)
-        )
+        )) ?? []
         guard let row = rows.first else {
-            return GroupPinnedNotice(
-                id: "",
-                groupId: groupId,
-                leaderName: "Liderança",
-                noticeText: "",
-                updatedAtLabel: ""
-            )
+            return try await fallback.pinnedNotice(for: groupId)
         }
         let authorName = await displayNames(for: [row["author_id"]?.stringValue ?? ""])
         let resolved = authorName[row["author_id"]?.stringValue ?? ""] ?? "Liderança"
@@ -42,18 +36,22 @@ extension SupabaseCommunityService {
             ])
             return try await pinnedNotice(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.updatePinnedNotice(in: groupId, noticeText: trimmed)
         }
     }
 
     func chatMessages(for groupId: String) async throws -> [GroupChatMessage] {
-        let response = try await postgrest.callRPC("get_chat_messages", payload: [
-            "p_group_id": .string(groupId),
-            "p_before": .null,
-            "p_limit": .int(40)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        return try await mapChatMessages(items, groupId: groupId)
+        do {
+            let response = try await postgrest.callRPC("get_chat_messages", payload: [
+                "p_group_id": .string(groupId),
+                "p_before": .null,
+                "p_limit": .int(40)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            return try await mapChatMessages(items, groupId: groupId)
+        } catch {
+            return try await fallback.chatMessages(for: groupId)
+        }
     }
 
     @discardableResult
@@ -70,7 +68,7 @@ extension SupabaseCommunityService {
             ])
             return try await chatMessages(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.sendChatMessage(in: groupId, text: trimmed)
         }
     }
 

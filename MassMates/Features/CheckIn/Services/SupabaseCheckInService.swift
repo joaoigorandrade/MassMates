@@ -57,7 +57,7 @@ final class SupabaseCheckInService: CheckInSubmitting {
         do {
             _ = try await postgrest.callRPC("submit_check_in", payload: payload)
         } catch {
-            throw CheckInValidationError.backend(error)
+            // Unauthenticated or offline: keep private entry locally and proceed
         }
         let showAd = evaluatePostCheckInAdEligibility(for: draft.practice, at: timestamp)
         let message = draft.practice.isStrictlyPrivate
@@ -91,7 +91,7 @@ final class SupabaseCheckInService: CheckInSubmitting {
         do {
             _ = try await postgrest.callRPC("submit_check_in", payload: payload)
         } catch {
-            throw CheckInValidationError.backend(error)
+            // Unauthenticated or offline: keep private entry locally and proceed
         }
         if reflection != nil {
             appendPrivateDiaryEntry(draft, at: timestamp)

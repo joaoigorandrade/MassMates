@@ -51,22 +51,26 @@ struct NewCheckInModalView: View {
     }
 
     private var fruitAndDestinationStep: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
-            stepTopBar(stepText: viewModel.selectedPractice.checkInChipTitle.uppercased(), showBack: true)
-            titleHeader("Fruto & Destino")
-            CheckInSafeguardAndNoteSectionView(viewModel: viewModel, activeStreakDays: activeStreakDays)
-            CheckInDestinationCardView(
-                isLockedToPrivateDiary: viewModel.isDestinationLockedToPrivateDiary,
-                destinationMode: viewModel.destinationMode,
-                availableGroups: viewModel.availableGroups,
-                selectedGroupIds: viewModel.selectedGroupIds,
-                activeStreakDays: activeStreakDays,
-                onSelectMode: { viewModel.selectDestinationMode($0) },
-                onToggleGroup: { viewModel.toggleGroupSelection($0) }
-            )
-            Spacer()
-            confirmActionSection
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.sm) {
+                stepTopBar(stepText: viewModel.selectedPractice.checkInChipTitle.uppercased(), showBack: true)
+                titleHeader("Fruto & Destino")
+                CheckInSafeguardAndNoteSectionView(viewModel: viewModel, activeStreakDays: activeStreakDays)
+                CheckInDestinationCardView(
+                    isLockedToPrivateDiary: viewModel.isDestinationLockedToPrivateDiary,
+                    destinationMode: viewModel.destinationMode,
+                    availableGroups: viewModel.availableGroups,
+                    selectedGroupIds: viewModel.selectedGroupIds,
+                    activeStreakDays: activeStreakDays,
+                    onSelectMode: { viewModel.selectDestinationMode($0) },
+                    onToggleGroup: { viewModel.toggleGroupSelection($0) }
+                )
+                confirmActionSection
+                    .padding(.top, MassMatesSpacing.sm)
+            }
+            .padding(.bottom, MassMatesSpacing.xl)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var practiceGrid: some View {

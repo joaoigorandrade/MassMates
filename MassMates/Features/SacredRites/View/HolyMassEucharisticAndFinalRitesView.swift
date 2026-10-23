@@ -12,6 +12,8 @@ struct HolyMassEucharisticAndFinalRitesView: View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xl) {
             offertorySection
             hairlineDivider
+            prefaceSection
+            hairlineDivider
             sanctusSection
             hairlineDivider
             consecrationSection
@@ -23,7 +25,16 @@ struct HolyMassEucharisticAndFinalRitesView: View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
             sectionHeader(title: "Apresentação das Oferendas", posture: .seated)
             ForEach(HolyMassRitesCatalog.offertoryTurns) { turn in
-                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
+                dialogueTurnView(turn: turn)
+            }
+        }
+    }
+
+    private var prefaceSection: some View {
+        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+            sectionHeader(title: "Diálogo do Prefácio", posture: .standing)
+            ForEach(HolyMassRitesCatalog.prefaceDialogueTurns) { turn in
+                dialogueTurnView(turn: turn)
             }
         }
     }
@@ -31,16 +42,20 @@ struct HolyMassEucharisticAndFinalRitesView: View {
     private var sanctusSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
             sectionHeader(title: "Santo", posture: .kneeling)
-            dialogueTurnView(
+            dialogueTurnView(turn: MassDialogueTurn(
+                id: "sanc-1",
                 speaker: "Sacerdote",
                 text: "Santo, Santo, Santo, Senhor Deus do universo. O céu e a terra proclamam a vossa glória. Hosana nas alturas!",
+                latinText: "Sanctus, Sanctus, Sanctus Dóminus Deus Sábaoth...",
                 isAssembly: false
-            )
-            dialogueTurnView(
+            ))
+            dialogueTurnView(turn: MassDialogueTurn(
+                id: "sanc-2",
                 speaker: "Assembleia",
                 text: "Bendito o que vem em nome do Senhor. Hosana nas alturas!",
+                latinText: "Benedíctus qui venit in nómine Dómini. Hosánna in excélsis.",
                 isAssembly: true
-            )
+            ))
             hairlineDivider
             latinSanctusBlock
         }
@@ -97,16 +112,21 @@ struct HolyMassEucharisticAndFinalRitesView: View {
         }
     }
 
-    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+    private func dialogueTurnView(turn: MassDialogueTurn) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
+            Text(turn.speaker.replacingOccurrences(of: ":", with: "").uppercased())
                 .font(MassMatesFont.caption)
                 .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(text)
-                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+            Text(turn.text)
+                .font(turn.isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineSpacing(6)
+            if let latin = turn.latinText {
+                Text(latin)
+                    .font(MassMatesFont.customScripture(size: 14, italic: true))
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
         }
     }
 

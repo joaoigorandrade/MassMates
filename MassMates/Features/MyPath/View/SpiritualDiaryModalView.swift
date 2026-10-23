@@ -85,20 +85,23 @@ struct SpiritualDiaryModalView: View {
     }
 
     private var entriesSection: some View {
-        VStack(spacing: 0) {
-            if isSearchActive {
-                searchField.padding(.vertical, MassMatesSpacing.xs)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-            }
-            if displayedEntries.isEmpty {
-                Text("Nenhum registro encontrado").font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary).frame(maxWidth: .infinity, minHeight: 120)
-            } else {
-                ForEach(displayedEntries) { entry in
-                    SpiritualDiaryEntryCardView(entry: entry) { selectedEntryForReading = $0 }
-                    hairlineDivider
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                if isSearchActive {
+                    searchField.padding(.vertical, MassMatesSpacing.xs)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
+                if displayedEntries.isEmpty {
+                    Text("Nenhum registro encontrado").font(MassMatesFont.callout)
+                        .foregroundStyle(MassMatesPalette.textSecondary).frame(maxWidth: .infinity, minHeight: 120)
+                } else {
+                    ForEach(displayedEntries) { entry in
+                        SpiritualDiaryEntryCardView(entry: entry) { selectedEntryForReading = $0 }
+                        hairlineDivider
+                    }
                 }
             }
+            .padding(.bottom, MassMatesSpacing.lg)
         }
     }
 

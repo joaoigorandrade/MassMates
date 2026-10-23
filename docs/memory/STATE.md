@@ -1,15 +1,13 @@
-Current Focus: Comprehensive SwiftUI performance optimization and view-graph diffing overhaul.
+Current Focus: Fixed broken layouts, clipped views, 403 group auth errors, and bottom tab bar centering.
 Completed:
-- Executed 4 specialized parallel subagents across Navigation, Today/CheckIn, Groups/Feed, and SacredRites/PrayerTimer.
-- Fixed route host view model re-instantiations in body using lazy HostBox retention.
-- Terminated 10 continuous un-triggered phaseAnimator loops in Rosary beads and idle mental prayer loop.
-- Eliminated synchronous main-thread UIImage(data:) decoding during check-in typing via background thumbnail caching.
-- Eliminated dynamic array allocations and filtering in view body (GroupSafetyModerationView, GroupsHomeCardsView, GroupDetailView).
-- Cached subview measurements in FlowWrapLayout.
-- Conformed 15+ components to Equatable with .equatable() wrappers to prune view graph invalidation cascades.
-- Replaced custom duplicate GeometryReader bars with MassMatesProgressBar.
-- Rebuilt and passed 100% of unit tests (96 tests in 25 suites) with zero compiler warnings under Swift 6 strict concurrency.
-Next Step: Wire live AdMob SDK when secrets are configured and conduct end-to-end user manual smoke testing on physical simulator.
+- Tab Bar: Centered floating `+` button by adding missing 4th tab (`sacredRites` "Ritos") and disabled top border hit testing.
+- Groups Fallback: Handled unauthenticated/offline PostgREST calls with graceful fallback to `LocalCommunityGroupsService`.
+- Today Dashboard: Wrapped view in `ScrollView`, eliminated dead whitespace, and wired "Ver regra ->" to `.ruleOfLife` sheet.
+- Meu Caminho Heatmap: Inverted matrix to row-major for 1:1 day label alignment and removed duplicate settings header gear icon.
+- Modals & Viewports: Added `ScrollView` to `NewCheckInModalView`, `HolyMassGuideModalView`, `ConfessionPreparationModalView`, `NightlyExamenModalView`, `SpiritualDiaryModalView`, `CreateGroupFormTabView`, and `JoinGroupByCodeTabView`.
+- Timer & Completion: Wired `onCompletePractice` callback on timer/rosary completion; paused timer on mode switch; fixed decade meditation card.
+- Design System: Replaced hardcoded fonts and colors across views with `MassMatesFont` and `MassMatesPalette` tokens.
+- Rebuilt workspace with Tuist and passed 100% of unit tests (99 tests in 26 suites) with zero warnings under Swift 6 strict concurrency.
+Next Step: Perform visual verification on iOS Simulator and review live network integration.
 Blockers/Quirks:
 - Operator secrets and provider configuration pending for AdMob, APNs, and Auth SMTP in Supabase dashboard.
-- AdMob SDK not yet linked; `RewardedAdCoordinator` continues using `UnavailableRewardedAdPresenter`.

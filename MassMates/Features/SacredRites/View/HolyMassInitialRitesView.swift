@@ -22,8 +22,8 @@ struct HolyMassInitialRitesView: View {
     private var initialGreetingSection: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xs) {
             rubricText("O SACERDOTE SAÚDA O POVO")
-            dialogueRow(speaker: "S.", text: "O Senhor esteja convosco.", isAssembly: false)
-            dialogueRow(speaker: "T.", text: "Ele está no meio de nós.", isAssembly: true)
+            dialogueRow(speaker: "S.", text: "O Senhor esteja convosco.", latin: "Dóminus vobíscum.", isAssembly: false)
+            dialogueRow(speaker: "T.", text: "Ele está no meio de nós.", latin: "Et cum spíritu tuo.", isAssembly: true)
         }
     }
 
@@ -40,12 +40,12 @@ struct HolyMassInitialRitesView: View {
 
     private var kyrieDialogues: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            dialogueRow(speaker: "S.", text: "Senhor, tende piedade de nós.", isAssembly: false)
-            dialogueRow(speaker: "T.", text: "Senhor, tende piedade de nós.", isAssembly: true)
-            dialogueRow(speaker: "S.", text: "Cristo, tende piedade de nós.", isAssembly: false)
-            dialogueRow(speaker: "T.", text: "Cristo, tende piedade de nós.", isAssembly: true)
-            dialogueRow(speaker: "S.", text: "Senhor, tende piedade de nós.", isAssembly: false)
-            dialogueRow(speaker: "T.", text: "Senhor, tende piedade de nós.", isAssembly: true)
+            dialogueRow(speaker: "S.", text: "Senhor, tende piedade de nós.", latin: "Kýrie, eléison.", isAssembly: false)
+            dialogueRow(speaker: "T.", text: "Senhor, tende piedade de nós.", latin: "Kýrie, eléison.", isAssembly: true)
+            dialogueRow(speaker: "S.", text: "Cristo, tende piedade de nós.", latin: "Christe, eléison.", isAssembly: false)
+            dialogueRow(speaker: "T.", text: "Cristo, tende piedade de nós.", latin: "Christe, eléison.", isAssembly: true)
+            dialogueRow(speaker: "S.", text: "Senhor, tende piedade de nós.", latin: "Kýrie, eléison.", isAssembly: false)
+            dialogueRow(speaker: "T.", text: "Senhor, tende piedade de nós.", latin: "Kýrie, eléison.", isAssembly: true)
         }
     }
 
@@ -56,21 +56,28 @@ struct HolyMassInitialRitesView: View {
                 .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineSpacing(3)
-            dialogueRow(speaker: "T.", text: "Amém.", isAssembly: true)
+            dialogueRow(speaker: "T.", text: "Amém.", latin: "Amen.", isAssembly: true)
         }
     }
 
-    private func dialogueRow(speaker: String, text: String, isAssembly: Bool) -> some View {
+    private func dialogueRow(speaker: String, text: String, latin: String? = nil, isAssembly: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: MassMatesSpacing.xs) {
             Text(speaker)
                 .font(MassMatesFont.scripture)
                 .fontWeight(.bold)
                 .foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textSecondary)
                 .frame(width: 22, alignment: .leading)
-            Text(text)
-                .font(MassMatesFont.scripture)
-                .fontWeight(isAssembly ? .semibold : .regular)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(text)
+                    .font(MassMatesFont.scripture)
+                    .fontWeight(isAssembly ? .semibold : .regular)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                if let latin {
+                    Text(latin)
+                        .font(MassMatesFont.customScripture(size: 14, italic: true))
+                        .foregroundStyle(MassMatesPalette.textTertiary)
+                }
+            }
         }
     }
 

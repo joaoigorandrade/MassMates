@@ -11,7 +11,7 @@ struct MyPathPhase4Tests {
 
         let initialCompleted = viewModel.completedDaysInHeatmap
         let initialStreak = viewModel.milestones.activeStreakDays
-        #expect(viewModel.heatmapDays.count == 28)
+        #expect(viewModel.heatmapDays.count == 84)
         #expect(viewModel.milestones.canClaimStreakMercyThisMonth)
 
         let claimDate = Date(timeIntervalSince1970: 1_760_000_000)
@@ -68,7 +68,7 @@ struct MyPathPhase4Tests {
         let unlocked = viewModel.unlockWithBiometrics(simulateSuccess: true)
         #expect(unlocked)
         #expect(viewModel.isDiaryUnlocked)
-        #expect(viewModel.filteredEntries.count == 3)
+        #expect(viewModel.filteredEntries.count == SpiritualDiaryViewModel.defaultSampleEntries().count)
 
         viewModel.searchQuery = "Salmo 50"
         #expect(viewModel.filteredEntries.count == 1)
@@ -96,7 +96,7 @@ struct MyPathPhase4Tests {
 
         viewModel.backupPassphrase = " TotusTuus2026! "
         let envelope = try #require(viewModel.exportEncryptedBackup(at: Date(timeIntervalSince1970: 1_760_900_000)))
-        #expect(envelope.entryCount == 3)
+        #expect(envelope.entryCount == SpiritualDiaryViewModel.defaultSampleEntries().count)
         #expect(!envelope.ciphertextBase64.isEmpty)
         #expect(!envelope.sha256Checksum.isEmpty)
 

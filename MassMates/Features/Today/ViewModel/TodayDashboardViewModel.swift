@@ -65,10 +65,14 @@ final class TodayDashboardViewModel {
     }
 
     var currentStreakDays: Int {
+        currentProgress.activeStreakDays
+    }
+
+    var currentProgress: TodayProgressSummary {
         guard case .loaded(let data) = viewState else {
-            return ruleReader.loadTodayProgress().activeStreakDays
+            return ruleReader.loadTodayProgress()
         }
-        return data.progress.activeStreakDays
+        return data.progress
     }
 
     func loadDashboard() {

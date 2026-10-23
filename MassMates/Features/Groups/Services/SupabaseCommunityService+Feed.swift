@@ -3,33 +3,41 @@ import Foundation
 extension SupabaseCommunityService {
     // MARK: - Body / Public API
     func feedPosts(for groupId: String) async throws -> [GroupFeedPost] {
-        let response = try await postgrest.callRPC("get_feed_posts", payload: [
-            "p_group_id": .string(groupId),
-            "p_before": .null,
-            "p_limit": .int(30)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        let posts = try await mapFeedPosts(items)
-        feedCursorByGroup[groupId] = response["next_cursor"]?.stringValue
-        feedCacheByGroup[groupId] = posts
-        return posts
+        do {
+            let response = try await postgrest.callRPC("get_feed_posts", payload: [
+                "p_group_id": .string(groupId),
+                "p_before": .null,
+                "p_limit": .int(30)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            let posts = try await mapFeedPosts(items)
+            feedCursorByGroup[groupId] = response["next_cursor"]?.stringValue
+            feedCacheByGroup[groupId] = posts
+            return posts
+        } catch {
+            return try await fallback.feedPosts(for: groupId)
+        }
     }
 
     /// Loads the next page of the feed. The composite cursor the backend
     /// returned is passed back **unchanged** as `p_before`.
     func loadMoreFeedPosts(for groupId: String) async throws -> [GroupFeedPost] {
         let cursor = feedCursorByGroup[groupId]
-        let response = try await postgrest.callRPC("get_feed_posts", payload: [
-            "p_group_id": .string(groupId),
-            "p_before": cursor.map { JSONValue.string($0) } ?? .null,
-            "p_limit": .int(30)
-        ])
-        let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
-        let posts = try await mapFeedPosts(items)
-        feedCursorByGroup[groupId] = response["next_cursor"]?.stringValue
-        let merged = (feedCacheByGroup[groupId] ?? []) + posts
-        feedCacheByGroup[groupId] = merged
-        return merged
+        do {
+            let response = try await postgrest.callRPC("get_feed_posts", payload: [
+                "p_group_id": .string(groupId),
+                "p_before": cursor.map { JSONValue.string($0) } ?? .null,
+                "p_limit": .int(30)
+            ])
+            let items = response["items"]?.arrayValue ?? response.arrayValue ?? []
+            let posts = try await mapFeedPosts(items)
+            feedCursorByGroup[groupId] = response["next_cursor"]?.stringValue
+            let merged = (feedCacheByGroup[groupId] ?? []) + posts
+            feedCacheByGroup[groupId] = merged
+            return merged
+        } catch {
+            return try await fallback.feedPosts(for: groupId)
+        }
     }
 
     func feedItemsWithSponsoredAds(for groupId: String) async throws -> [GroupFeedItem] {
@@ -43,11 +51,15 @@ extension SupabaseCommunityService {
         postId: String,
         in groupId: String
     ) async throws -> [GroupFeedPost] {
-        _ = try await postgrest.callRPC("toggle_amen", payload: [
-            "p_post_id": .string(postId),
-            "p_reaction_type": .string(reaction.backendValue)
-        ])
-        return try await feedPosts(for: groupId)
+        do {
+            _ = try await postgrest.callRPC("toggle_amen", payload: [
+                "p_post_id": .string(postId),
+                "p_reaction_type": .string(reaction.backendValue)
+            ])
+            return try await feedPosts(for: groupId)
+        } catch {
+            return try await fallback.toggleReaction(reaction, postId: postId, in: groupId)
+        }
     }
 
     @discardableResult
@@ -68,7 +80,7 @@ extension SupabaseCommunityService {
             ])
             return try await feedPosts(for: groupId)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.createPost(in: groupId, practice: practice, fruitOfPrayer: fruitOfPrayer, photoCaption: photoCaption)
         }
     }
 

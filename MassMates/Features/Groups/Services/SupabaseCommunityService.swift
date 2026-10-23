@@ -9,6 +9,7 @@ final class SupabaseCommunityService: CommunityBackend {
     let postgrest: SupabasePostgREST
     let sessionProvider: any SessionProviding
     let realtime: SupabaseRealtimeClient?
+    let fallback: LocalCommunityGroupsService
     var groupCache: [String: CommunityGroup] = [:]
     var nameCache: [String: String] = [:]
     var feedCursorByGroup: [String: String] = [:]
@@ -21,11 +22,13 @@ final class SupabaseCommunityService: CommunityBackend {
     init(
         postgrest: SupabasePostgREST,
         sessionProvider: any SessionProviding,
-        realtime: SupabaseRealtimeClient? = nil
+        realtime: SupabaseRealtimeClient? = nil,
+        fallback: LocalCommunityGroupsService = LocalCommunityGroupsService()
     ) {
         self.postgrest = postgrest
         self.sessionProvider = sessionProvider
         self.realtime = realtime
+        self.fallback = fallback
     }
 
     // MARK: - Body / Public API
@@ -39,57 +42,64 @@ final class SupabaseCommunityService: CommunityBackend {
             for group in groups { groupCache[group.id] = group }
             return groups
         } catch {
-            return try await loadGroupsLegacy()
+            let legacy = (try? await loadGroupsLegacy()) ?? []
+            if !legacy.isEmpty { return legacy }
+            return try await fallback.joinedGroups()
         }
     }
 
     func featuredChallenges() async throws -> [FeaturedChallenge] {
-        let response = try await postgrest.callRPC("list_featured_challenges", payload: [:])
-        let items = response.arrayValue ?? (response["items"]?.arrayValue ?? [])
-        let joinedIds = await joinedGroupIds()
-        return items.map { item in
-            let group = SupabaseCommunityMapping.group(from: item, isFeatured: true)
-            return FeaturedChallenge(
-                group: group,
-                durationLabel: durationLabel(for: item),
-                subtitle: group.collectiveGoalLabel,
-                isJoined: joinedIds.contains(group.id)
-            )
+        do {
+            let response = try await postgrest.callRPC("list_featured_challenges", payload: [:])
+            let items = response.arrayValue ?? (response["items"]?.arrayValue ?? [])
+            let joinedIds = await joinedGroupIds()
+            let list = items.map { item in
+                let group = SupabaseCommunityMapping.group(from: item, isFeatured: true)
+                return FeaturedChallenge(
+                    group: group,
+                    durationLabel: durationLabel(for: item),
+                    subtitle: group.collectiveGoalLabel,
+                    isJoined: joinedIds.contains(group.id)
+                )
+            }
+            return list.isEmpty ? (try await fallback.featuredChallenges()) : list
+        } catch {
+            return try await fallback.featuredChallenges()
         }
     }
 
     func slotCapacity() async throws -> GroupSlotCapacity {
-        let response = try await postgrest.callRPC("my_group_slots", payload: [:])
-        return GroupSlotCapacity(
-            personalGroupCount: response["personal_used"]?.intValue ?? 0,
-            maxBasePersonalGroups: response["personal_max"]?.intValue ?? 2,
-            hasRewardedSlotUnlocked: response["bonus_active"]?.boolValue ?? false,
-            hasJoinedFeaturedChallenge: (response["seasonal_used"]?.intValue ?? 0) > 0
-        )
+        do {
+            let response = try await postgrest.callRPC("my_group_slots", payload: [:])
+            return GroupSlotCapacity(
+                personalGroupCount: response["personal_used"]?.intValue ?? 0,
+                maxBasePersonalGroups: response["personal_max"]?.intValue ?? 2,
+                hasRewardedSlotUnlocked: response["bonus_active"]?.boolValue ?? false,
+                hasJoinedFeaturedChallenge: (response["seasonal_used"]?.intValue ?? 0) > 0
+            )
+        } catch {
+            return try await fallback.slotCapacity()
+        }
     }
 
     func group(forId id: String) async throws -> CommunityGroup? {
         if let cached = groupCache[id] { return cached }
-        let groups = try await joinedGroups()
-        return groups.first { $0.id == id }
+        let groups = (try? await joinedGroups()) ?? []
+        if let match = groups.first(where: { $0.id == id }) { return match }
+        return try await fallback.group(forId: id)
     }
 
     func previewGroup(forInviteInput rawInput: String) async throws(CommunityGroupError) -> CommunityGroup {
         guard let code = InviteCodeParser.normalize(rawInput) else { throw .invalidInviteCode }
         do {
-            let response = try await postgrest.callRPC("preview_group_by_code", payload: [
-                "p_code": .string(code)
-            ])
+            let response = try await postgrest.callRPC("preview_group_by_code", payload: ["p_code": .string(code)])
             return SupabaseCommunityMapping.group(from: response)
         } catch {
-            throw CommunityGroupError.map(error)
+            return try await fallback.previewGroup(forInviteInput: code)
         }
     }
 
     // MARK: - Subviews / Private Helpers
-    /// The ids of the groups the caller joined. The cache is filled by
-    /// `joinedGroups()`, so the groups screen does not pay for a second
-    /// `my_groups` call.
     func joinedGroupIds() async -> Set<String> {
         if groupCache.isEmpty {
             _ = try? await joinedGroups()
@@ -102,8 +112,6 @@ final class SupabaseCommunityService: CommunityBackend {
         return id
     }
 
-    /// The previous multi-request path. It is only used when `my_groups` is
-    /// unreachable (offline) so the screen still renders.
     func loadGroupsLegacy() async throws -> [CommunityGroup] {
         guard let userId = await currentUserID() else { return [] }
         let memberships = try await postgrest.select(
@@ -157,32 +165,5 @@ final class SupabaseCommunityService: CommunityBackend {
             filter: .equal(column: "is_featured", value: "true")
         )
         return Set(rows.compactMap { $0["group_id"]?.stringValue })
-    }
-
-    func displayNames(for userIds: [String]) async -> [String: String] {
-        let missing = userIds.filter { nameCache[$0] == nil }
-        guard !missing.isEmpty else {
-            return Dictionary(uniqueKeysWithValues: userIds.compactMap { id in
-                nameCache[id].map { (id, $0) }
-            })
-        }
-        let rows = (try? await postgrest.select(
-            from: "profiles",
-            columns: "id,display_name",
-            filter: .contains(column: "id", values: missing)
-        )) ?? []
-        for (id, name) in SupabaseCommunityMapping.displayNameMap(from: rows) {
-            nameCache[id] = name
-        }
-        return Dictionary(uniqueKeysWithValues: userIds.compactMap { id in
-            nameCache[id].map { (id, $0) }
-        })
-    }
-
-    func durationLabel(for item: JSONValue) -> String {
-        let start = item["starts_on"]?.stringValue
-        let end = item["ends_on"]?.stringValue
-        guard let start, let end else { return "Jornada" }
-        return "\(start) → \(end)"
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 enum AppRoute: ModalRoute, URLRoutable {
     case dailyGospel(reading: DailyLiturgicalReading, season: LiturgicalColor)
     case prayerTimer(mode: PrayerTimerMode, season: LiturgicalColor)
+    case ruleOfLife(season: LiturgicalColor)
     case createJoinGroup(initialTab: CreateJoinGroupTab, prefilledInviteCode: String?, season: LiturgicalColor)
     case groupDetail(group: CommunityGroup, season: LiturgicalColor)
     case newCheckIn(preselectedPractice: SpiritualPractice?, season: LiturgicalColor)
@@ -29,6 +30,8 @@ enum AppRoute: ModalRoute, URLRoutable {
             DailyGospelRouteHostView(reading: reading, season: season)
         case .prayerTimer(let mode, let season):
             PrayerTimerRouteHostView(mode: mode, season: season)
+        case .ruleOfLife(let season):
+            RuleOfLifeRouteHostView(season: season)
         case .createJoinGroup(let initialTab, let prefilledInviteCode, let season):
             CreateJoinGroupRouteHostView(
                 initialTab: initialTab,
@@ -102,7 +105,7 @@ enum AppTab: String, TabRoute {
         case .myPath:
             Label("Meu Caminho", systemImage: "person.crop.circle")
         case .sacredRites:
-            Label("Mais", systemImage: "book.closed")
+            Label("Ritos", systemImage: "book.closed")
         }
     }
 

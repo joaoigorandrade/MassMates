@@ -73,8 +73,8 @@ struct SettingsAppearanceView: View {
             Text("ÍCONE DO APP").font(MassMatesFont.caption).tracking(0.6).foregroundStyle(MassMatesPalette.textSecondary)
             HStack(spacing: MassMatesSpacing.lg) {
                 iconOption(icon: .classicLiturgical, label: "Verde comum", tint: theme.tint, bg: MassMatesPalette.bg)
-                iconOption(icon: .ourLadyOfAparecida, label: "Ouro sagrado", tint: Color(red: 0.49, green: 0.40, blue: 0.20), bg: theme.tintSoft)
-                iconOption(icon: .stMichael, label: "Noite", tint: Color(red: 0.91, green: 0.89, blue: 0.86), bg: Color(red: 0.11, green: 0.10, blue: 0.09))
+                iconOption(icon: .ourLadyOfAparecida, label: "Ouro sagrado", tint: Theme(season: .white).tint, bg: theme.tintSoft)
+                iconOption(icon: .stMichael, label: "Noite", tint: MassMatesPalette.textPrimary, bg: MassMatesPalette.surfaceMuted)
             }
             .frame(maxWidth: .infinity, alignment: .center).padding(.top, MassMatesSpacing.xs)
         }

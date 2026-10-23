@@ -93,14 +93,16 @@ struct HolyMassGuideModalView: View {
     }
 
     private var viewportContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            selectedRiteContent
-            Spacer(minLength: 0)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                selectedRiteContent
+            }
+            .padding(.horizontal, MassMatesLayout.readingMargin)
+            .padding(.top, MassMatesSpacing.md)
+            .padding(.bottom, MassMatesSpacing.xl)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin)
-        .padding(.top, MassMatesSpacing.md)
-        .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder

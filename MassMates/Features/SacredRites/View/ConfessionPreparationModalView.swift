@@ -82,17 +82,21 @@ struct ConfessionPreparationModalView: View {
     }
 
     private var viewportContent: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            Group {
-                if showingContrition { actOfContritionSection }
-                else { ConfessionGuidedExamSectionView(viewModel: viewModel, commandmentIndex: currentCommandmentIndex) }
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                Group {
+                    if showingContrition { actOfContritionSection }
+                    else { ConfessionGuidedExamSectionView(viewModel: viewModel, commandmentIndex: currentCommandmentIndex) }
+                }
+                .id(showingContrition ? -1 : currentCommandmentIndex)
+                .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             }
-            .id(showingContrition ? -1 : currentCommandmentIndex)
-            .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
-            Spacer(minLength: 0)
+            .padding(.horizontal, MassMatesLayout.screenMargin)
+            .padding(.top, MassMatesSpacing.md)
+            .padding(.bottom, MassMatesSpacing.xl)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, MassMatesLayout.screenMargin).padding(.top, MassMatesSpacing.md)
-        .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading).frame(maxWidth: .infinity)
     }
 
     private var actOfContritionSection: some View {

@@ -76,7 +76,7 @@ struct HolyMassWordRitesView: View, Equatable {
             sectionHeader(title: "Santo Evangelho", citation: "São Marcos 10, 17-30", posture: .standing)
             acclamationAlleluia
             ForEach(HolyMassRitesCatalog.gospelDialogueTurns) { turn in
-                dialogueTurnView(speaker: turn.speaker, text: turn.text, isAssembly: turn.isAssembly)
+                dialogueTurnView(turn: turn)
             }
             Text("«Naquele tempo, Jesus se pôs a caminho, quando um homem correu ao seu encontro, ajoelhou-se e perguntou: “Bom Mestre, que devo fazer para ganhar a vida eterna?” Jesus respondeu: “Por que me chamas de bom? Só Deus é bom... Só te falta uma coisa: vai, vende tudo o que tens e dá aos pobres, e terás um tesouro no céu. Depois, vem e segue-me!”»")
                 .font(MassMatesFont.scripture)
@@ -119,15 +119,20 @@ struct HolyMassWordRitesView: View, Equatable {
         }
     }
 
-    private func dialogueTurnView(speaker: String, text: String, isAssembly: Bool) -> some View {
+    private func dialogueTurnView(turn: MassDialogueTurn) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
-            Text(speaker.replacingOccurrences(of: ":", with: "").uppercased())
+            Text(turn.speaker.replacingOccurrences(of: ":", with: "").uppercased())
                 .font(MassMatesFont.caption)
                 .tracking(0.5)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-            Text(text)
-                .font(isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
+            Text(turn.text)
+                .font(turn.isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+            if let latin = turn.latinText {
+                Text(latin)
+                    .font(MassMatesFont.customScripture(size: 14, italic: true))
+                    .foregroundStyle(MassMatesPalette.textTertiary)
+            }
         }
     }
 

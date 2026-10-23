@@ -16,14 +16,18 @@ struct JoinGroupByCodeTabView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            headerSection
-            digitCellsContainer
-            pasteActionButton
-            previewOrAffirmationSection
-            Spacer(minLength: MassMatesSpacing.xs)
-            joinActionButton
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                headerSection
+                digitCellsContainer
+                pasteActionButton
+                previewOrAffirmationSection
+                joinActionButton
+                    .padding(.top, MassMatesSpacing.xs)
+            }
+            .padding(.bottom, MassMatesSpacing.xl)
         }
+        .scrollDismissesKeyboard(.interactively)
         .task { isFieldFocused = true }
     }
 
@@ -158,11 +162,13 @@ struct JoinGroupByCodeTabView: View {
     }
 
     private var joinActionButton: some View {
-        VStack(spacing: MassMatesSpacing.xs) {
+        let isCodeValid = InviteCodeParser.normalize(viewModel.inviteCodeInput) != nil
+        return VStack(spacing: MassMatesSpacing.xs) {
             MassMatesPrimaryButton(title: "Entrar na Fraternidade") {
-                if viewModel.inviteCodeInput.isEmpty { viewModel.inviteCodeInput = "ST1925" }
                 Task { if await viewModel.confirmJoinGroup() != nil { onJoined() } }
             }
+            .disabled(!isCodeValid)
+            .opacity(isCodeValid ? 1.0 : 0.5)
             Text("Ao entrar, você compartilha apenas hábitos de oração ativos e reflexões públicas.")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
                 .multilineTextAlignment(.center).frame(maxWidth: .infinity)

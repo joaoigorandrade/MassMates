@@ -73,6 +73,8 @@ struct DailyGospelModalView: View {
         case .gospel: viewModel.reading.gospelTitle
         }
         return VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+            Rectangle().fill(theme.tint).frame(width: 32, height: 1)
+                .padding(.bottom, 2)
             Text(reference).font(MassMatesFont.caption).tracking(1.0).foregroundStyle(MassMatesPalette.textSecondary)
             Text(title).font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
             if section == .gospel {
@@ -115,7 +117,7 @@ struct DailyGospelModalView: View {
                 .font(MassMatesFont.customScripture(size: 16, italic: true))
                 .foregroundStyle(MassMatesPalette.textSecondary)
             Text(isGospel ? "— Glória a Vós, Senhor." : "— Graças a Deus.")
-                .font(Font.system(size: 16, weight: .semibold, design: .serif))
+                .font(MassMatesFont.customScripture(size: 16))
                 .foregroundStyle(MassMatesPalette.textPrimary)
         }
         .padding(.top, MassMatesSpacing.sm)

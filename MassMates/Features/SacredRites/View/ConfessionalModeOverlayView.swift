@@ -31,7 +31,7 @@ struct ConfessionalModeOverlayView: View {
         }
         .padding(MassMatesLayout.readingMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 18 / 255.0, green: 17 / 255.0, blue: 16 / 255.0).ignoresSafeArea())
+        .background(MassMatesPalette.bg.ignoresSafeArea())
         .environment(\.colorScheme, .dark)
     }
 

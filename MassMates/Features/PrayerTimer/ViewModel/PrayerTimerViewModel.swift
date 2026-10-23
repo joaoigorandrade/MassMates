@@ -9,7 +9,11 @@ final class PrayerTimerViewModel {
     private let audioPlayer: any PrayerAudioPlaying
     private let onCompletePractice: (SpiritualPractice) -> Void
 
-    var mode: PrayerTimerMode
+    var mode: PrayerTimerMode {
+        didSet {
+            if isRunning { pauseTimer(now: Date()) }
+        }
+    }
     var totalSeconds: Int
     var remainingSeconds: Int
     var isRunning = false
@@ -70,7 +74,7 @@ final class PrayerTimerViewModel {
     var activeHailMaryNumber: Int {
         switch currentBeadIndex {
         case 1...10: currentBeadIndex
-        case 0: 1
+        case 0: 0
         default: 10
         }
     }
@@ -100,6 +104,7 @@ final class PrayerTimerViewModel {
             self.targetEndDate = nil
             if isChimeEnabled { audioPlayer.playChime() }
             audioPlayer.stopAmbientSound()
+            onCompletePractice(mode == .rosary ? .rosary : .mentalPrayer)
         }
         syncLockScreen()
     }
@@ -167,6 +172,7 @@ final class PrayerTimerViewModel {
         } else {
             isSessionFinished = true
             lastHapticEvent = .rosaryCompleted
+            onCompletePractice(.rosary)
         }
     }
 

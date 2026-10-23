@@ -13,9 +13,10 @@ struct RosaryCompanionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.lg) {
+        VStack(spacing: MassMatesSpacing.md) {
             mysteryHeader
             decacordRingSurface
+            decadeMeditationCard
             quietTouchPrompt
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -49,11 +50,9 @@ struct RosaryCompanionView: View {
 
     private var formattedMysteryTitle: String {
         let raw = viewModel.currentDecade.title
-        if raw.contains("Mistério:") {
-            let single = viewModel.mysterySet.title.replacingOccurrences(of: "Mistérios ", with: "Mistério ")
-            return raw.replacingOccurrences(of: "Mistério:", with: "\(single):")
-        }
-        return raw
+        guard raw.contains("Mistério:") else { return raw }
+        let single = viewModel.mysterySet.title.replacingOccurrences(of: "Mistérios ", with: "Mistério ")
+        return raw.replacingOccurrences(of: "Mistério:", with: "\(single):")
     }
 
     private var decacordRingSurface: some View {
@@ -65,14 +64,24 @@ struct RosaryCompanionView: View {
                     .offset(beadOffset(for: index))
             }
             VStack(spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text("\(viewModel.activeHailMaryNumber)")
-                        .font(MassMatesFont.numeral)
+                if viewModel.currentBeadIndex == 0 {
+                    Text("Pai-Nosso")
+                        .font(MassMatesFont.headline)
                         .foregroundStyle(MassMatesPalette.textPrimary)
-                        .contentTransition(.numericText())
-                    Text("/ 10")
-                        .font(MassMatesFont.body)
-                        .foregroundStyle(MassMatesPalette.textTertiary)
+                } else if viewModel.currentBeadIndex > 10 {
+                    Text("Glória")
+                        .font(MassMatesFont.headline)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(viewModel.activeHailMaryNumber)")
+                            .font(MassMatesFont.numeral)
+                            .foregroundStyle(MassMatesPalette.textPrimary)
+                            .contentTransition(.numericText())
+                        Text("/ 10")
+                            .font(MassMatesFont.body)
+                            .foregroundStyle(MassMatesPalette.textTertiary)
+                    }
                 }
                 Text(beadSubLabel)
                     .font(MassMatesFont.caption)
@@ -82,6 +91,24 @@ struct RosaryCompanionView: View {
             }
         }
         .frame(width: 240, height: 240)
+    }
+
+    private var decadeMeditationCard: some View {
+        VStack(spacing: 2) {
+            if !viewModel.currentDecade.scriptureReference.isEmpty {
+                Text(viewModel.currentDecade.scriptureReference)
+                    .font(MassMatesFont.caption)
+                    .foregroundStyle(theme.tint)
+            }
+            if !viewModel.currentDecade.meditation.isEmpty {
+                Text("“\(viewModel.currentDecade.meditation)”")
+                    .font(MassMatesFont.customScripture(size: 13, italic: true))
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal, MassMatesLayout.screenMargin)
     }
 
     private func beadOffset(for index: Int, radius: CGFloat = 96) -> CGSize {
@@ -99,9 +126,7 @@ struct RosaryCompanionView: View {
             } else if isCompleted {
                 Circle().fill(theme.tint).frame(width: 12, height: 12)
             } else {
-                Circle()
-                    .fill(MassMatesPalette.bg)
-                    .frame(width: 11, height: 11)
+                Circle().fill(MassMatesPalette.bg).frame(width: 11, height: 11)
                     .overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
             }
         }
@@ -112,12 +137,9 @@ struct RosaryCompanionView: View {
     @ViewBuilder
     private func animatedBead(_ view: some View, isCurrent: Bool) -> some View {
         if isCurrent && !reduceMotion {
-            view
-                .phaseAnimator([1.0, 1.15]) { content, phase in
-                    content.scaleEffect(phase)
-                } animation: { _ in
-                    .easeInOut(duration: 1.2)
-                }
+            view.phaseAnimator([1.0, 1.15]) { content, phase in
+                content.scaleEffect(phase)
+            } animation: { _ in .easeInOut(duration: 1.2) }
         } else {
             view
         }
@@ -133,12 +155,8 @@ struct RosaryCompanionView: View {
 
     private var quietTouchPrompt: some View {
         HStack(spacing: MassMatesSpacing.xxs) {
-            Image(systemName: "hand.tap")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textTertiary)
-            Text("Toque na tela para avançar")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+            Image(systemName: "hand.tap").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+            Text("Toque na tela para avançar").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
         }
     }
 

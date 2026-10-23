@@ -34,69 +34,14 @@ enum ConfessionExaminationCatalog {
         )
     ]
 
-    static let commandmentGroups: [CommandmentExamGroup] = [
-        CommandmentExamGroup(
-            id: "cmd-1-2",
-            title: "1º e 2º Mandamentos",
-            badge: "Amor a Deus & Santo Nome",
-            summary: "Amar a Deus sobre todas as coisas e não tomar Seu Santo Nome em vão.",
-            category: .commandments,
-            items: [
-                CommandmentExamItem(id: "cmd-1a", question: "Negligenciei a oração pessoal ou rezei com pressa e indiferença?", sinNote: "Falta deliberada à oração diária e momentos de oração por negligência", isInitiallyChecked: false),
-                CommandmentExamItem(id: "cmd-1b", question: "Coloquei comodismo, trabalho ou aprovação dos outros acima da fé?", sinNote: "Colocar conforto material ou trabalho acima da vontade de Deus", isInitiallyChecked: false),
-                CommandmentExamItem(id: "cmd-2a", question: "Pronunciei o Nome Santo de Deus sem respeito, com ira ou leviandade?", sinNote: "Uso leviano do Santo Nome de Deus ou blasfêmias em momentos de irritação", isInitiallyChecked: false)
-            ]
-        ),
-        CommandmentExamGroup(
-            id: "cmd-3",
-            title: "3º Mandamento",
-            badge: "Domingo & Festas",
-            summary: "Guardar os domingos e dias Santos de guarda com amor e descanso.",
-            category: .commandments,
-            items: [
-                CommandmentExamItem(id: "cmd-3a", question: "Faltei à Santa Missa no domingo ou dia santo por culpa própria?", sinNote: "Falta à Santa Missa Dominical por preguiça ou comodismo", isInitiallyChecked: false),
-                CommandmentExamItem(id: "cmd-3b", question: "Deixei de santificar o Domingo com descanso, família e obras de caridade?", sinNote: "Trabalho servil excessivo aos domingos sem caridade ou necessidade", isInitiallyChecked: false)
-            ]
-        ),
-        CommandmentExamGroup(
-            id: "cmd-4-5",
-            title: "4º e 5º Mandamentos",
-            badge: "Família & Respeito à Vida",
-            summary: "Honrar pai e mãe; não matar (inclui ódios, calúnias e escândalos).",
-            category: .duties,
-            items: [
-                CommandmentExamItem(id: "cmd-4a", question: "Fui impaciente, ríspido ou ingrato com meus pais, cônjuge ou filhos?", sinNote: "Impaciência e respostas ríspidas em conversa familiar (3x)", isInitiallyChecked: true),
-                CommandmentExamItem(id: "cmd-5a", question: "Alimentei ressentimento, recusa em perdoar ou desejei mal ao próximo?", sinNote: "Alimentar rancor, desejo de vingança ou ódio contra alguém", isInitiallyChecked: false)
-            ]
-        ),
-        CommandmentExamGroup(
-            id: "cmd-6-9",
-            title: "6º e 9º Mandamentos",
-            badge: "Pureza & Castidade",
-            summary: "Guardar a castidade no corpo, nos olhares e nos pensamentos.",
-            category: .capital,
-            items: [
-                CommandmentExamItem(id: "cmd-6a", question: "Fui vigilante nos olhos, telas e entretenimento, rejeitando a impureza?", sinNote: "Olhares impuros em telas e redes sociais consentidos sem vigilância", isInitiallyChecked: false),
-                CommandmentExamItem(id: "cmd-9a", question: "Consenti voluntariamente em pensamentos ou desejos contrários à pureza?", sinNote: "Consentimento deliberado em pensamentos impuros", isInitiallyChecked: false)
-            ]
-        ),
-        CommandmentExamGroup(
-            id: "cmd-7-8-10",
-            title: "7º, 8º e 10º Mandamentos",
-            badge: "Justiça, Verdade & Retidão",
-            summary: "Não furtar, não levantar falso testemunho, não cobiçar os bens alheios.",
-            category: .duties,
-            items: [
-                CommandmentExamItem(id: "cmd-7a", question: "Fui rigorosamente honesto nas horas de trabalho, acordos e bens alheios?", sinNote: "Pequenas mentiras ou desvios de tempo no cumprimento do trabalho", isInitiallyChecked: false),
-                CommandmentExamItem(id: "cmd-8a", question: "Falei mal de terceiros (maledicência) ou espalhei juízos precipitados?", sinNote: "Omissão em prestar ajuda fraterna a colega em necessidade", isInitiallyChecked: true)
-            ]
-        )
-    ]
+    static var commandmentGroups: [CommandmentExamGroup] {
+        expandedGroups
+    }
 
     static let initialNotes: [ConfessionPrivateNote] = [
-        ConfessionPrivateNote(id: "note-1", text: "Impaciência e respostas ríspidas em conversa familiar (3x)", linkedExamItemID: "cmd-4a"),
-        ConfessionPrivateNote(id: "note-2", text: "Distração deliberada e negligência na oração matutina", linkedExamItemID: nil),
-        ConfessionPrivateNote(id: "note-3", text: "Omissão em prestar ajuda fraterna a colega em necessidade", linkedExamItemID: "cmd-8a")
+        ConfessionPrivateNote(id: "note-1", text: "Impaciência e rispidez no convívio familiar", linkedExamItemID: "cmd-4a"),
+        ConfessionPrivateNote(id: "note-2", text: "Tibieza na oração diária, acídia e procrastinação culposa", linkedExamItemID: "cap-sloth"),
+        ConfessionPrivateNote(id: "note-3", text: "Maledicência, quebra de reputação alheia ou mentira deliberada", linkedExamItemID: "cmd-8a")
     ]
 
     static let penitentRiteSteps: [PenitentRiteStep] = [

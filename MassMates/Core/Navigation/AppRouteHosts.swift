@@ -165,8 +165,14 @@ struct NewCheckInRouteHostView: View {
         let c: any CommunityBackend = communityService ?? LocalCommunityGroupsService()
         let engine = checkInEngine ?? LocalCheckInEngineService(groupsListing: c, feedService: c, onPracticeCompleted: onCompletePractice)
         let vm = NewCheckInViewModel(
-            preselectedPractice: preselectedPractice, checkInService: engine, groupsListing: c,
-            onCheckInCompleted: { _ in Task { await groupsHomeViewModel?.loadGroups() } }
+            preselectedPractice: preselectedPractice,
+            checkInService: engine,
+            groupsListing: c,
+            onCheckInCompleted: { result in
+                onCompletePractice(result.practice)
+                todayViewModel?.markPracticeCompleted(result.practice)
+                Task { await groupsHomeViewModel?.loadGroups() }
+            }
         )
         box.value = vm
         return vm

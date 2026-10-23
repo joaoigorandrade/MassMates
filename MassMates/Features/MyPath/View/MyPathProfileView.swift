@@ -37,22 +37,25 @@ struct MyPathProfileView: View {
 
     // MARK: - Subviews / Private Helpers
     private var dashboardView: some View {
-        VStack(spacing: MassMatesSpacing.md) {
-            headerBar
-            statusBanner
-            ConsistencyHeatmapCardView(
-                days: viewModel.heatmapDays,
-                activeStreakDays: viewModel.milestones.activeStreakDays
-            )
-            MyPathIdentityAndMetricsSectionView(
-                rosariesCount: viewModel.milestones.rosariesPrayed,
-                massesCount: viewModel.milestones.massesAttended,
-                prayerHours: viewModel.milestones.mentalPrayerHours
-            )
-            navigationRows
-            Spacer(minLength: 0)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MassMatesSpacing.md) {
+                headerBar
+                statusBanner
+                ConsistencyHeatmapCardView(
+                    days: viewModel.heatmapDays,
+                    activeStreakDays: viewModel.milestones.activeStreakDays
+                )
+                MyPathIdentityAndMetricsSectionView(
+                    rosariesCount: viewModel.milestones.rosariesPrayed,
+                    massesCount: viewModel.milestones.massesAttended,
+                    prayerHours: viewModel.milestones.mentalPrayerHours
+                )
+                navigationRows
+            }
+            .padding(.horizontal, MassMatesLayout.screenMargin)
+            .padding(.top, MassMatesSpacing.xs)
+            .padding(.bottom, MassMatesSpacing.xl)
         }
-        .padding(.horizontal, MassMatesLayout.screenMargin)
     }
 
     private var headerBar: some View {
@@ -61,14 +64,6 @@ struct MyPathProfileView: View {
                 .font(MassMatesFont.displayMobile)
                 .foregroundStyle(MassMatesPalette.textPrimary)
             Spacer()
-            Button(action: triggerOpenSettings) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 20))
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Ajustes")
         }
     }
 

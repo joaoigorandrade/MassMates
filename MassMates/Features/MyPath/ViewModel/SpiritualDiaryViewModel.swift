@@ -133,28 +133,6 @@ final class SpiritualDiaryViewModel {
     }
 
     static func defaultSampleEntries() -> [PrivateDiaryCheckInEntry] {
-        [
-            PrivateDiaryCheckInEntry(
-                id: "seed-confession-1",
-                practice: .confession,
-                reflectionOrNotes: "Paz profunda após o Sacramento da Reconciliação.",
-                confessorOrPenanceNotes: "Rezar o Salmo 50 e oferecer uma dezena pelas famílias.",
-                createdAt: Date(timeIntervalSince1970: 1_760_850_000)
-            ),
-            PrivateDiaryCheckInEntry(
-                id: "seed-lectio-2",
-                practice: .dailyGospel,
-                reflectionOrNotes: "Permanecei no meu amor: confiar no silêncio de Deus.",
-                confessorOrPenanceNotes: nil,
-                createdAt: Date(timeIntervalSince1970: 1_760_760_000)
-            ),
-            PrivateDiaryCheckInEntry(
-                id: "seed-rosary-3",
-                practice: .rosary,
-                reflectionOrNotes: "Mistérios Gozosos oferecidos pela perseverança do grupo.",
-                confessorOrPenanceNotes: nil,
-                createdAt: Date(timeIntervalSince1970: 1_760_670_000)
-            )
-        ]
+        SpiritualDiarySampleData.realisticSeedEntries()
     }
 }

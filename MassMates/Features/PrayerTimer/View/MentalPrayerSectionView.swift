@@ -29,7 +29,7 @@ struct MentalPrayerSectionView: View {
                     .stroke(MassMatesPalette.line, lineWidth: 1.5)
                 Circle()
                     .trim(from: 0, to: viewModel.progress)
-                    .stroke(theme.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(theme.tint, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.progress)
                 VStack(spacing: MassMatesSpacing.xxs) {
@@ -55,7 +55,6 @@ struct MentalPrayerSectionView: View {
                 .phaseAnimator([0.0, 1.0]) { content, phase in
                     content
                         .scaleEffect(1.0 + (0.015 * phase))
-                        .shadow(color: theme.tint.opacity(0.18 * phase), radius: 10 * phase)
                 } animation: { _ in
                     .easeInOut(duration: 2.4)
                 }
@@ -100,9 +99,8 @@ struct MentalPrayerSectionView: View {
                 Circle()
                     .fill(theme.tint)
                     .frame(width: 64, height: 64)
-                    .shadow(color: Color.black.opacity(0.08), radius: 6, y: 3)
                 Image(systemName: viewModel.isRunning ? "pause.fill" : "play.fill")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(theme.onTint)
                     .contentTransition(.symbolEffect(.replace))
                     .offset(x: viewModel.isRunning ? 0 : 2)

@@ -5,10 +5,12 @@ protocol LiturgicalCalendarProviding: Sendable {
 }
 
 struct DefaultLiturgicalCalendarService: LiturgicalCalendarProviding {
+    // MARK: - Dependencies & State
+
     // MARK: - Init
     init() {}
 
-    // MARK: - Public API
+    // MARK: - Body / Public API
     func liturgicalDay(for date: Date) -> LiturgicalDay {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
@@ -18,11 +20,11 @@ struct DefaultLiturgicalCalendarService: LiturgicalCalendarProviding {
             color: season.liturgicalColor,
             seasonTitle: season.title,
             saintOrFeast: resolveSaintOrFeast(for: date, season: season, calendar: calendar),
-            reading: defaultReading(for: season)
+            reading: LiturgicalReadingsCatalog.reading(for: season, date: date)
         )
     }
 
-    // MARK: - Private Helpers
+    // MARK: - Subviews / Private Helpers
     private func resolveSeason(for date: Date, calendar: Calendar) -> LiturgicalSeason {
         let year = calendar.component(.year, from: date)
         let month = calendar.component(.month, from: date)

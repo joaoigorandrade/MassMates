@@ -18,7 +18,6 @@ struct OnboardingFlowView: View {
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             }
             .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: viewModel.currentStep)
-            .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.bottom, MassMatesSpacing.xl)
             .padding(.top, MassMatesSpacing.xs)
         }
