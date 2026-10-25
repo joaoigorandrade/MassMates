@@ -23,7 +23,7 @@ struct SponsoredBannerView: View, Equatable {
             Text(message)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .lineLimit(2)
+                .lineLimit(nil)
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .padding(.vertical, MassMatesSpacing.sm)

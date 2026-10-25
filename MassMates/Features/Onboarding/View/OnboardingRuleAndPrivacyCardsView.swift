@@ -17,18 +17,20 @@ struct OnboardingRuleAndPrivacyCardsView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            topNavigationBar
-            titleHeader
-                .padding(.top, MassMatesSpacing.md)
-                .padding(.bottom, MassMatesSpacing.lg)
-            presetRowsSection
-            personalizeButton
-                .padding(.top, MassMatesSpacing.md)
-            Spacer()
-            continueButton
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                topNavigationBar
+                titleHeader
+                    .padding(.top, MassMatesSpacing.md)
+                    .padding(.bottom, MassMatesSpacing.lg)
+                presetRowsSection
+                personalizeButton
+                    .padding(.top, MassMatesSpacing.md)
+                continueButton
+                    .padding(.top, MassMatesSpacing.lg)
+            }
+            .padding(.bottom, MassMatesSpacing.sm)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $isCustomizing) { customizationSheet }
     }
 
@@ -82,12 +84,10 @@ struct OnboardingRuleAndPrivacyCardsView: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(content.title)
-                        .font(MassMatesFont.headline)
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(content.subtitle)
-                        .font(MassMatesFont.caption)
-                        .foregroundStyle(MassMatesPalette.textSecondary)
+                    Text(content.title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(content.subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 radioIndicator(isSelected: isSelected)
@@ -103,9 +103,7 @@ struct OnboardingRuleAndPrivacyCardsView: View {
             Circle()
                 .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 2 : 1.5)
                 .frame(width: 20, height: 20)
-            if isSelected {
-                Circle().fill(theme.tint).frame(width: 10, height: 10)
-            }
+            if isSelected { Circle().fill(theme.tint).frame(width: 10, height: 10) }
         }
     }
 
@@ -124,6 +122,8 @@ struct OnboardingRuleAndPrivacyCardsView: View {
             Text("Personalizar")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(theme.tint)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -137,32 +137,29 @@ struct OnboardingRuleAndPrivacyCardsView: View {
     }
 
     private var customizationSheet: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            Text("Práticas Incluídas")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            ForEach(viewModel.practicePreviewItems) { item in
-                Button {
-                    viewModel.togglePracticePreview(id: item.id)
-                } label: {
-                    HStack {
-                        Image(systemName: item.systemImage)
-                            .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textSecondary)
-                        Text(item.title)
-                            .font(MassMatesFont.body)
-                            .foregroundStyle(MassMatesPalette.textPrimary)
-                        Spacer()
-                        Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.line)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                Text("Práticas Incluídas").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                ForEach(viewModel.practicePreviewItems) { item in
+                    Button { viewModel.togglePracticePreview(id: item.id) } label: {
+                        HStack {
+                            Image(systemName: item.systemImage)
+                                .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textSecondary)
+                            Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                            Spacer()
+                            Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.line)
+                        }
+                        .frame(minHeight: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                     }
-                    .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                MassMatesPrimaryButton(title: "Pronto") { isCustomizing = false }
+                    .padding(.top, MassMatesSpacing.md)
             }
-            Spacer()
-            MassMatesPrimaryButton(title: "Pronto") { isCustomizing = false }
+            .padding(MassMatesSpacing.lg)
         }
-        .padding(MassMatesSpacing.lg)
         .background(MassMatesPalette.bg)
     }
 }

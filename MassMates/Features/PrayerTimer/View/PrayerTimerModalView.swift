@@ -71,8 +71,9 @@ struct PrayerTimerModalView: View {
                     .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textTertiary)
                 if isSelected { Circle().fill(theme.tint).frame(width: 5, height: 5) }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
+            .padding(.vertical, 6).padding(.horizontal, 4)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -125,11 +126,10 @@ struct PrayerTimerModalView: View {
             dismissModal()
         } label: {
             Text("Concluir")
-                .font(MassMatesFont.callout)
-                .fontWeight(.medium)
-                .foregroundStyle(theme.tint)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
+                .font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
+                .padding(.vertical, 8).padding(.horizontal, 12)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(MassMatesPressableButtonStyle())
         .accessibilityLabel("Concluir oração")
@@ -152,9 +152,10 @@ struct PrayerTimerModalView: View {
                         if isSelected { Image(systemName: "checkmark").font(MassMatesFont.caption) }
                     }
                     .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                    .padding(MassMatesSpacing.sm)
+                    .padding(MassMatesSpacing.sm).frame(minHeight: MassMatesLayout.minTapTarget)
                     .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

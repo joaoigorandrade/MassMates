@@ -75,18 +75,15 @@ struct CheckInSafeguardAndNoteSectionView: View {
             Spacer()
             statusBadge
         }
+        .frame(minHeight: MassMatesLayout.minTapTarget)
     }
 
     private var statusBadge: some View {
         Group {
             if viewModel.isDestinationLockedToPrivateDiary {
-                Text("Privado")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                Text("Privado").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             } else {
-                Text("Opcional")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                Text("Opcional").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             }
         }
     }
@@ -106,8 +103,8 @@ struct CheckInSafeguardAndNoteSectionView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .contentShape(Circle())
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remover foto")
@@ -117,12 +114,11 @@ struct CheckInSafeguardAndNoteSectionView: View {
     private var photoPickerButton: some View {
         PhotosPicker(selection: $selectedPickerItem, matching: .images) {
             HStack(spacing: 6) {
-                Image(systemName: "camera")
-                    .font(.system(size: 14))
-                Text("Adicionar foto")
-                    .font(MassMatesFont.caption)
+                Image(systemName: "camera").font(.system(size: 14))
+                Text("Adicionar foto").font(MassMatesFont.caption)
             }
             .foregroundStyle(MassMatesPalette.textSecondary)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

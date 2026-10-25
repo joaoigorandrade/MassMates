@@ -18,14 +18,14 @@ struct SettingsPrivacyView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: 0) {
-            topNavigationArea
-            hairline
-            rowsSection
-            Spacer(minLength: 0)
-            bottomDestructiveSection
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                topNavigationArea
+                hairline
+                rowsSection
+                bottomDestructiveSection.padding(.top, MassMatesSpacing.xl)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
@@ -40,6 +40,7 @@ struct SettingsPrivacyView: View {
                     }
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Voltar")
@@ -89,6 +90,7 @@ struct SettingsPrivacyView: View {
             }
             .frame(minHeight: MassMatesLayout.minRowHeight)
             .padding(.horizontal, MassMatesLayout.screenMargin)
+            .contentShape(Rectangle())
             hairline
         }
     }
@@ -103,6 +105,7 @@ struct SettingsPrivacyView: View {
                 }
                 .frame(minHeight: MassMatesLayout.minRowHeight)
                 .padding(.horizontal, MassMatesLayout.screenMargin)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             hairline
@@ -122,7 +125,8 @@ struct SettingsPrivacyView: View {
                 Text(deleteTitle)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.danger)
-                    .frame(height: MassMatesLayout.minTapTarget)
+                    .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Apagar minha conta")

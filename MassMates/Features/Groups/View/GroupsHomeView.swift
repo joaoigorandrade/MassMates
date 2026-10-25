@@ -70,22 +70,24 @@ struct GroupsHomeView: View {
     }
 
     private func mainHub(snapshot: GroupsHomeSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerSection(capacity: snapshot.slotCapacity)
-            if let feedback = viewModel.feedbackMessage {
-                feedbackBanner(text: feedback).padding(.bottom, MassMatesSpacing.xs)
-            }
-            ContinuousFraternitiesSectionView(
-                groups: snapshot.joinedGroups,
-                onSelectGroup: { group in
-                    navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
-                },
-                onDiscoverChallenges: {
-                    withAnimation(.easeInOut(duration: 0.2)) { isShowingDiscovery = true }
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection(capacity: snapshot.slotCapacity)
+                if let feedback = viewModel.feedbackMessage {
+                    feedbackBanner(text: feedback).padding(.bottom, MassMatesSpacing.xs)
                 }
-            )
-            Spacer()
-            bottomActions
+                ContinuousFraternitiesSectionView(
+                    groups: snapshot.joinedGroups,
+                    onSelectGroup: { group in
+                        navigator?.navigate(to: .groupDetail(group: group, season: theme.season))
+                    },
+                    onDiscoverChallenges: {
+                        withAnimation(.easeInOut(duration: 0.2)) { isShowingDiscovery = true }
+                    }
+                )
+                bottomActions.padding(.top, MassMatesSpacing.md)
+            }
+            .padding(.bottom, 100)
         }
     }
 
@@ -108,7 +110,9 @@ struct GroupsHomeView: View {
             navigator?.present(.createJoinGroup(initialTab: .createNew, prefilledInviteCode: nil, season: theme.season))
         } label: {
             Image(systemName: "plus").font(.system(size: 20, weight: .medium))
-                .foregroundStyle(MassMatesPalette.textPrimary).frame(width: 40, height: 40).contentShape(Circle())
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }

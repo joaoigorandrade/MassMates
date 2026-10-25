@@ -18,20 +18,23 @@ struct OnboardingSacredTransparencyCardView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            topNavigationBar
-            ambientLockIcon
-                .padding(.top, MassMatesSpacing.md)
-                .padding(.bottom, MassMatesSpacing.sm)
-            Text("Sua oração é só sua")
-                .font(.system(size: 32, weight: .regular, design: .serif))
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .padding(.bottom, MassMatesSpacing.xl)
-            bulletPointsSection
-            Spacer()
-            bottomActionSection
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                topNavigationBar
+                ambientLockIcon
+                    .padding(.top, MassMatesSpacing.md)
+                    .padding(.bottom, MassMatesSpacing.sm)
+                Text("Sua oração é só sua")
+                    .font(.system(size: 32, weight: .regular, design: .serif))
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .minimumScaleFactor(0.85)
+                    .padding(.bottom, MassMatesSpacing.lg)
+                bulletPointsSection
+                bottomActionSection
+                    .padding(.top, MassMatesSpacing.xl)
+            }
+            .padding(.bottom, MassMatesSpacing.sm)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showAdPreferences) {
             adPreferencesSheet
         }
@@ -45,6 +48,7 @@ struct OnboardingSacredTransparencyCardView: View {
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()
@@ -102,9 +106,10 @@ struct OnboardingSacredTransparencyCardView: View {
                 Text("Preferências de anúncios")
                     .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.vertical, MassMatesSpacing.xxs)
             if viewModel.isConsecrationToastVisible {
                 consecrationToastBanner
             }
@@ -113,19 +118,22 @@ struct OnboardingSacredTransparencyCardView: View {
     }
 
     private var adPreferencesSheet: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            Text("Preferências de Anúncios")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            Text("O MassMates exibe apenas anúncios discretos e éticos, sem rastreamento de dados de oração ou exame.")
-                .font(MassMatesFont.body)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Spacer()
-            MassMatesPrimaryButton(title: "Confirmar") {
-                showAdPreferences = false
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                Text("Preferências de Anúncios")
+                    .font(MassMatesFont.headline)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                Text("O MassMates exibe apenas anúncios discretos e éticos, sem rastreamento de dados de oração ou exame.")
+                    .font(MassMatesFont.body)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                MassMatesPrimaryButton(title: "Confirmar") {
+                    showAdPreferences = false
+                }
+                .padding(.top, MassMatesSpacing.lg)
             }
+            .padding(MassMatesSpacing.lg)
         }
-        .padding(MassMatesSpacing.lg)
         .background(MassMatesPalette.bg)
     }
 
@@ -137,6 +145,7 @@ struct OnboardingSacredTransparencyCardView: View {
             Text("Espaço sagrado pronto com paz.")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.bg)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
         .padding(MassMatesSpacing.sm)

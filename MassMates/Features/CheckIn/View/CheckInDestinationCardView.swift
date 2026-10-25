@@ -65,7 +65,7 @@ struct CheckInDestinationCardView: View {
                 Text(title).font(MassMatesFont.callout).fontWeight(isSelected ? .semibold : .regular)
             }
             .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
-            .frame(maxWidth: .infinity, minHeight: 38)
+            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
             .background(isSelected ? theme.tintSoft.opacity(0.4) : MassMatesPalette.surface)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button).stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: isSelected ? 1.5 : 1))
@@ -100,12 +100,14 @@ struct CheckInDestinationCardView: View {
                     HStack(spacing: MassMatesSpacing.sm) {
                         Image(systemName: "person.3").font(.system(size: 16)).foregroundStyle(theme.tint)
                         Text(group.name).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                            .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                         Spacer()
                         Toggle("", isOn: Binding(get: { isSelected }, set: { _ in onToggleGroup(group.id) }))
                             .labelsHidden().tint(theme.tint).allowsHitTesting(false)
                     }
                     .padding(.horizontal, MassMatesSpacing.md)
-                    .frame(height: 52)
+                    .padding(.vertical, MassMatesSpacing.xs)
+                    .frame(minHeight: MassMatesLayout.minRowHeight)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -131,13 +133,14 @@ struct CheckInDestinationCardView: View {
             Image(systemName: "lock.shield.fill").font(.system(size: 16)).foregroundStyle(theme.tint)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Salvo apenas no seu diário").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
-                Text("Visível unicamente para você com total sigilo.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+                Text("Visível unicamente para você com total sigilo.").font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textTertiary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(theme.tint)
         }
         .padding(MassMatesSpacing.md)
-        .frame(minHeight: 52)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
     }
 
     private var lockedPrivateRow: some View {
@@ -148,10 +151,13 @@ struct CheckInDestinationCardView: View {
                 Spacer()
                 Image(systemName: "lock.fill").font(.system(size: 14)).foregroundStyle(MassMatesPalette.textTertiary)
             }
-            Text("Por sigilo sacramental, confissões são mantidas privadas.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+            Text("Por sigilo sacramental, confissões são mantidas privadas.")
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, MassMatesSpacing.md)
         .padding(.vertical, MassMatesSpacing.sm)
+        .frame(minHeight: MassMatesLayout.minRowHeight, alignment: .leading)
     }
 }
 

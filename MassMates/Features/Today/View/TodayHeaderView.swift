@@ -83,11 +83,11 @@ struct TodayHeaderView: View, Equatable {
                     .frame(width: 6, height: 6)
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: theme.season)
                 Text(seasonPillText)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(MassMatesFont.caption)
                     .tracking(0.6)
                     .foregroundStyle(MassMatesPalette.textSecondary)
             }
-            .padding(.vertical, 4)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -99,7 +99,8 @@ struct TodayHeaderView: View, Equatable {
             Text(saintOrFeast.isEmpty ? "Santos de Hoje" : saintOrFeast)
                 .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-                .lineLimit(2)
+                .lineLimit(nil)
+                .minimumScaleFactor(0.85)
                 .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(reduceMotion ? .identity : .opacity)
             Spacer(minLength: MassMatesSpacing.sm)
@@ -121,6 +122,7 @@ struct TodayHeaderView: View, Equatable {
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .contentTransition(.numericText())
             }
+            .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(MassMatesPressableButtonStyle())

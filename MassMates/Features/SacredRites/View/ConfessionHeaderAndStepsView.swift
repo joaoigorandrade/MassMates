@@ -77,6 +77,8 @@ struct ConfessionHeaderAndStepsView: View {
                     .fill(isSelected ? MassMatesPalette.textPrimary : Color.clear)
                     .frame(height: 1.5)
             }
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -102,6 +104,8 @@ struct ConfessionHeaderAndStepsView: View {
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.textSecondary)
                 }
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if viewModel.isHolySpiritPrayerExpanded {
@@ -139,7 +143,7 @@ struct ConfessionHeaderAndStepsView: View {
             Text("\(step.number)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(step.isCompleted ? MassMatesPalette.surface : MassMatesPalette.textPrimary)
-                .frame(width: 22, height: 22)
+                .frame(minWidth: 22, minHeight: 22)
                 .background(step.isCompleted ? MassMatesPalette.textPrimary : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             VStack(alignment: .leading, spacing: 2) {
@@ -150,6 +154,7 @@ struct ConfessionHeaderAndStepsView: View {
                 Text(step.description)
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
         }

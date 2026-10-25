@@ -118,15 +118,18 @@ private struct GroupMemberModerationRowView: View, Equatable {
             Text("\(member.name) (\(member.roleLabel))")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(2)
             Spacer()
             Button("Remover", action: onRemove)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.danger)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
             Button("Bloquear", action: onBlock)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.warning)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
     }
 }
@@ -146,15 +149,18 @@ private struct GroupPostModerationRowView: View, Equatable {
             Text("\(post.authorName) • \(post.practice.title)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineLimit(2)
             Spacer()
             Button("Denunciar", action: onReport)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(theme.tint)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
             Button("Excluir", action: onDelete)
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.danger)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
     }
 }

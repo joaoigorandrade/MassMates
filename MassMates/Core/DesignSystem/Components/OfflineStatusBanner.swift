@@ -16,6 +16,7 @@ struct OfflineStatusBanner: View {
         Text(message)
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.textSecondary)
+            .multilineTextAlignment(.center)
             .padding(.horizontal, MassMatesSpacing.md)
             .padding(.vertical, MassMatesSpacing.xs)
             .frame(maxWidth: .infinity)

@@ -29,6 +29,8 @@ private struct TabBarItemView: View, Equatable {
                 Text(title)
                     .font(MassMatesFont.caption)
                     .fontWeight(isSelected ? .semibold : .regular)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -60,7 +62,7 @@ struct MassMatesTabBarView: View {
             tabItem(tab: .groups, title: "Grupos", icon: "person.2")
             centerActionButton
             tabItem(tab: .sacredRites, title: "Ritos", icon: "book.closed")
-            tabItem(tab: .myPath, title: "Meu Caminho", icon: "person.crop.circle")
+            tabItem(tab: .myPath, title: "Eu", icon: "person.crop.circle")
         }
         .sensoryFeedback(.selection, trigger: tabNavigator.selectedTab)
         .frame(height: 56)

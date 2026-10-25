@@ -20,13 +20,17 @@ struct CreateGroupRulesAndLimitsView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-            scoringModeSection
-            sharingRequirementSection
-            Spacer(minLength: 0)
-            createActionButton
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
+                scoringModeSection
+                sharingRequirementSection
+                createActionButton
+                    .padding(.top, MassMatesSpacing.xs)
+            }
+            .padding(.top, MassMatesSpacing.xs)
+            .padding(.bottom, MassMatesSpacing.xl)
         }
-        .padding(.top, MassMatesSpacing.xs)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Subviews / Private Helpers
@@ -57,18 +61,20 @@ struct CreateGroupRulesAndLimitsView: View {
                     Text(mode.descriptionText)
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.textSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
                 Spacer()
             }
             .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(height: 44)
+            .padding(.vertical, MassMatesSpacing.xxs)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
             .overlay(
                 RoundedRectangle(cornerRadius: MassMatesRadius.photo)
                     .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(.rect(cornerRadius: MassMatesRadius.photo))
         }
         .buttonStyle(.plain)
     }
@@ -100,17 +106,20 @@ struct CreateGroupRulesAndLimitsView: View {
                     Text(req.badgeText)
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.textSecondary)
+                        .lineLimit(2)
                 }
                 Spacer()
             }
             .padding(.horizontal, MassMatesSpacing.sm)
-            .frame(height: 44)
+            .padding(.vertical, MassMatesSpacing.xxs)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
             .overlay(
                 RoundedRectangle(cornerRadius: MassMatesRadius.photo)
                     .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(.rect(cornerRadius: MassMatesRadius.photo))
         }
         .buttonStyle(.plain)
     }

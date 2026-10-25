@@ -19,7 +19,7 @@ struct GroupsBottomActionsView: View {
             Rectangle().fill(MassMatesPalette.line).frame(width: 1, height: 22)
             actionButton(title: "Criar grupo", color: theme.tint, action: onCreateGroup)
         }
-        .frame(height: 48)
+        .frame(minHeight: MassMatesLayout.minTapTarget)
         .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.card).stroke(MassMatesPalette.line, lineWidth: 1))
@@ -44,10 +44,7 @@ struct DiscoverChallengesView: View {
     private let onOpenGroup: (CommunityGroup) -> Void
 
     // MARK: - Init
-    init(
-        challenges: [FeaturedChallenge], onBack: @escaping () -> Void,
-        onJoinChallenge: @escaping (String) -> Void = { _ in }, onOpenGroup: @escaping (CommunityGroup) -> Void = { _ in }
-    ) {
+    init(challenges: [FeaturedChallenge], onBack: @escaping () -> Void, onJoinChallenge: @escaping (String) -> Void = { _ in }, onOpenGroup: @escaping (CommunityGroup) -> Void = { _ in }) {
         self.challenges = Array(challenges.prefix(3))
         self.onBack = onBack
         self.onJoinChallenge = onJoinChallenge
@@ -56,12 +53,14 @@ struct DiscoverChallengesView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerBar
-            Text("Desafios Sazonais").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
-            captionLabel
-            challengesList
-            Spacer()
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                headerBar
+                Text("Desafios Sazonais").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
+                captionLabel
+                challengesList
+            }
+            .padding(.bottom, 100)
         }
     }
 
@@ -74,7 +73,8 @@ struct DiscoverChallengesView: View {
                     Text("Voltar aos meus grupos").font(MassMatesFont.callout)
                 }
                 .foregroundStyle(theme.tint)
-                .frame(minHeight: 36)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Voltar aos meus grupos")
@@ -127,7 +127,7 @@ struct DiscoverChallengeRowView: View, Equatable {
             Button(action: onOpen) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: MassMatesSpacing.xs) {
-                        Text(challenge.group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+                        Text(challenge.group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(2)
                         if challenge.group.sponsorName != nil {
                             Text("Patrocinado").font(.system(size: 9, weight: .semibold)).foregroundStyle(MassMatesPalette.textSecondary)
                                 .padding(.horizontal, 4).padding(.vertical, 1).background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: 3))
@@ -148,10 +148,9 @@ struct DiscoverChallengeRowView: View, Equatable {
             }
             .buttonStyle(.plain).accessibilityLabel(challenge.isJoined ? "Ver desafio" : "Entrar no desafio")
         }
-        .frame(height: 64)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
+        .padding(.vertical, MassMatesSpacing.xxs)
     }
-
-    // MARK: - Subviews / Private Helpers
 }
 
 struct GroupsCapacityCardView: View {

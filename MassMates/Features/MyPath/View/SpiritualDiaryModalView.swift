@@ -38,14 +38,10 @@ struct SpiritualDiaryModalView: View {
         .animation(reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.8), value: viewModel.isDiaryUnlocked)
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .background(MassMatesPalette.bg.ignoresSafeArea())
-        .sheet(item: $selectedEntryForReading) {
-            DiaryEntryImmersiveReaderView(entry: $0, allEntries: displayedEntries).environment(\.liturgicalTheme, theme)
-        }
+        .sheet(item: $selectedEntryForReading) { DiaryEntryImmersiveReaderView(entry: $0, allEntries: displayedEntries).environment(\.liturgicalTheme, theme) }
         .sheet(isPresented: $showingNewEntrySheet) {
-            NewDiaryEntrySheetView { practice, text in
-                await viewModel.addDiaryEntry(practice: practice, reflection: text)
-                updateDisplayedEntries()
-            }.environment(\.liturgicalTheme, theme)
+            NewDiaryEntrySheetView { p, t in await viewModel.addDiaryEntry(practice: p, reflection: t); updateDisplayedEntries() }
+                .environment(\.liturgicalTheme, theme)
         }
         .onChange(of: viewModel.filteredEntries) { updateDisplayedEntries() }
         .onChange(of: viewModel.searchQuery) { updateDisplayedEntries() }
@@ -61,6 +57,7 @@ struct SpiritualDiaryModalView: View {
                 Image(systemName: "xmark").font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityLabel("Fechar")
             Spacer()
             Text("Diário").font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
@@ -69,13 +66,15 @@ struct SpiritualDiaryModalView: View {
                 Button { toggleSearch() } label: {
                     Image(systemName: isSearchActive ? "xmark" : "magnifyingglass").font(.system(size: 17, weight: .medium))
                         .foregroundStyle(MassMatesPalette.textPrimary).frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel("Buscar")
                 Button { showingNewEntrySheet = true } label: {
                     Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.tint)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+                        .contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel("Novo Registro")
             }
-        }.frame(height: 52)
+        }.frame(minHeight: MassMatesLayout.minRowHeight)
     }
 
     private var monthSwitcher: some View {
@@ -91,6 +90,7 @@ struct SpiritualDiaryModalView: View {
         Button(action: action) {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textSecondary).frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }.buttonStyle(.plain)
     }
 
@@ -134,6 +134,7 @@ struct SpiritualDiaryModalView: View {
             }
             .foregroundStyle(MassMatesPalette.textSecondary).padding(.vertical, 8).padding(.horizontal, MassMatesSpacing.md)
             .background(MassMatesPalette.surfaceMuted.opacity(0.8)).clipShape(Capsule())
+            .frame(minHeight: MassMatesLayout.minTapTarget).contentShape(Rectangle())
         }.buttonStyle(.plain).padding(.bottom, MassMatesSpacing.sm)
     }
 

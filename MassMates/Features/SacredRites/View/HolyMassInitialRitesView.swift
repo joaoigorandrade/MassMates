@@ -66,19 +66,23 @@ struct HolyMassInitialRitesView: View {
                 .font(MassMatesFont.scripture)
                 .fontWeight(.bold)
                 .foregroundStyle(isAssembly ? theme.tint : MassMatesPalette.textSecondary)
-                .frame(width: 22, alignment: .leading)
+                .frame(minWidth: 22, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(text)
                     .font(MassMatesFont.scripture)
                     .fontWeight(isAssembly ? .semibold : .regular)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let latin {
                     Text(latin)
                         .font(MassMatesFont.customScripture(size: 14, italic: true))
                         .foregroundStyle(MassMatesPalette.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func rubricText(_ text: String) -> some View {

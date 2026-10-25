@@ -85,6 +85,7 @@ struct GroupFeedCommentsView: View, @preconcurrency Equatable {
                 .font(MassMatesFont.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(comment.isHidden ? MassMatesPalette.textTertiary : MassMatesPalette.textPrimary)
+                .lineLimit(1)
             Text("• \(comment.relativeTimeLabel)")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
@@ -102,6 +103,7 @@ struct GroupFeedCommentsView: View, @preconcurrency Equatable {
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
                 .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remover comentário")
@@ -126,6 +128,7 @@ struct GroupFeedCommentsView: View, @preconcurrency Equatable {
                     .fontWeight(.semibold)
                     .foregroundStyle(canSubmit ? theme.tint : MassMatesPalette.textTertiary)
                     .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
                     .disabled(!canSubmit)
             }
             statusFootnoteRow

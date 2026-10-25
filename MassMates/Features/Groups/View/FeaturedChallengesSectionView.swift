@@ -28,13 +28,7 @@ struct FeaturedChallengesSectionView: View {
     ]
 
     // MARK: - Init
-    init(
-        challenges: [FeaturedChallenge] = [],
-        showsBackButton: Bool = true,
-        onJoinChallenge: ((String) -> Void)? = nil,
-        onOpenGroup: ((CommunityGroup) -> Void)? = nil,
-        onBack: (() -> Void)? = nil
-    ) {
+    init(challenges: [FeaturedChallenge] = [], showsBackButton: Bool = true, onJoinChallenge: ((String) -> Void)? = nil, onOpenGroup: ((CommunityGroup) -> Void)? = nil, onBack: (() -> Void)? = nil) {
         self.challenges = challenges
         self.showsBackButton = showsBackButton
         self.onJoinChallenge = onJoinChallenge
@@ -45,14 +39,16 @@ struct FeaturedChallengesSectionView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if showsBackButton { backBar }
-            headerSection
-            initiativesList
-            Spacer()
-            footerCaption
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                if showsBackButton { backBar }
+                headerSection
+                initiativesList
+                footerCaption.padding(.top, MassMatesSpacing.lg)
+            }
+            .padding(.bottom, 100)
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .padding(.horizontal, MassMatesLayout.screenMargin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
@@ -74,6 +70,7 @@ struct FeaturedChallengesSectionView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .padding(.top, MassMatesSpacing.xs)
@@ -136,7 +133,7 @@ private struct FeaturedInitiativeRowView: View, Equatable {
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(initiative.title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+                Text(initiative.title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(2)
                 subtitleView
             }
             Spacer()
@@ -166,6 +163,7 @@ private struct FeaturedInitiativeRowView: View, Equatable {
                 .fontWeight(.medium)
                 .foregroundStyle(isJoined ? MassMatesPalette.textTertiary : theme.tint)
                 .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget, alignment: .trailing)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isJoined)

@@ -48,6 +48,7 @@ struct CreateGroupFormTabView: View {
                     Image(systemName: "camera").font(.system(size: 22, weight: .regular))
                         .foregroundStyle(MassMatesPalette.textSecondary)
                 }
+                .contentShape(Circle())
             }
             .buttonStyle(.plain).frame(width: 64, height: 64)
             Spacer()
@@ -128,13 +129,15 @@ struct CreateGroupFormTabView: View {
                 Spacer()
             }
             .padding(.horizontal, MassMatesSpacing.md)
-            .frame(height: 48)
+            .padding(.vertical, MassMatesSpacing.xs)
+            .frame(minHeight: 48)
             .background(isSelected ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             .overlay(
                 RoundedRectangle(cornerRadius: MassMatesRadius.button)
                     .strokeBorder(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)
     }

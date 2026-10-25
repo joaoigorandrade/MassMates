@@ -64,15 +64,18 @@ struct NightlyExamenFooterSectionView: View {
                 Text(virtue.subtitle)
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(MassMatesSpacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(isSelected ? theme.tintSoft : MassMatesPalette.surface)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             .overlay(
                 RoundedRectangle(cornerRadius: MassMatesRadius.button)
                     .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -132,6 +135,7 @@ struct NightlyExamenFooterSectionView: View {
             .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

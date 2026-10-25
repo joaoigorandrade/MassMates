@@ -54,7 +54,8 @@ struct LectioDivinaAccordionSectionView: View {
                         Text("Voltar ao texto").font(MassMatesFont.callout)
                     }
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                    .frame(height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Voltar ao texto")
                 Spacer()
@@ -90,6 +91,8 @@ struct LectioDivinaAccordionSectionView: View {
                         .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
                 }
             }
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .padding(.vertical, MassMatesSpacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -100,13 +103,16 @@ struct LectioDivinaAccordionSectionView: View {
             Text("\(item.number)").font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint).frame(width: 20, alignment: .leading)
             Text(item.stage).font(MassMatesFont.scriptureEmphasis).foregroundStyle(MassMatesPalette.textPrimary)
             Text("—").font(MassMatesFont.scripture).foregroundStyle(MassMatesPalette.textTertiary)
-            Text(item.prompt).font(MassMatesFont.scripture).foregroundStyle(MassMatesPalette.textPrimary).fixedSize(horizontal: false, vertical: true)
+            Text(item.prompt).font(MassMatesFont.scripture).foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private func stepGuidanceCard(for step: LectioDivinaStep) -> some View {
         Text(step.guidance)
             .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary).lineSpacing(3)
+            .lineLimit(nil)
             .padding(MassMatesSpacing.sm).frame(maxWidth: .infinity, alignment: .leading)
             .background(MassMatesPalette.surface).clipShape(.rect(cornerRadius: MassMatesRadius.photo))
             .overlay { RoundedRectangle(cornerRadius: MassMatesRadius.photo).stroke(MassMatesPalette.line, lineWidth: 1) }

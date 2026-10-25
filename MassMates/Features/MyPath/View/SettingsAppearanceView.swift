@@ -25,10 +25,9 @@ struct SettingsAppearanceView: View {
                     appIconSection.padding(.horizontal, MassMatesLayout.screenMargin)
                     languageSection.padding(.horizontal, MassMatesLayout.screenMargin)
                 }
+                .padding(.bottom, MassMatesSpacing.xl)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
@@ -43,6 +42,7 @@ struct SettingsAppearanceView: View {
                     }
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Voltar")
@@ -69,9 +69,10 @@ struct SettingsAppearanceView: View {
                     Button { viewModel.selectThemeMode(mode) } label: {
                         Text(mode.displayName).font(MassMatesFont.callout).fontWeight(isSelected ? .semibold : .medium)
                             .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
-                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
                             .background(isSelected ? MassMatesPalette.surface : Color.clear)
                             .clipShape(.rect(cornerRadius: 10))
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -108,6 +109,7 @@ struct SettingsAppearanceView: View {
                 }
                 Text(label).font(MassMatesFont.caption).foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -128,6 +130,7 @@ struct SettingsAppearanceView: View {
                         }
                     }
                     .frame(minHeight: MassMatesLayout.minRowHeight)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 hairline

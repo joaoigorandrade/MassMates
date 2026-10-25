@@ -34,7 +34,7 @@ struct GroupDetailView: View {
                 }
                 .padding(.horizontal, MassMatesLayout.screenMargin)
                 .padding(.top, MassMatesSpacing.xs)
-                .padding(.bottom, MassMatesSpacing.xl)
+                .padding(.bottom, 100)
             }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
@@ -74,6 +74,7 @@ struct GroupDetailView: View {
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Voltar")
@@ -85,6 +86,7 @@ struct GroupDetailView: View {
                 ShareLink(item: url, subject: Text(viewModel.group.name), message: Text("Participe do grupo \(viewModel.group.name) no MassMates:")) {
                     Image(systemName: "square.and.arrow.up").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
             } else {
                 Button {
@@ -93,6 +95,7 @@ struct GroupDetailView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
             }
         }
@@ -113,6 +116,7 @@ struct GroupDetailView: View {
         } label: {
             Image(systemName: "ellipsis").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+                .contentShape(Rectangle())
         }
         .accessibilityLabel("Mais opções")
     }

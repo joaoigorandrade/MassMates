@@ -21,9 +21,15 @@ struct CreateGroupChallengeWindowView: View {
 
     // MARK: - Subviews / Private Helpers
     private var datesRow: some View {
-        HStack(spacing: MassMatesSpacing.sm) {
-            dateField(title: "Início", date: dayBinding(\.startsOn))
-            dateField(title: "Fim", date: dayBinding(\.endsOn))
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: MassMatesSpacing.sm) {
+                dateField(title: "Início", date: dayBinding(\.startsOn))
+                dateField(title: "Fim", date: dayBinding(\.endsOn))
+            }
+            VStack(spacing: MassMatesSpacing.xs) {
+                dateField(title: "Início", date: dayBinding(\.startsOn))
+                dateField(title: "Fim", date: dayBinding(\.endsOn))
+            }
         }
     }
 
@@ -38,7 +44,8 @@ struct CreateGroupChallengeWindowView: View {
                 .labelsHidden()
         }
         .padding(.horizontal, MassMatesSpacing.sm)
-        .frame(height: 44)
+        .padding(.vertical, MassMatesSpacing.xxs)
+        .frame(minHeight: MassMatesLayout.minTapTarget)
         .background(MassMatesPalette.surfaceMuted)
         .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
         .overlay(

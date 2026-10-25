@@ -48,7 +48,7 @@ struct MyPathGraceAndMercyView: View, Equatable {
                 footerCaption
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
-            .padding(.bottom, MassMatesSpacing.xl)
+            .padding(.bottom, 104)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
@@ -60,7 +60,9 @@ struct MyPathGraceAndMercyView: View, Equatable {
                 Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold))
                 Text("Voltar").font(MassMatesFont.callout)
             }
-            .foregroundStyle(MassMatesPalette.textSecondary).frame(minHeight: MassMatesLayout.minTapTarget)
+            .foregroundStyle(MassMatesPalette.textSecondary)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityLabel("Voltar")
     }
@@ -135,9 +137,10 @@ struct MyPathGraceAndMercyView: View, Equatable {
                     Image(systemName: saint.systemImage).font(.system(size: 18)).foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary)
                 }
                 Text(saint.title).font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary).lineLimit(1)
+                    .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textSecondary).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityLabel(saint.title)
     }

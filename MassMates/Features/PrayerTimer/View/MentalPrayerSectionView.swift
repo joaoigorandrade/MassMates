@@ -37,6 +37,8 @@ struct MentalPrayerSectionView: View {
                         .font(MassMatesFont.timerNumeral)
                         .foregroundStyle(MassMatesPalette.textPrimary)
                         .contentTransition(.numericText())
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                     Text("Silêncio interior")
                         .font(MassMatesFont.caption)
                         .tracking(1.4)
@@ -87,6 +89,8 @@ struct MentalPrayerSectionView: View {
                         .stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1)
                 }
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -105,6 +109,7 @@ struct MentalPrayerSectionView: View {
                     .contentTransition(.symbolEffect(.replace))
                     .offset(x: viewModel.isRunning ? 0 : 2)
             }
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.isRunning)

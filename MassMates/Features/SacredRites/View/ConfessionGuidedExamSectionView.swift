@@ -57,11 +57,13 @@ struct ConfessionGuidedExamSectionView: View {
                     .font(MassMatesFont.body)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 circularCheckmark(isChecked: isChecked)
             }
             .frame(minHeight: MassMatesLayout.minRowHeight)
             .padding(.horizontal, MassMatesSpacing.xxs)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -85,7 +87,7 @@ struct ConfessionGuidedExamSectionView: View {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(height: 40)
+                .frame(height: MassMatesLayout.minTapTarget)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
                 .onSubmit { viewModel.addCustomSinNote() }
@@ -93,7 +95,7 @@ struct ConfessionGuidedExamSectionView: View {
                 Image(systemName: "plus")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(theme.onTint)
-                    .frame(width: 40, height: 40)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
                     .background(theme.tint)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.button))
             }

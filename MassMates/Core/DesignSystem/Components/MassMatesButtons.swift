@@ -39,10 +39,13 @@ struct MassMatesPrimaryButton: View {
             buttonLabel
                 .font(MassMatesFont.headline)
                 .foregroundStyle(theme.onTint)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                 .padding(.horizontal, MassMatesSpacing.md)
+                .padding(.vertical, MassMatesSpacing.xs)
                 .background(theme.tint)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .contentShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(MassMatesPressableButtonStyle())
     }
@@ -81,10 +84,13 @@ struct MassMatesSecondaryButton: View {
             buttonLabel
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
                 .padding(.horizontal, MassMatesSpacing.md)
+                .padding(.vertical, MassMatesSpacing.xs)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .contentShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(MassMatesPressableButtonStyle())
     }
@@ -118,7 +124,8 @@ struct MassMatesTextButton: View {
             Text(title)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(theme.tint)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

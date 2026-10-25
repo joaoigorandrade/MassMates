@@ -34,13 +34,7 @@ struct RuleOfLifeSectionView: View {
         onTogglePractice: @escaping (SpiritualPractice) -> Void = { _ in },
         onEditRule: (() -> Void)? = nil
     ) {
-        self.init(
-            items: DailyRuleChecklistItem.from(summary: progress),
-            selectedPreset: progress.selectedPreset,
-            onSelectPreset: onSelectPreset,
-            onEditRule: onEditRule ?? { onSelectPreset(progress.selectedPreset) },
-            onTogglePractice: onTogglePractice
-        )
+        self.init(items: DailyRuleChecklistItem.from(summary: progress), selectedPreset: progress.selectedPreset, onSelectPreset: onSelectPreset, onEditRule: onEditRule ?? { onSelectPreset(progress.selectedPreset) }, onTogglePractice: onTogglePractice)
     }
 
     // MARK: - Body / Public API
@@ -67,6 +61,7 @@ struct RuleOfLifeSectionView: View {
             } label: {
                 Image(systemName: "xmark").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain).accessibilityLabel("Fechar")
             Spacer()
@@ -86,7 +81,7 @@ struct RuleOfLifeSectionView: View {
             checklistRows
             spiritualQuote
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin).padding(.top, MassMatesSpacing.sm)
+        .padding(.horizontal, MassMatesLayout.screenMargin).padding(.top, MassMatesSpacing.sm)
     }
 
     private var presetPills: some View {
@@ -97,9 +92,11 @@ struct RuleOfLifeSectionView: View {
                     Button { selectPreset(preset) } label: {
                         Text(preset.title).font(isSelected ? MassMatesFont.headline : MassMatesFont.caption)
                             .foregroundStyle(isSelected ? theme.onTint : MassMatesPalette.textSecondary)
-                            .padding(.horizontal, MassMatesSpacing.sm).padding(.vertical, 6)
+                            .padding(.horizontal, MassMatesSpacing.sm)
+                            .frame(minHeight: MassMatesLayout.minTapTarget)
                             .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
                             .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                            .contentShape(.rect(cornerRadius: MassMatesRadius.chip))
                     }
                     .buttonStyle(.plain).accessibilityLabel(preset.title)
                 }
@@ -138,7 +135,9 @@ struct RuleOfLifeSectionView: View {
     private var bottomActionArea: some View {
         Button { onEditRule?() } label: {
             Text("Editar regra de vida").font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
-                .padding(.vertical, MassMatesSpacing.xs).padding(.horizontal, MassMatesSpacing.md)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .padding(.horizontal, MassMatesSpacing.md)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain).padding(.vertical, MassMatesSpacing.md)
     }

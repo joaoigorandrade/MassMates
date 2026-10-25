@@ -41,13 +41,23 @@ struct ConsistencyHeatmapCardView: View, Equatable {
 
     // MARK: - Subviews / Private Helpers
     private var headerRow: some View {
-        HStack(alignment: .center) {
-            Text("Últimas 12 semanas · \(faithfulDaysCount) dias fiéis")
-                .font(MassMatesFont.caption)
-                .foregroundStyle(MassMatesPalette.textSecondary)
-            Spacer(minLength: MassMatesSpacing.xs)
-            legendView
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center) {
+                headerText
+                Spacer(minLength: MassMatesSpacing.xs)
+                legendView
+            }
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
+                headerText
+                legendView
+            }
         }
+    }
+
+    private var headerText: some View {
+        Text("Últimas 12 semanas · \(faithfulDaysCount) dias fiéis")
+            .font(MassMatesFont.caption)
+            .foregroundStyle(MassMatesPalette.textSecondary)
     }
 
     private var legendView: some View {

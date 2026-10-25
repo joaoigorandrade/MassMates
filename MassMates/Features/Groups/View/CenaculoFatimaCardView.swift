@@ -38,7 +38,7 @@ struct CenaculoFatimaCardView: View {
                 Text(group.name.isEmpty ? "Cenáculo N. Sra. de Fátima" : group.name)
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Text("\(group.memberCount) membros · Dias Fiéis")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
@@ -101,6 +101,7 @@ struct CenaculoFatimaCardView: View {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(isLiked ? Theme(season: .red).tint : MassMatesPalette.textTertiary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

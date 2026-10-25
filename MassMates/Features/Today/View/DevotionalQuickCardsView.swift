@@ -70,10 +70,12 @@ struct DevotionalQuickCardsView: View, Equatable {
                 Text(title)
                     .font(MassMatesFont.body)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineLimit(nil)
                 if let subtitle {
                     Text(subtitle)
                         .font(MassMatesFont.callout)
                         .foregroundStyle(MassMatesPalette.textSecondary)
+                        .lineLimit(nil)
                 }
             }
             Spacer()
@@ -82,6 +84,7 @@ struct DevotionalQuickCardsView: View, Equatable {
                 .foregroundStyle(MassMatesPalette.textTertiary)
         }
         .frame(minHeight: MassMatesLayout.minRowHeight)
+        .padding(.vertical, MassMatesSpacing.xs)
         .contentShape(Rectangle())
     }
 

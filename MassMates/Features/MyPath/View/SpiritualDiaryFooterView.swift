@@ -40,10 +40,12 @@ struct SpiritualDiaryFooterView: View {
                 Text("Exportar Backup Criptografado")
                     .font(MassMatesFont.headline)
             }
+            .padding(.horizontal, MassMatesSpacing.sm)
             .foregroundStyle(MassMatesPalette.textPrimary)
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minRowHeight)
             .background(MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Exportar Backup Criptografado")
@@ -70,6 +72,7 @@ struct SpiritualDiaryFooterView: View {
                         .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
                         .background(MassMatesPalette.line)
                         .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -90,6 +93,7 @@ struct SpiritualDiaryFooterView: View {
                     .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minRowHeight)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                    .contentShape(Rectangle())
             }
         }
     }
@@ -116,6 +120,7 @@ struct SpiritualDiaryFooterView: View {
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

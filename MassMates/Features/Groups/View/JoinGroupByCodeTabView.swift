@@ -59,7 +59,7 @@ struct JoinGroupByCodeTabView: View {
         let isActive = index == currentCount
         return VStack(spacing: MassMatesSpacing.xxs) {
             Text(isFilled ? char : " ")
-                .font(MassMatesFont.numeral).foregroundStyle(MassMatesPalette.textPrimary)
+                .font(MassMatesFont.numeral).minimumScaleFactor(0.7).foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             RoundedRectangle(cornerRadius: 1)
                 .fill(indicatorColor(isFilled: isFilled, isActive: isActive))
@@ -105,13 +105,13 @@ struct JoinGroupByCodeTabView: View {
     }
 
     private var pasteActionButton: some View {
-        Button {
-            pasteCodeFromClipboard()
-        } label: {
+        Button { pasteCodeFromClipboard() } label: {
             Label("Ou cole o código do convite copiado", systemImage: "link")
                 .font(MassMatesFont.callout).foregroundStyle(theme.tint)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget, alignment: .center)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .center)
+        .buttonStyle(.plain)
     }
 
     private func pasteCodeFromClipboard() {

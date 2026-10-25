@@ -50,15 +50,18 @@ struct HolyMassGuideModalView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: 36, height: 36)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.circle)
+                .background(MassMatesPalette.surfaceMuted).clipShape(.circle)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private var liturgicalSectionCaption: some View {
         Text("\(viewModel.selectedSection.title.uppercased()) · \(viewModel.currentSectionIndex + 1) DE \(HolyMassRiteSection.allCases.count)")
-            .font(MassMatesFont.caption).tracking(0.8).fontWeight(.medium).foregroundStyle(MassMatesPalette.textSecondary)
+            .font(MassMatesFont.caption).tracking(0.8).fontWeight(.medium)
+            .foregroundStyle(MassMatesPalette.textSecondary)
+            .minimumScaleFactor(0.85).lineLimit(1)
     }
 
     private var silentModeButton: some View {
@@ -68,8 +71,9 @@ struct HolyMassGuideModalView: View {
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .symbolEffect(.bounce, value: viewModel.isSilentModeActive)
                 .frame(width: 36, height: 36)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.circle)
+                .background(MassMatesPalette.surfaceMuted).clipShape(.circle)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -97,10 +101,8 @@ struct HolyMassGuideModalView: View {
                 }
             }
             .padding(.horizontal, MassMatesLayout.readingMargin)
-            .padding(.top, MassMatesSpacing.md)
-            .padding(.bottom, MassMatesSpacing.xl)
-            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            .padding(.top, MassMatesSpacing.md).padding(.bottom, MassMatesSpacing.xl)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading).frame(maxWidth: .infinity)
         }
     }
 
@@ -128,11 +130,7 @@ struct HolyMassGuideModalView: View {
                         .frame(width: 6, height: 6)
                 }
             }
-            HStack {
-                previousRiteButton
-                Spacer()
-                nextRiteButton
-            }
+            HStack { previousRiteButton; Spacer(); nextRiteButton }
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .padding(.top, MassMatesSpacing.xs).padding(.bottom, MassMatesSpacing.md)
@@ -145,7 +143,8 @@ struct HolyMassGuideModalView: View {
         } label: {
             Text("← Anterior")
                 .font(MassMatesFont.headline).fontWeight(.regular).foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.canGoToPreviousSection)

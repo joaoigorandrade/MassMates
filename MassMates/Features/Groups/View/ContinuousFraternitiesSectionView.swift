@@ -63,7 +63,8 @@ struct ContinuousFraternitiesSectionView: View {
             }
             Spacer()
         }
-        .frame(height: 64)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
+        .padding(.vertical, MassMatesSpacing.xs)
     }
 
     private var discoveryRow: some View {
@@ -75,7 +76,8 @@ struct ContinuousFraternitiesSectionView: View {
                     .foregroundStyle(theme.tint)
                 Spacer()
             }
-            .frame(height: 54)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .padding(.vertical, MassMatesSpacing.xs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -107,7 +109,8 @@ private struct ContinuousFraternityRowView: View, Equatable {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
-            .frame(height: 64)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            .padding(.vertical, MassMatesSpacing.xs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -124,7 +127,7 @@ private struct ContinuousFraternityRowView: View, Equatable {
     private var groupContent: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: MassMatesSpacing.xs) {
-                Text(group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
+                Text(group.name).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(2)
                 if group.type == .challenge {
                     Text("Destaque").font(.system(size: 10, weight: .bold)).foregroundStyle(theme.tint)
                         .padding(.horizontal, 4).padding(.vertical, 1).background(theme.tintSoft).clipShape(.rect(cornerRadius: 3))

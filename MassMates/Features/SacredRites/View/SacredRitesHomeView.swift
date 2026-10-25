@@ -17,7 +17,11 @@ struct SacredRitesHomeView: View {
                 ritesSection
                 spiritualLifeSection
             }
-            .padding(MassMatesLayout.screenMargin)
+            .padding(.horizontal, MassMatesLayout.screenMargin)
+            .padding(.top, MassMatesLayout.screenMargin)
+            .padding(.bottom, 108)
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
@@ -117,6 +121,7 @@ struct SacredRitesHomeView: View {
                         .foregroundStyle(MassMatesPalette.textTertiary)
                 }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

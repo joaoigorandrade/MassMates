@@ -58,8 +58,11 @@ struct OnboardingEmailAuthFormView: View {
             Image(systemName: "xmark.circle.fill")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Limpar e-mail")
     }
 
     private var sendEmailButton: some View {
@@ -76,6 +79,7 @@ struct OnboardingEmailAuthFormView: View {
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
             .background(theme.tint)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -86,6 +90,7 @@ struct OnboardingEmailAuthFormView: View {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(theme.tint)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -98,6 +103,7 @@ struct OnboardingEmailAuthFormView: View {
             Text("Verifique sua caixa de entrada para autenticar sua conta com serenidade.")
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(MassMatesSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -115,6 +121,7 @@ struct OnboardingEmailAuthFormView: View {
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -144,6 +151,7 @@ struct OnboardingAuthTrustCardsView: View {
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.textTertiary)
             .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var termsNoticeText: some View {
@@ -151,6 +159,7 @@ struct OnboardingAuthTrustCardsView: View {
             .font(MassMatesFont.caption)
             .foregroundStyle(MassMatesPalette.textTertiary)
             .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

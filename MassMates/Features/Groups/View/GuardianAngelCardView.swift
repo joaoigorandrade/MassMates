@@ -114,6 +114,8 @@ struct GuardianAngelCardView: View {
                 .font(MassMatesFont.caption)
                 .foregroundStyle(MassMatesPalette.textTertiary)
                 .multilineTextAlignment(.center)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -123,9 +125,12 @@ struct GuardianAngelCardView: View {
             Text(title)
                 .font(MassMatesFont.headline)
                 .foregroundStyle(isCompleted ? MassMatesPalette.textSecondary : theme.onTint)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, MassMatesSpacing.sm)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
                 .background(isCompleted ? MassMatesPalette.surfaceMuted : theme.tint)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .contentShape(.rect(cornerRadius: MassMatesRadius.button))
         }
         .buttonStyle(.plain)
         .disabled(isCompleted)

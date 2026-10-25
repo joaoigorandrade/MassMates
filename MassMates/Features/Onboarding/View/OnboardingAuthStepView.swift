@@ -13,21 +13,21 @@ struct OnboardingAuthStepView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: 0) {
-            topNavigationBar
-            Spacer(minLength: MassMatesSpacing.md)
-            headerSection
-            Spacer(minLength: MassMatesSpacing.lg)
-            if let error = viewModel.errorMessage {
-                errorMessageView(error)
-                    .padding(.bottom, MassMatesSpacing.sm)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MassMatesSpacing.md) {
+                topNavigationBar
+                headerSection
+                    .padding(.top, MassMatesSpacing.sm)
+                if let error = viewModel.errorMessage {
+                    errorMessageView(error)
+                }
+                actionsSection
+                    .padding(.vertical, MassMatesSpacing.sm)
+                OnboardingAuthTrustCardsView()
             }
-            actionsSection
-            Spacer(minLength: MassMatesSpacing.lg)
-            OnboardingAuthTrustCardsView()
-                .padding(.bottom, MassMatesSpacing.sm)
+            .padding(.bottom, MassMatesSpacing.md)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollDismissesKeyboard(.interactively)
         .padding(.horizontal, MassMatesLayout.screenMargin)
         .background(MassMatesPalette.bg)
     }
@@ -39,11 +39,8 @@ struct OnboardingAuthStepView: View {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(
-                        width: MassMatesLayout.minTapTarget,
-                        height: MassMatesLayout.minTapTarget,
-                        alignment: .leading
-                    )
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()
@@ -56,10 +53,13 @@ struct OnboardingAuthStepView: View {
                 .font(MassMatesFont.display)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
             Text("Acompanhe suas orações e leituras diárias em serenidade.")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
     }
@@ -69,6 +69,7 @@ struct OnboardingAuthStepView: View {
             .font(MassMatesFont.callout)
             .foregroundStyle(MassMatesPalette.danger)
             .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var actionsSection: some View {
@@ -77,7 +78,7 @@ struct OnboardingAuthStepView: View {
             googleSignInButton
             emailActionSection
         }
-        .frame(maxWidth: 340)
+        .frame(maxWidth: 360)
     }
 
     private var appleSignInButton: some View {
@@ -89,11 +90,13 @@ struct OnboardingAuthStepView: View {
                     .font(MassMatesFont.headline)
                 Text("Continuar com a Apple")
                     .font(MassMatesFont.headline)
+                    .minimumScaleFactor(0.85)
             }
             .foregroundStyle(MassMatesPalette.bg)
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
             .background(MassMatesPalette.textPrimary)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -107,6 +110,7 @@ struct OnboardingAuthStepView: View {
                     .font(MassMatesFont.headline)
                 Text("Continuar com o Google")
                     .font(MassMatesFont.headline)
+                    .minimumScaleFactor(0.85)
             }
             .foregroundStyle(MassMatesPalette.textPrimary)
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
@@ -116,6 +120,7 @@ struct OnboardingAuthStepView: View {
                 RoundedRectangle(cornerRadius: MassMatesRadius.button)
                     .stroke(MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -147,6 +152,7 @@ struct OnboardingAuthStepView: View {
                     .font(MassMatesFont.headline)
                 Text("Continuar com e-mail")
                     .font(MassMatesFont.headline)
+                    .minimumScaleFactor(0.85)
             }
             .foregroundStyle(MassMatesPalette.textPrimary)
             .frame(maxWidth: .infinity, minHeight: MassMatesLayout.primaryButtonHeight)
@@ -156,6 +162,7 @@ struct OnboardingAuthStepView: View {
                 RoundedRectangle(cornerRadius: MassMatesRadius.button)
                     .stroke(MassMatesPalette.line, lineWidth: 1)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

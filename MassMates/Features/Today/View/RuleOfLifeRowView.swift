@@ -17,11 +17,17 @@ struct RuleOfLifeRowView: View {
         Button(action: onToggle) {
             HStack(spacing: MassMatesSpacing.sm) {
                 circularToggle
-                Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
+                Text(item.title)
+                    .font(MassMatesFont.body)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
                 Spacer()
                 trailingLabel
             }
-            .frame(height: MassMatesLayout.minRowHeight).contentShape(Rectangle())
+            .frame(minHeight: MassMatesLayout.minRowHeight)
+            .padding(.vertical, MassMatesSpacing.xs)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(item.title), \(item.isCompleted ? "concluído" : "pendente")")

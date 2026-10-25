@@ -19,11 +19,9 @@ struct DailyGospelModalView: View {
     var body: some View {
         VStack(spacing: 0) {
             if isShowingLectio {
-                lectioView
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+                lectioView.transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
             } else {
-                pagedReadingView
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .leading), removal: .push(from: .trailing)))
+                pagedReadingView.transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .leading), removal: .push(from: .trailing)))
             }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
@@ -74,7 +72,11 @@ struct DailyGospelModalView: View {
         return VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Rectangle().fill(theme.tint).frame(width: 32, height: 1).padding(.bottom, 2)
             Text(reference).font(MassMatesFont.caption).tracking(1.0).foregroundStyle(MassMatesPalette.textSecondary)
-            Text(title).font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
+            Text(title)
+                .font(MassMatesFont.displayMobile)
+                .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(nil)
+                .minimumScaleFactor(0.85)
             if section == .gospel {
                 Text("Proclamação do Evangelho de Jesus Cristo").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             }
@@ -112,11 +114,9 @@ struct DailyGospelModalView: View {
         return VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Rectangle().fill(MassMatesPalette.line.opacity(0.5)).frame(height: 1)
             Text(isGospel ? "— Palavra da Salvação." : "— Palavra do Senhor.")
-                .font(MassMatesFont.customScripture(size: 16, italic: true))
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .font(MassMatesFont.customScripture(size: 16, italic: true)).foregroundStyle(MassMatesPalette.textSecondary)
             Text(isGospel ? "— Glória a Vós, Senhor." : "— Graças a Deus.")
-                .font(MassMatesFont.customScripture(size: 16))
-                .foregroundStyle(MassMatesPalette.textPrimary)
+                .font(MassMatesFont.customScripture(size: 16)).foregroundStyle(MassMatesPalette.textPrimary)
         }
         .padding(.top, MassMatesSpacing.sm)
     }
@@ -127,7 +127,8 @@ struct DailyGospelModalView: View {
             Spacer()
             lectioButton
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin).frame(height: MassMatesLayout.minRowHeight)
+        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
     }
 
     private var pageIndicators: some View {
@@ -152,6 +153,7 @@ struct DailyGospelModalView: View {
             }
             .font(MassMatesFont.callout).fontWeight(.medium).foregroundStyle(theme.tint)
             .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(MassMatesPressableButtonStyle())
     }

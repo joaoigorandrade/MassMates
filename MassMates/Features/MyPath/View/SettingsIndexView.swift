@@ -24,14 +24,14 @@ struct SettingsIndexView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: 0) {
-            topNavigationArea
-            hairline
-            rowsSection
-            Spacer(minLength: 0)
-            bottomActionSection
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                topNavigationArea
+                hairline
+                rowsSection
+                bottomActionSection.padding(.top, MassMatesSpacing.xl)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
@@ -44,6 +44,7 @@ struct SettingsIndexView: View {
                         .font(MassMatesFont.headline)
                         .foregroundStyle(MassMatesPalette.textPrimary)
                         .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Fechar")
@@ -87,6 +88,7 @@ struct SettingsIndexView: View {
                 }
                 .frame(minHeight: MassMatesLayout.minRowHeight)
                 .padding(.horizontal, MassMatesLayout.screenMargin)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             hairline
@@ -98,7 +100,8 @@ struct SettingsIndexView: View {
             Text("MassMates 1.0").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
             Button { showingDeleteAlert = true } label: {
                 Text(deleteTitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
-                    .frame(height: MassMatesLayout.minTapTarget)
+                    .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Apagar minha conta")

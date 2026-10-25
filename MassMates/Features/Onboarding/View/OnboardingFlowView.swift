@@ -12,15 +12,14 @@ struct OnboardingFlowView: View {
 
     // MARK: - Body / Public API
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-                stepBody
-                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
-            }
-            .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: viewModel.currentStep)
-            .padding(.bottom, MassMatesSpacing.xl)
-            .padding(.top, MassMatesSpacing.xs)
+        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
+            stepBody
+                .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
         }
+        .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: viewModel.currentStep)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.bottom, MassMatesSpacing.xl)
+        .padding(.top, MassMatesSpacing.xs)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 

@@ -33,7 +33,7 @@ struct NightlyExamenModalView: View {
             Spacer()
             progressSegments
             Spacer()
-            Color.clear.frame(width: 36, height: 36)
+            Color.clear.frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
         }
         .padding(.horizontal, MassMatesLayout.readingMargin)
         .padding(.top, MassMatesSpacing.sm).padding(.bottom, MassMatesSpacing.xs)
@@ -47,8 +47,9 @@ struct NightlyExamenModalView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: 36, height: 36)
-                .background(MassMatesPalette.surfaceMuted)
-                .clipShape(.circle)
+                .background(MassMatesPalette.surfaceMuted).clipShape(.circle)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Fechar exame")
@@ -64,6 +65,8 @@ struct NightlyExamenModalView: View {
                         .fill(step <= viewModel.currentStepIndex ? theme.tint : MassMatesPalette.line)
                         .frame(height: 3)
                         .frame(maxWidth: .infinity)
+                        .frame(height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -127,7 +130,8 @@ struct NightlyExamenModalView: View {
         } label: {
             Text(viewModel.currentStepIndex > 1 ? "Anterior" : "Pular")
                 .font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

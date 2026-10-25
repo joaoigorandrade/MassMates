@@ -84,7 +84,7 @@ struct GroupFeedPostCardView: View, @preconcurrency Equatable {
         HStack(spacing: MassMatesSpacing.xs) {
             avatarView
             VStack(alignment: .leading, spacing: 2) {
-                Text(post.authorName).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                Text(post.authorName).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary).lineLimit(1)
                 Text(post.relativeTimeLabel).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
             }
             Spacer()
@@ -105,7 +105,7 @@ struct GroupFeedPostCardView: View, @preconcurrency Equatable {
     private var practiceChip: some View {
         HStack(spacing: MassMatesSpacing.xxs) {
             Image(systemName: post.practice.systemImage)
-            Text(post.practice.title)
+            Text(post.practice.title).lineLimit(1)
         }
         .font(MassMatesFont.caption).fontWeight(.medium)
         .foregroundStyle(theme.tint)
@@ -144,6 +144,7 @@ struct GroupFeedPostCardView: View, @preconcurrency Equatable {
             .background(isDrawerExpanded ? theme.tintSoft : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(isDrawerExpanded ? theme.tint : MassMatesPalette.line, lineWidth: 1))
+            .contentShape(.rect(cornerRadius: MassMatesRadius.chip))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Apoio fraterno, \(comments.count) comentários")

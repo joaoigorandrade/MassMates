@@ -31,7 +31,7 @@ struct RosaryCompanionView: View {
             Button { viewModel.previousDecade() } label: {
                 Image(systemName: "chevron.left").font(MassMatesFont.callout)
                     .foregroundStyle(viewModel.currentDecadeIndex > 0 ? theme.tint : MassMatesPalette.textTertiary.opacity(0.3))
-                    .frame(width: 36, height: 36)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget).contentShape(Rectangle())
             }
             .disabled(viewModel.currentDecadeIndex == 0).buttonStyle(.plain).accessibilityLabel("Mistério anterior")
             Spacer()
@@ -39,14 +39,14 @@ struct RosaryCompanionView: View {
                 Text("\(viewModel.mysterySet.title.uppercased()) · \(viewModel.currentDecade.number)º")
                     .font(MassMatesFont.caption).tracking(1.6).foregroundStyle(MassMatesPalette.textSecondary)
                 Text(formattedMysteryTitle).font(MassMatesFont.displayMobile).foregroundStyle(MassMatesPalette.textPrimary)
-                    .multilineTextAlignment(.center).lineLimit(2).id(formattedMysteryTitle)
+                    .multilineTextAlignment(.center).minimumScaleFactor(0.85).id(formattedMysteryTitle)
                 Text(viewModel.currentDecade.fruitOfMystery).font(MassMatesFont.scriptureEmphasis).foregroundStyle(MassMatesPalette.textSecondary)
             }
             Spacer()
             Button { viewModel.nextDecade() } label: {
                 Image(systemName: "chevron.right").font(MassMatesFont.callout)
                     .foregroundStyle(viewModel.currentDecadeIndex < 4 ? theme.tint : MassMatesPalette.textTertiary.opacity(0.3))
-                    .frame(width: 36, height: 36)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget).contentShape(Rectangle())
             }
             .disabled(viewModel.currentDecadeIndex >= 4).buttonStyle(.plain).accessibilityLabel("Próximo mistério")
         }
@@ -66,6 +66,7 @@ struct RosaryCompanionView: View {
             ForEach(1...10, id: \.self) { index in
                 Button { viewModel.selectBead(index) } label: {
                     beadView(index: index, active: viewModel.activeHailMaryNumber)
+                        .frame(width: 32, height: 32).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Ave Maria \(index)").offset(beadOffset(for: index))
             }
@@ -74,6 +75,7 @@ struct RosaryCompanionView: View {
                     centerBeadText
                     Text(beadSubLabel).font(MassMatesFont.caption).tracking(1.4).textCase(.uppercase).foregroundStyle(MassMatesPalette.textSecondary)
                 }
+                .frame(minWidth: 80, minHeight: 80).contentShape(Rectangle())
             }
             .buttonStyle(.plain).accessibilityLabel("Avançar conta")
         }
@@ -102,7 +104,7 @@ struct RosaryCompanionView: View {
             if !viewModel.currentDecade.meditation.isEmpty {
                 Text("“\(viewModel.currentDecade.meditation)”")
                     .font(MassMatesFont.customScripture(size: 13, italic: true))
-                    .foregroundStyle(MassMatesPalette.textSecondary).multilineTextAlignment(.center).lineLimit(2)
+                    .foregroundStyle(MassMatesPalette.textSecondary).multilineTextAlignment(.center)
             }
         }.padding(.horizontal, MassMatesLayout.screenMargin)
     }
@@ -121,8 +123,7 @@ struct RosaryCompanionView: View {
             } else if isCompleted {
                 Circle().fill(theme.tint).frame(width: 12, height: 12)
             } else {
-                Circle().fill(MassMatesPalette.bg).frame(width: 11, height: 11)
-                    .overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
+                Circle().fill(MassMatesPalette.bg).frame(width: 11, height: 11).overlay { Circle().stroke(MassMatesPalette.line, lineWidth: 1.5) }
             }
         }
         return animatedBead(base, isCurrent: isCurrent)
@@ -152,15 +153,14 @@ struct RosaryCompanionView: View {
                     Text(viewModel.isRunning ? "Pausar" : "Tocar")
                 }
                 .font(MassMatesFont.callout).foregroundStyle(theme.tint)
+                .frame(minHeight: MassMatesLayout.minTapTarget).contentShape(Rectangle())
             }
             .buttonStyle(.plain).accessibilityLabel(viewModel.isRunning ? "Pausar som" : "Tocar som")
             Text("·").foregroundStyle(MassMatesPalette.line)
             Button { viewModel.advanceBead() } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "hand.tap").font(MassMatesFont.caption)
-                    Text("Avançar").font(MassMatesFont.caption)
-                }
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                Label("Avançar", systemImage: "hand.tap").font(MassMatesFont.caption)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .frame(minHeight: MassMatesLayout.minTapTarget).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }

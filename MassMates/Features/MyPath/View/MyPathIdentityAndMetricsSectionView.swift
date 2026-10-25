@@ -43,9 +43,13 @@ struct MyPathIdentityAndMetricsSectionView: View {
             Text(value)
                 .font(MassMatesFont.numeral)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(label)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
     }

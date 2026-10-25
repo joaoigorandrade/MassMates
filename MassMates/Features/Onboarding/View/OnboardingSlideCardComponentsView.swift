@@ -25,6 +25,8 @@ struct OnboardingPaginationDotsView: View {
                     Capsule()
                         .fill(idx == currentIndex ? theme.tint : MassMatesPalette.line)
                         .frame(width: idx == currentIndex ? 20 : 8, height: 8)
+                        .frame(width: idx == currentIndex ? 32 : 24, height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Página \(idx + 1) de \(count)")
@@ -114,12 +116,14 @@ struct OnboardingSlidePageView: View {
                 .multilineTextAlignment(.center)
                 .tracking(-0.3)
                 .lineLimit(2)
+                .minimumScaleFactor(0.8)
             Text(resolvedBody)
                 .font(MassMatesFont.body)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
+                .frame(maxWidth: 360)
                 .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

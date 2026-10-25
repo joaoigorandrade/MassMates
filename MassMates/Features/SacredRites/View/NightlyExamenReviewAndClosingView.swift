@@ -65,6 +65,8 @@ struct NightlyExamenReviewAndClosingView: View {
                 .background(isSelected ? theme.tintSoft : MassMatesPalette.surface)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1))
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -83,13 +85,16 @@ struct NightlyExamenReviewAndClosingView: View {
                 Image(systemName: isChecked ? "checkmark.square.fill" : "square")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(isChecked ? theme.tint : MassMatesPalette.textTertiary)
-                Text(prompt.text).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                Text(prompt.text)
+                    .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             }
             .padding(MassMatesSpacing.sm)
             .frame(minHeight: MassMatesLayout.minTapTarget)
             .background(isChecked ? theme.tintSoft.opacity(0.4) : MassMatesPalette.surfaceMuted)
             .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -134,6 +139,7 @@ struct NightlyExamenReviewAndClosingView: View {
                 .frame(minHeight: MassMatesLayout.minTapTarget)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.button))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if viewModel.isConfessionNoteExpanded {

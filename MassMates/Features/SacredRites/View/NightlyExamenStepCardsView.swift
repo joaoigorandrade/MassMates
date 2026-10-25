@@ -59,6 +59,8 @@ struct NightlyExamenStepCardsView: View {
                 .padding(.horizontal, MassMatesSpacing.sm).frame(minHeight: 34)
                 .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -102,10 +104,12 @@ struct NightlyExamenStepCardsView: View {
             Text(eval.title)
                 .font(MassMatesFont.callout).fontWeight(isSelected ? .medium : .regular)
                 .foregroundStyle(isSelected ? theme.tint : MassMatesPalette.textPrimary)
-                .frame(maxWidth: .infinity).frame(minHeight: 40)
+                .minimumScaleFactor(0.85).lineLimit(1)
+                .frame(maxWidth: .infinity).frame(minHeight: MassMatesLayout.minTapTarget)
                 .background(isSelected ? theme.tintSoft : MassMatesPalette.surface)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.chip).stroke(isSelected ? theme.tint : MassMatesPalette.line, lineWidth: 1))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -119,8 +123,9 @@ struct NightlyExamenStepCardsView: View {
                 Spacer()
                 Text(viewModel.isAmbientMusicPlaying ? "Ligado" : "Tocar").font(MassMatesFont.caption).foregroundStyle(theme.tint)
             }
-            .padding(.horizontal, MassMatesSpacing.md).frame(height: 40)
+            .padding(.horizontal, MassMatesSpacing.md).frame(minHeight: MassMatesLayout.minTapTarget)
             .background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.button))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

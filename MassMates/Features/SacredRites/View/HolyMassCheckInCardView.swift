@@ -88,10 +88,12 @@ struct HolyMassCheckInCardView: View {
             HStack {
                 Label("Salvar reflexão da homilia no Diário", systemImage: "square.and.pencil")
                     .font(MassMatesFont.callout)
-                Spacer(minLength: 0)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: MassMatesSpacing.xs)
                 Label("Sigilo", systemImage: "lock.fill")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textTertiary)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .foregroundStyle(MassMatesPalette.textPrimary)
             .padding(.horizontal, MassMatesSpacing.md)
@@ -110,7 +112,11 @@ struct HolyMassCheckInCardView: View {
                     .foregroundStyle(MassMatesPalette.textPrimary)
                 Spacer()
                 Button { viewModel.toggleDiaryModal() } label: {
-                    Image(systemName: "xmark").foregroundStyle(MassMatesPalette.textTertiary)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(MassMatesPalette.textTertiary)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Fechar")
@@ -122,6 +128,7 @@ struct HolyMassCheckInCardView: View {
         }
         .padding(MassMatesSpacing.sm)
         .background(MassMatesPalette.surface)
+        .clipShape(.rect(cornerRadius: MassMatesRadius.button))
         .overlay(RoundedRectangle(cornerRadius: MassMatesRadius.button).stroke(MassMatesPalette.line, lineWidth: 1))
     }
 

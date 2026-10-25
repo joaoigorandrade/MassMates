@@ -34,6 +34,7 @@ struct ApostoladoSponsoredCardView: View {
             .background(MassMatesPalette.surface)
             .clipShape(.rect(cornerRadius: MassMatesRadius.card))
             .overlay(cardBorder)
+            .contentShape(.rect(cornerRadius: MassMatesRadius.card))
         }
         .buttonStyle(.plain)
     }
@@ -41,7 +42,7 @@ struct ApostoladoSponsoredCardView: View {
     // MARK: - Subviews / Private Helpers
     private var iconView: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: MassMatesRadius.photo)
                 .fill(theme.tintSoft)
                 .frame(width: 44, height: 44)
             Image(systemName: "church.fill")
@@ -55,12 +56,12 @@ struct ApostoladoSponsoredCardView: View {
             Text(title)
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
-                .lineLimit(1)
+                .lineLimit(2)
             HStack(spacing: 4) {
-                Text("Patrocinado por")
+                Text("Patrocinado")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.sponsored)
-                Text(sponsorName)
+                Text("· \(sponsorName)")
                     .font(MassMatesFont.caption)
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .lineLimit(1)

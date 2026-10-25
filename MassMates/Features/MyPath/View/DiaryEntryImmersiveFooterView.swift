@@ -46,6 +46,7 @@ struct DiaryEntryImmersiveFooterView: View {
                     }
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Reflexão anterior: \(previousLabel)")
@@ -63,6 +64,7 @@ struct DiaryEntryImmersiveFooterView: View {
                     }
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(minHeight: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Próxima reflexão: \(nextLabel)")

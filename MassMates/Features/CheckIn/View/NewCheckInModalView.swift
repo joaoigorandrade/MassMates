@@ -94,7 +94,8 @@ struct NewCheckInModalView: View {
                     withAnimation(reduceMotion ? .none : .snappy(duration: 0.28)) { currentStep = .practice }
                 } label: {
                     Image(systemName: "chevron.left").font(MassMatesFont.caption.weight(.semibold))
-                        .foregroundStyle(MassMatesPalette.textSecondary).frame(width: 32, height: 32)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
+                        .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
                         .contentShape(Rectangle())
                 }.buttonStyle(.plain)
             }
@@ -103,7 +104,8 @@ struct NewCheckInModalView: View {
             Button { dismissModal() } label: {
                 Image(systemName: "xmark").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: 32, height: 32).background(MassMatesPalette.surfaceMuted).clipShape(.circle)
-                    .contentShape(Circle())
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+                    .contentShape(Rectangle())
             }.buttonStyle(.plain)
         }
     }
@@ -111,7 +113,11 @@ struct NewCheckInModalView: View {
     private func titleHeader(_ title: String, subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.system(size: 24, weight: .semibold, design: .serif)).foregroundStyle(MassMatesPalette.textPrimary)
-            if let subtitle { Text(subtitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary) }
+                .minimumScaleFactor(0.85)
+            if let subtitle {
+                Text(subtitle).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -125,7 +131,9 @@ struct NewCheckInModalView: View {
                     .background(theme.tint).clipShape(.rect(cornerRadius: MassMatesRadius.button))
                     .contentShape(Rectangle())
             }.buttonStyle(.plain)
-            Text("O registro fortalecerá a sua fidelidade diária.").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+            Text("O registro fortalecerá a sua fidelidade diária.")
+                .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -133,6 +141,7 @@ struct NewCheckInModalView: View {
         VStack(spacing: 6) {
             if let error = viewModel.errorMessage {
                 Text(error).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.danger)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }
             Button { Task { await viewModel.submit() } } label: {
                 Text("Confirmar Registro").font(MassMatesFont.headline).foregroundStyle(theme.onTint)
@@ -144,6 +153,7 @@ struct NewCheckInModalView: View {
                 ? "Destino restrito ao diário pessoal para proteger o sigilo."
                 : "Seu registro fortalece a perseverança comunitária.")
                 .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -34,10 +34,11 @@ struct ReactionPillButton: View, Equatable {
         Button(action: action) {
             pillContent
                 .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
                 .background(isActive ? theme.tintSoft : MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .overlay(borderOverlay)
+                .contentShape(.rect(cornerRadius: MassMatesRadius.chip))
                 .scaleEffect(isActive && !reduceMotion ? 1.04 : 1.0)
                 .animation(
                     reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.65),

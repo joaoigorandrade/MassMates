@@ -38,7 +38,9 @@ struct CheckInPracticeTileView: View, Equatable {
                 Text(practice.checkInChipTitle)
                     .font(MassMatesFont.callout.weight(.medium))
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(MassMatesSpacing.sm)
             .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)

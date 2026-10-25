@@ -75,6 +75,7 @@ struct GroupFeedPostMediaView: View, Equatable {
                     EmptyView()
                 }
             }
+            .contentShape(.rect(cornerRadius: MassMatesRadius.photo))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Ver foto do testemunho")

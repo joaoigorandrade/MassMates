@@ -90,7 +90,8 @@ struct GroupProgressTabView: View {
                     .foregroundStyle(MassMatesPalette.textSecondary)
                     .rotationEffect(.degrees(isShowingGuardianAngelDetails ? 90 : 0))
             }
-            .frame(height: 52)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .padding(.vertical, MassMatesSpacing.xs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -120,6 +121,7 @@ struct GroupProgressTabView: View {
                 Text(isUser ? "Você" : entry.memberName)
                     .font(MassMatesFont.body).fontWeight(isUser ? .semibold : .regular)
                     .foregroundStyle(MassMatesPalette.textPrimary)
+                    .lineLimit(2)
                 Spacer()
                 Text(scoreText(for: entry))
                     .font(.system(size: 15, weight: isUser ? .semibold : .medium, design: .rounded))

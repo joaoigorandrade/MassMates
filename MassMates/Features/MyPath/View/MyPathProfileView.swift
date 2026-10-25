@@ -57,7 +57,7 @@ struct MyPathProfileView: View {
             }
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .padding(.top, MassMatesSpacing.xs)
-            .padding(.bottom, MassMatesSpacing.xl)
+            .padding(.bottom, 104)
         }
     }
 
@@ -108,7 +108,7 @@ struct MyPathProfileView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(MassMatesPalette.textTertiary)
             }
-            .frame(height: MassMatesLayout.minRowHeight)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -76,7 +76,7 @@ struct TodayDashboardView: View {
 
                 quietSponsoredBanner
             }
-            .padding(.bottom, MassMatesSpacing.xl)
+            .padding(.bottom, 108)
         }
     }
 
@@ -88,6 +88,7 @@ struct TodayDashboardView: View {
                 ruleOfLifeRing(data: data)
             }
             .buttonStyle(MassMatesPressableButtonStyle())
+            .contentShape(Circle())
             .accessibilityLabel("Regra de Vida: \(data.progress.completedCount) de \(data.progress.totalCount) concluídas")
 
             Button {
@@ -98,7 +99,7 @@ struct TodayDashboardView: View {
                     Image(systemName: "arrow.right").font(.system(size: 13, weight: .semibold))
                 }
                 .foregroundStyle(viewModel.currentTheme.tint)
-                .padding(.vertical, 4)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
                 .padding(.horizontal, MassMatesSpacing.sm)
                 .contentShape(Rectangle())
             }
@@ -119,7 +120,11 @@ struct TodayDashboardView: View {
                     .font(MassMatesFont.numeral)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .contentTransition(.numericText())
-                Text("Regra de Vida").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
+                    .minimumScaleFactor(0.8)
+                Text("Regra de Vida")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textSecondary)
+                    .minimumScaleFactor(0.8)
             }
         }
         .frame(width: 172, height: 172)
@@ -139,14 +144,15 @@ struct TodayDashboardView: View {
             openURL(url)
         } label: {
             HStack(spacing: MassMatesSpacing.xs) {
-                Text("PATROCINADO").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
+                Text("PATROCINADO").font(MassMatesFont.caption).fontWeight(.bold).tracking(0.6).foregroundStyle(MassMatesPalette.textTertiary)
                 Text("·").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.line)
                 Text("Edições CNBB · Bíblia Sagrada Edição Pastoral")
-                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(1)
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary).lineLimit(nil)
                 Spacer()
                 Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(MassMatesPalette.textTertiary)
             }
-            .padding(.vertical, 10)
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .padding(.vertical, MassMatesSpacing.xs)
             .padding(.horizontal, MassMatesLayout.screenMargin)
             .contentShape(Rectangle())
         }

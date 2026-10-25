@@ -40,7 +40,7 @@ struct DailyGospelSubHeaderView: View, Equatable {
             fontSizeButton
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .frame(height: MassMatesLayout.minRowHeight)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
     }
 
     private var closeButton: some View {
@@ -49,6 +49,7 @@ struct DailyGospelSubHeaderView: View, Equatable {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Fechar Leitura")
@@ -62,6 +63,7 @@ struct DailyGospelSubHeaderView: View, Equatable {
                 .font(.system(size: 17, weight: .regular, design: .serif))
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Ajustar Tipografia")
@@ -95,6 +97,8 @@ struct DailyGospelSubHeaderView: View, Equatable {
                     .frame(height: 1.5)
                     .clipShape(.rect(cornerRadius: 1))
             }
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
             .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.plain)

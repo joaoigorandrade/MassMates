@@ -67,12 +67,14 @@ struct GroupIdentityBannerView: View {
             }
             .foregroundStyle(theme.tint)
             .padding(.horizontal, MassMatesSpacing.xs)
-            .padding(.vertical, 3)
+            .padding(.vertical, 4)
             .background(theme.tintSoft)
             .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
             .overlay(
                 Capsule().stroke(theme.tint.opacity(0.3), lineWidth: 1)
             )
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.success, trigger: hasCopiedInviteCode)
@@ -119,6 +121,8 @@ struct GroupIdentityBannerView: View {
                     .frame(height: 2)
                     .clipShape(Capsule())
             }
+            .frame(minHeight: MassMatesLayout.minTapTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])

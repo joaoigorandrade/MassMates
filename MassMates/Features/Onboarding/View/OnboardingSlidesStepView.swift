@@ -37,6 +37,7 @@ struct OnboardingSlidesStepView: View, Equatable {
     var body: some View {
         VStack(spacing: 0) {
             pagedSlidesView
+            Spacer()
             bottomSection
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -52,7 +53,7 @@ struct OnboardingSlidesStepView: View, Equatable {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(minHeight: 380, maxHeight: 460)
+        .frame(minHeight: 300, maxHeight: 460)
         .animation(.easeInOut(duration: 0.25), value: currentIndex)
     }
 
@@ -85,6 +86,7 @@ struct OnboardingSlidesStepView: View, Equatable {
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .opacity(isOnFinalSlide ? 0 : 1)

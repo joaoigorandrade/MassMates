@@ -61,6 +61,8 @@ struct CreateJoinGroupModalView: View {
                     Label("Identidade", systemImage: "chevron.left")
                         .font(MassMatesFont.callout)
                         .foregroundStyle(theme.tint)
+                        .frame(minHeight: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -70,15 +72,14 @@ struct CreateJoinGroupModalView: View {
     }
 
     private var closeButton: some View {
-        Button {
-            if let navigator { navigator.dismiss() } else { dismiss() }
-        } label: {
+        Button { dismissModal() } label: {
             Image(systemName: "xmark")
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(width: 32, height: 32)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }
@@ -107,9 +108,10 @@ struct CreateJoinGroupModalView: View {
             Text(title)
                 .font(MassMatesFont.callout.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? MassMatesPalette.textPrimary : MassMatesPalette.textSecondary)
-                .frame(maxWidth: .infinity, minHeight: 36)
+                .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minTapTarget)
                 .background(isSelected ? MassMatesPalette.surface : Color.clear)
                 .clipShape(Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -134,10 +136,9 @@ struct CreateJoinGroupModalView: View {
             Text(message).font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.danger)
             Spacer()
             if !viewModel.slotCapacity.hasRewardedSlotUnlocked {
-                Button {
-                    Task { await viewModel.unlockRewardedSlot() }
-                } label: {
+                Button { Task { await viewModel.unlockRewardedSlot() } } label: {
                     Text("+1 vaga").font(MassMatesFont.caption).foregroundStyle(theme.tint)
+                        .frame(minHeight: MassMatesLayout.minTapTarget).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -152,9 +153,7 @@ struct CreateJoinGroupModalView: View {
     private var activeContent: some View {
         switch (viewModel.selectedTab, creationStep) {
         case (.joinByCode, _):
-            JoinGroupByCodeTabView(viewModel: viewModel) {
-                if let navigator { navigator.dismiss() } else { dismiss() }
-            }
+            JoinGroupByCodeTabView(viewModel: viewModel) { dismissModal() }
         case (.createNew, .identity):
             CreateGroupFormTabView(viewModel: viewModel, onAdvance: {
                 withAnimation(.easeInOut(duration: 0.2)) { creationStep = .rules }
@@ -163,11 +162,13 @@ struct CreateJoinGroupModalView: View {
             CreateGroupRulesAndLimitsView(
                 viewModel: viewModel,
                 onBack: { withAnimation(.easeInOut(duration: 0.2)) { creationStep = .identity } },
-                onCreated: {
-                    if let navigator { navigator.dismiss() } else { dismiss() }
-                }
+                onCreated: { dismissModal() }
             )
         }
+    }
+
+    private func dismissModal() {
+        if let navigator { navigator.dismiss() } else { dismiss() }
     }
 }
 

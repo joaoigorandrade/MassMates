@@ -122,39 +122,34 @@ struct HolyMassWordRitesView: View, Equatable {
     private func dialogueTurnView(turn: MassDialogueTurn) -> some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
             Text(turn.speaker.replacingOccurrences(of: ":", with: "").uppercased())
-                .font(MassMatesFont.caption)
-                .tracking(0.5)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+                .font(MassMatesFont.caption).tracking(0.5).foregroundStyle(MassMatesPalette.textSecondary)
             Text(turn.text)
                 .font(turn.isAssembly ? Font.system(size: 19, weight: .semibold, design: .serif) : MassMatesFont.scripture)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+                .foregroundStyle(MassMatesPalette.textPrimary).fixedSize(horizontal: false, vertical: true)
             if let latin = turn.latinText {
                 Text(latin)
                     .font(MassMatesFont.customScripture(size: 14, italic: true))
-                    .foregroundStyle(MassMatesPalette.textTertiary)
+                    .foregroundStyle(MassMatesPalette.textTertiary).fixedSize(horizontal: false, vertical: true)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func sectionHeader(title: String, citation: String? = nil, posture: LiturgicalPosture? = nil) -> some View {
-        HStack {
-            Text(title)
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-            if let citation {
-                Text(citation)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
+                if let citation {
+                    Text(citation).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                }
             }
-            Spacer()
+            Spacer(minLength: MassMatesSpacing.xs)
             if let posture {
                 Label(posture.rawValue, systemImage: posture.systemImage)
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .padding(.horizontal, MassMatesSpacing.xs)
-                    .padding(.vertical, 2)
-                    .background(MassMatesPalette.surfaceMuted)
-                    .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    .padding(.horizontal, MassMatesSpacing.xs).padding(.vertical, 2)
+                    .background(MassMatesPalette.surfaceMuted).clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                    .fixedSize(horizontal: true, vertical: false)
             }
         }
     }

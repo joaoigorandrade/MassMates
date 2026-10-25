@@ -24,18 +24,19 @@ struct CheckInCelebrationCardView: View, Equatable {
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(spacing: MassMatesSpacing.lg) {
-            topBarRow
-            Spacer()
-            celebrationRing
-            celebrationTitles
-            if result.shouldShowPostCheckInSponsoredCard && !result.practice.isStrictlyPrivate {
-                sponsoredCard
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: MassMatesSpacing.lg) {
+                topBarRow
+                celebrationRing
+                celebrationTitles
+                if result.shouldShowPostCheckInSponsoredCard && !result.practice.isStrictlyPrivate {
+                    sponsoredCard
+                }
+                doneButton
+                    .padding(.top, MassMatesSpacing.sm)
             }
-            Spacer()
-            doneButton
+            .padding(.bottom, MassMatesSpacing.md)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sensoryFeedback(.success, trigger: showCheckBadge)
         .task { await animateCelebration() }
     }
@@ -51,7 +52,8 @@ struct CheckInCelebrationCardView: View, Equatable {
                     .frame(width: 32, height: 32)
                     .background(MassMatesPalette.surfaceMuted)
                     .clipShape(.circle)
-                    .contentShape(Circle())
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .trailing)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Fechar")
@@ -108,10 +110,13 @@ struct CheckInCelebrationCardView: View, Equatable {
                 .font(.system(size: 21, weight: .regular, design: .serif))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
             Text(result.celebrationMessage)
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

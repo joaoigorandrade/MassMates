@@ -51,6 +51,8 @@ struct ConfessionPreparationModalView: View {
             Image(systemName: "xmark")
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(MassMatesPalette.textPrimary)
                 .frame(width: 36, height: 36).background(MassMatesPalette.surfaceMuted).clipShape(.circle)
+                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -113,11 +115,17 @@ struct ConfessionPreparationModalView: View {
             } else {
                 ForEach(viewModel.privateNotes) { note in
                     HStack {
-                        Text("• \(note.text)").font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                        Text("• \(note.text)")
+                            .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer()
                         Button { viewModel.removeNote(note) } label: {
                             Image(systemName: "xmark").font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
-                        }.buttonStyle(.plain)
+                                .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remover nota")
                     }
                 }
             }
@@ -143,7 +151,8 @@ struct ConfessionPreparationModalView: View {
         } label: {
             Text(showingContrition ? "← Mandamentos" : "← Anterior")
                 .font(MassMatesFont.headline).fontWeight(.regular).foregroundStyle(MassMatesPalette.textSecondary)
-                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!showingContrition && currentCommandmentIndex == 0).opacity((!showingContrition && currentCommandmentIndex == 0) ? 0.3 : 1.0)

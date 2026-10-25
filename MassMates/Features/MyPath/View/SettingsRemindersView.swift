@@ -21,12 +21,12 @@ struct SettingsRemindersView: View {
             topNavigationArea
             hairline
             ScrollView(showsIndicators: false) {
-                remindersList
+                VStack(spacing: 0) {
+                    remindersList
+                    bottomNoteSection.padding(.top, MassMatesSpacing.xl)
+                }
             }
-            Spacer(minLength: 0)
-            bottomNoteSection
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
@@ -41,6 +41,7 @@ struct SettingsRemindersView: View {
                     }
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(minHeight: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Voltar")
@@ -74,8 +75,13 @@ struct SettingsRemindersView: View {
         VStack(spacing: 0) {
             HStack(spacing: MassMatesSpacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
-                    Text(item.subtitle).font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textSecondary)
+                    Text(item.title)
+                        .font(MassMatesFont.body)
+                        .foregroundStyle(MassMatesPalette.textPrimary)
+                        .minimumScaleFactor(0.85)
+                    Text(item.subtitle)
+                        .font(MassMatesFont.caption)
+                        .foregroundStyle(MassMatesPalette.textSecondary)
                 }
                 Spacer()
                 DatePicker("", selection: bindingForReminderTime(item), displayedComponents: .hourAndMinute)

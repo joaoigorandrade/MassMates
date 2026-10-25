@@ -52,6 +52,8 @@ struct ConfessionRemindersAndRiteView: View {
                     Text("Limpar")
                         .font(MassMatesFont.caption)
                         .foregroundStyle(MassMatesPalette.danger)
+                        .frame(minWidth: MassMatesLayout.minTapTarget, minHeight: MassMatesLayout.minTapTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -97,25 +99,23 @@ struct ConfessionRemindersAndRiteView: View {
 
     private func noteRow(_ note: ConfessionPrivateNote) -> some View {
         HStack(alignment: .center, spacing: MassMatesSpacing.xs) {
-            Text("•")
-                .font(MassMatesFont.headline)
-                .foregroundStyle(MassMatesPalette.textSecondary)
+            Text("•").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textSecondary)
             Text(note.text)
-                .font(MassMatesFont.callout)
-                .foregroundStyle(MassMatesPalette.textPrimary)
+                .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button {
                 viewModel.removeNote(note)
             } label: {
                 Image(systemName: "xmark")
-                    .font(MassMatesFont.caption)
-                    .foregroundStyle(MassMatesPalette.textTertiary)
-                    .frame(width: 32, height: 32)
+                    .font(MassMatesFont.caption).foregroundStyle(MassMatesPalette.textTertiary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Remover nota")
         }
-        .padding(.horizontal, MassMatesSpacing.sm)
-        .padding(.vertical, MassMatesSpacing.xs)
+        .padding(.horizontal, MassMatesSpacing.sm).padding(.vertical, MassMatesSpacing.xs)
     }
 
     private var penitentLiturgicalRiteSection: some View {

@@ -37,33 +37,38 @@ struct OnboardingProfileAndConsentStepView: View {
                 )
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: wizardStep)
+        .animation(.default, value: wizardStep)
+        .padding(.horizontal, MassMatesLayout.screenMargin)
     }
 
     // MARK: - Subviews / Private Helpers
     private var nameStepView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            topNavigationBar
-            Text("Como podemos te chamar?")
-                .font(MassMatesFont.displayMobile)
-                .foregroundStyle(MassMatesPalette.textPrimary)
-                .padding(.top, MassMatesSpacing.md)
-                .padding(.bottom, MassMatesSpacing.xl)
-            HStack {
-                Spacer()
-                avatarPickerButton
-                Spacer()
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                topNavigationBar
+                Text("Como podemos te chamar?")
+                    .font(MassMatesFont.displayMobile)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .minimumScaleFactor(0.85)
+                    .padding(.top, MassMatesSpacing.md)
+                    .padding(.bottom, MassMatesSpacing.lg)
+                HStack {
+                    Spacer()
+                    avatarPickerButton
+                    Spacer()
+                }
+                .padding(.bottom, MassMatesSpacing.lg)
+                VStack(spacing: MassMatesSpacing.lg) {
+                    inputUnderlineField("Nome", text: $viewModel.userName)
+                    inputUnderlineField("Paróquia ou cidade (opcional)", text: $viewModel.parishOrCity)
+                }
+                errorBanner
+                continueButton
+                    .padding(.top, MassMatesSpacing.xl)
             }
-            .padding(.bottom, MassMatesSpacing.xl)
-            VStack(spacing: MassMatesSpacing.lg) {
-                inputUnderlineField("Nome", text: $viewModel.userName)
-                inputUnderlineField("Paróquia ou cidade (opcional)", text: $viewModel.parishOrCity)
-            }
-            errorBanner
-            Spacer()
-            continueButton
+            .padding(.bottom, MassMatesSpacing.sm)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var topNavigationBar: some View {
@@ -73,6 +78,7 @@ struct OnboardingProfileAndConsentStepView: View {
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()
@@ -114,6 +120,7 @@ struct OnboardingProfileAndConsentStepView: View {
                             .foregroundStyle(theme.onTint)
                     )
             }
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }

@@ -33,7 +33,7 @@ struct SpiritualDiaryEntryCardView: View, Equatable {
                 Spacer(minLength: 4)
                 chevronIndicator
             }
-            .frame(height: MassMatesLayout.minRowHeight)
+            .frame(minHeight: MassMatesLayout.minRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -45,7 +45,7 @@ struct SpiritualDiaryEntryCardView: View, Equatable {
             .font(MassMatesFont.headline)
             .fontWeight(.medium)
             .foregroundStyle(MassMatesPalette.textPrimary)
-            .frame(width: 24, alignment: .leading)
+            .frame(minWidth: 24, alignment: .leading)
     }
 
     private var practiceBadge: some View {

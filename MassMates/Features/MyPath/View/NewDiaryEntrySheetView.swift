@@ -32,6 +32,7 @@ struct NewDiaryEntrySheetView: View {
                 }
                 .padding(.horizontal, MassMatesLayout.screenMargin)
                 .padding(.top, MassMatesSpacing.md)
+                .padding(.bottom, MassMatesSpacing.xl)
             }
         }
         .background(MassMatesPalette.bg.ignoresSafeArea())
@@ -43,6 +44,8 @@ struct NewDiaryEntrySheetView: View {
             Button("Cancelar") { dismissModal() }
                 .font(MassMatesFont.callout)
                 .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
 
             Spacer()
             Text("Novo Registro")
@@ -54,9 +57,11 @@ struct NewDiaryEntrySheetView: View {
                 .font(MassMatesFont.headline)
                 .foregroundStyle(theme.tint)
                 .disabled(trimmedText.isEmpty || isSaving)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
         }
         .padding(.horizontal, MassMatesLayout.screenMargin)
-        .frame(height: 52)
+        .frame(minHeight: MassMatesLayout.minRowHeight)
         .overlay(alignment: .bottom) {
             Rectangle().fill(MassMatesPalette.line).frame(height: 1)
         }
@@ -81,6 +86,8 @@ struct NewDiaryEntrySheetView: View {
                                 .background(isSelected ? theme.tint : MassMatesPalette.surfaceMuted)
                                 .foregroundStyle(isSelected ? theme.onTint : MassMatesPalette.textPrimary)
                                 .clipShape(.capsule)
+                                .frame(minHeight: MassMatesLayout.minTapTarget)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }

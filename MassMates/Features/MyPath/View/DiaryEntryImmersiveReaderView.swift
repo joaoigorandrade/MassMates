@@ -52,19 +52,12 @@ struct DiaryEntryImmersiveReaderView: View {
     private var topNavigationBar: some View {
         HStack {
             Button {
-                if let onBack {
-                    onBack()
-                } else if let navigator, navigator.canPop() {
-                    navigator.pop()
-                } else if let navigator {
-                    navigator.dismiss()
-                } else {
-                    dismiss()
-                }
+                if let onBack { onBack() } else if let navigator, navigator.canPop() { navigator.pop() } else if let navigator { navigator.dismiss() } else { dismiss() }
             } label: {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Voltar")
@@ -73,10 +66,11 @@ struct DiaryEntryImmersiveReaderView: View {
                 Image(systemName: "square.and.arrow.up")
                     .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
                     .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, MassMatesLayout.readingMargin).frame(height: MassMatesLayout.minRowHeight)
+        .padding(.horizontal, MassMatesLayout.readingMargin).frame(minHeight: MassMatesLayout.minRowHeight)
     }
 
     private var metadataAndTitleSection: some View {

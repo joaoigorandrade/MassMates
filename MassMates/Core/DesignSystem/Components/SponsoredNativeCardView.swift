@@ -45,27 +45,30 @@ struct SponsoredNativeCardView: View, Equatable {
 
     private var cardContent: some View {
         HStack(alignment: .center, spacing: MassMatesSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: MassMatesSpacing.xxs) {
                 Text("PATROCINADO")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(MassMatesFont.caption)
+                    .fontWeight(.bold)
                     .tracking(0.6)
                     .foregroundStyle(MassMatesPalette.sponsored)
                 Text(displayTitle)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(MassMatesFont.callout)
                     .foregroundStyle(MassMatesPalette.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(nil)
             }
             Spacer(minLength: MassMatesSpacing.xs)
             Image(systemName: "arrow.up.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(MassMatesFont.caption)
+                .fontWeight(.semibold)
                 .foregroundStyle(MassMatesPalette.textSecondary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, MassMatesSpacing.md)
+        .padding(.vertical, MassMatesSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: MassMatesLayout.minRowHeight, alignment: .leading)
         .background(MassMatesPalette.surface)
         .clipShape(.rect(cornerRadius: MassMatesRadius.card))
         .overlay(cardBorder)
+        .contentShape(Rectangle())
     }
 
     private var displayTitle: String {

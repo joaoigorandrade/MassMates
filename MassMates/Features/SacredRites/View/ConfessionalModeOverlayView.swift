@@ -18,13 +18,14 @@ struct ConfessionalModeOverlayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
             overlayTopBar
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
                     openingFormulaBlock
                     annotatedSinsBlock
                     actOfContritionBlock
                 }
                 .padding(.vertical, MassMatesSpacing.xs)
+                .frame(maxWidth: MassMatesLayout.readingMaxWidth, alignment: .leading)
             }
             MassMatesPrimaryButton(
                 title: "Apagar Notas e Concluir",
@@ -36,8 +37,11 @@ struct ConfessionalModeOverlayView: View {
                     if let navigator { navigator.dismiss() } else { dismiss() }
                 }
             }
+            .frame(maxWidth: MassMatesLayout.readingMaxWidth)
         }
-        .padding(MassMatesLayout.readingMargin)
+        .padding(.horizontal, MassMatesLayout.readingMargin)
+        .padding(.top, MassMatesSpacing.md)
+        .padding(.bottom, MassMatesSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MassMatesPalette.bg.ignoresSafeArea())
         .environment(\.colorScheme, .dark)
@@ -60,16 +64,18 @@ struct ConfessionalModeOverlayView: View {
             } label: {
                 HStack(spacing: MassMatesSpacing.xxs) {
                     Image(systemName: "xmark")
-                    Text("Sair do Modo Confessionário")
+                    Text("Sair")
                 }
                 .font(MassMatesFont.caption.weight(.medium))
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .padding(.horizontal, MassMatesSpacing.sm)
-                .frame(height: 36)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
                 .background(MassMatesPalette.surfaceMuted)
                 .clipShape(.rect(cornerRadius: MassMatesRadius.chip))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Sair do Modo Confessionário")
         }
     }
 
@@ -118,6 +124,7 @@ struct ConfessionalModeOverlayView: View {
                 .font(MassMatesFont.scripture)
                 .foregroundStyle(MassMatesPalette.textPrimary)
                 .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, MassMatesSpacing.sm)

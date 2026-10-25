@@ -127,6 +127,7 @@ struct GroupPrayerIntentionRowView: View, Equatable {
             Text(intention.authorName)
                 .font(MassMatesFont.headline)
                 .foregroundStyle(MassMatesPalette.textPrimary)
+                .lineLimit(1)
             Spacer()
             Text(intention.relativeTimeLabel)
                 .font(MassMatesFont.caption)
