@@ -86,4 +86,11 @@ struct TodayFlowInteractiveButtonsTests {
         #expect(didComplete)
         #expect(vm.hasCompletedFruitRegistration)
     }
+
+    @Test("DailyGospel route modal presentation uses standard sheet presentation")
+    func dailyGospelModalPresentation() {
+        let reading = LiturgicalReadingsCatalog.reading(for: .ordinaryTime)
+        let route = AppRoute.dailyGospel(reading: reading, season: .green)
+        #expect(route.presentationStyle == .sheet)
+    }
 }

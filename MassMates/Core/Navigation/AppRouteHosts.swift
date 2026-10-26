@@ -28,14 +28,15 @@ struct DailyGospelRouteHostView: View {
     private let season: LiturgicalColor
 
     nonisolated init(reading: DailyLiturgicalReading, season: LiturgicalColor) {
-        self.reading = reading
-        self.season = season
+        self.reading = reading; self.season = season
     }
 
     var body: some View {
         DailyGospelModalView(viewModel: resolveViewModel())
             .environment(\.liturgicalTheme, Theme(season: season))
             .presentationCornerRadius(MassMatesRadius.sheet)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
     }
 
     private func resolveViewModel() -> DailyGospelViewModel {
@@ -53,8 +54,7 @@ struct PrayerTimerRouteHostView: View {
     private let season: LiturgicalColor
 
     nonisolated init(mode: PrayerTimerMode, season: LiturgicalColor) {
-        self.mode = mode
-        self.season = season
+        self.mode = mode; self.season = season
     }
 
     var body: some View {

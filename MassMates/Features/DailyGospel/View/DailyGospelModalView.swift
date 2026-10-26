@@ -34,8 +34,10 @@ struct DailyGospelModalView: View {
             DailyGospelSubHeaderView(viewModel: viewModel) { dismissModal() }
                 .equatable()
             readingTabView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             bottomBar
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var readingTabView: some View {
