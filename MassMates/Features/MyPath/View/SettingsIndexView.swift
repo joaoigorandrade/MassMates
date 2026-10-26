@@ -4,8 +4,6 @@ import SwiftUI
 struct SettingsIndexView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-    @OptionalNavigator<AppRoute> private var navigator
     @State private var showingDeleteAlert: Bool = false
     private let viewModel: SettingsViewModel
     private let onNavigate: (SettingsScreen) -> Void
@@ -134,11 +132,6 @@ struct SettingsIndexView: View {
 
     private func handleDismiss() {
         onDismiss()
-        if let navigator {
-            navigator.dismiss()
-        } else {
-            dismiss()
-        }
     }
 
     private var hairline: some View {

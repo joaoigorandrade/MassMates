@@ -1,19 +1,26 @@
+import Navigation
 import SwiftUI
 
 struct OnboardingSacredTransparencyCardView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @OptionalNavigator<OnboardingRoute> private var navigator
     @Bindable private var viewModel: OnboardingViewModel
-    @State private var showAdPreferences: Bool = false
     private let onBack: (() -> Void)?
+    private let onShowAdPreferences: (() -> Void)?
+    private let onFinish: (() -> Void)?
 
     // MARK: - Init
     init(
         viewModel: OnboardingViewModel,
-        onBack: (() -> Void)? = nil
+        onBack: (() -> Void)? = nil,
+        onShowAdPreferences: (() -> Void)? = nil,
+        onFinish: (() -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onBack = onBack
+        self.onShowAdPreferences = onShowAdPreferences
+        self.onFinish = onFinish
     }
 
     // MARK: - Body / Public API
@@ -24,10 +31,7 @@ struct OnboardingSacredTransparencyCardView: View {
                 ambientLockIcon
                     .padding(.top, MassMatesSpacing.md)
                     .padding(.bottom, MassMatesSpacing.sm)
-                Text("Sua oração é só sua")
-                    .font(.system(size: 32, weight: .regular, design: .serif))
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                    .minimumScaleFactor(0.85)
+                titleText
                     .padding(.bottom, MassMatesSpacing.lg)
                 bulletPointsSection
                 bottomActionSection
@@ -35,15 +39,12 @@ struct OnboardingSacredTransparencyCardView: View {
             }
             .padding(.bottom, MassMatesSpacing.sm)
         }
-        .sheet(isPresented: $showAdPreferences) {
-            adPreferencesSheet
-        }
     }
 
     // MARK: - Subviews / Private Helpers
     private var topNavigationBar: some View {
         HStack {
-            Button(action: { onBack?() ?? viewModel.navigateBack() }) {
+            Button(action: handleBack) {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
@@ -67,10 +68,26 @@ struct OnboardingSacredTransparencyCardView: View {
         }
     }
 
+    private func handleBack() {
+        if let onBack {
+            onBack()
+        } else {
+            viewModel.navigateBack()
+            navigator?.pop()
+        }
+    }
+
     private var ambientLockIcon: some View {
         Image(systemName: "lock")
             .font(.system(size: 28))
             .foregroundStyle(MassMatesPalette.textPrimary.opacity(0.8))
+    }
+
+    private var titleText: some View {
+        Text("Sua oração é só sua")
+            .font(.system(size: 32, weight: .regular, design: .serif))
+            .foregroundStyle(MassMatesPalette.textPrimary)
+            .minimumScaleFactor(0.85)
     }
 
     private var bulletPointsSection: some View {
@@ -96,20 +113,8 @@ struct OnboardingSacredTransparencyCardView: View {
 
     private var bottomActionSection: some View {
         VStack(spacing: MassMatesSpacing.sm) {
-            MassMatesPrimaryButton(title: "Aceitar e começar") {
-                viewModel.acknowledgedLocalDiaryWarning = true
-                viewModel.completeOnboardingWithConsent(allowPersonalizedAds: false)
-            }
-            Button {
-                showAdPreferences = true
-            } label: {
-                Text("Preferências de anúncios")
-                    .font(MassMatesFont.callout)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .frame(minHeight: MassMatesLayout.minTapTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+            acceptButton
+            adPreferencesButton
             if viewModel.isConsecrationToastVisible {
                 consecrationToastBanner
             }
@@ -117,24 +122,29 @@ struct OnboardingSacredTransparencyCardView: View {
         .padding(.bottom, MassMatesSpacing.sm)
     }
 
-    private var adPreferencesSheet: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                Text("Preferências de Anúncios")
-                    .font(MassMatesFont.headline)
-                    .foregroundStyle(MassMatesPalette.textPrimary)
-                Text("O MassMates exibe apenas anúncios discretos e éticos, sem rastreamento de dados de oração ou exame.")
-                    .font(MassMatesFont.body)
-                    .foregroundStyle(MassMatesPalette.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                MassMatesPrimaryButton(title: "Confirmar") {
-                    showAdPreferences = false
-                }
-                .padding(.top, MassMatesSpacing.lg)
-            }
-            .padding(MassMatesSpacing.lg)
+    private var acceptButton: some View {
+        MassMatesPrimaryButton(title: "Aceitar e começar") {
+            viewModel.acknowledgedLocalDiaryWarning = true
+            viewModel.completeOnboardingWithConsent(allowPersonalizedAds: false)
+            onFinish?()
         }
-        .background(MassMatesPalette.bg)
+    }
+
+    private var adPreferencesButton: some View {
+        Button {
+            if let onShowAdPreferences {
+                onShowAdPreferences()
+            } else {
+                navigator?.present(.adPreferences)
+            }
+        } label: {
+            Text("Preferências de anúncios")
+                .font(MassMatesFont.callout)
+                .foregroundStyle(MassMatesPalette.textSecondary)
+                .frame(minHeight: MassMatesLayout.minTapTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var consecrationToastBanner: some View {

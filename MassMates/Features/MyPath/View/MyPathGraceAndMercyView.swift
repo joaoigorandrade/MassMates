@@ -4,8 +4,6 @@ import SwiftUI
 struct MyPathGraceAndMercyView: View, Equatable {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-    @OptionalNavigator<AppRoute> private var navigator
     private let canClaimStreakMercy: Bool
     private let activeSaintIcon: SaintAppIconOption?
     private let unlockedSaintIcons: Set<SaintAppIconOption>
@@ -165,12 +163,5 @@ struct MyPathGraceAndMercyView: View, Equatable {
 
     private func handleBack() {
         onBack()
-        if let navigator, navigator.canPop() {
-            navigator.pop()
-        } else if let navigator {
-            navigator.dismiss()
-        } else {
-            dismiss()
-        }
     }
 }

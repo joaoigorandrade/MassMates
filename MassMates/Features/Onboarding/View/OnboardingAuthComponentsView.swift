@@ -5,11 +5,17 @@ struct OnboardingEmailAuthFormView: View {
     @Environment(\.liturgicalTheme) private var theme
     @Bindable private var viewModel: OnboardingViewModel
     private let onCollapse: (() -> Void)?
+    private let onSignedIn: (() -> Void)?
 
     // MARK: - Init
-    init(viewModel: OnboardingViewModel, onCollapse: (() -> Void)? = nil) {
+    init(
+        viewModel: OnboardingViewModel,
+        onCollapse: (() -> Void)? = nil,
+        onSignedIn: (() -> Void)? = nil
+    ) {
         self.viewModel = viewModel
         self.onCollapse = onCollapse
+        self.onSignedIn = onSignedIn
     }
 
     // MARK: - Body / Public API
@@ -68,6 +74,9 @@ struct OnboardingEmailAuthFormView: View {
     private var sendEmailButton: some View {
         Button {
             viewModel.signIn(with: .email)
+            if viewModel.authenticatedUserIdentifier != nil {
+                onSignedIn?()
+            }
         } label: {
             HStack(spacing: MassMatesSpacing.xs) {
                 Image(systemName: "arrow.right")
@@ -139,28 +148,21 @@ struct OnboardingAuthTrustCardsView: View {
     // MARK: - Body / Public API
     var body: some View {
         VStack(spacing: MassMatesSpacing.xxs) {
-            privacyNoticeText
-            termsNoticeText
+            Text("Seus momentos de oração e confissão são estritamente privados.")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Ao continuar, você concorda com nossos \(Text("Termos de Fraternidade").underline().foregroundStyle(MassMatesPalette.textSecondary)) e \(Text("Política de Privacidade").underline().foregroundStyle(MassMatesPalette.textSecondary)).")
+                .font(MassMatesFont.caption)
+                .foregroundStyle(MassMatesPalette.textTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: 320)
     }
 
     // MARK: - Subviews / Private Helpers
-    private var privacyNoticeText: some View {
-        Text("Seus momentos de oração e confissão são estritamente privados.")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textTertiary)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var termsNoticeText: some View {
-        Text("Ao continuar, você concorda com nossos \(Text("Termos de Fraternidade").underline().foregroundStyle(MassMatesPalette.textSecondary)) e \(Text("Política de Privacidade").underline().foregroundStyle(MassMatesPalette.textSecondary)).")
-            .font(MassMatesFont.caption)
-            .foregroundStyle(MassMatesPalette.textTertiary)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-    }
 }
 
 #Preview("Onboarding Auth Components — 5 Seasons (Light / Dark / AX3)") {

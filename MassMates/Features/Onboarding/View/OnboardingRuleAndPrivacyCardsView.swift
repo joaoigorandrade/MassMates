@@ -1,18 +1,26 @@
+import Navigation
 import SwiftUI
 
 struct OnboardingRuleAndPrivacyCardsView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
+    @OptionalNavigator<OnboardingRoute> private var navigator
     @Bindable private var viewModel: OnboardingViewModel
-    @State private var isCustomizing: Bool = false
     private let onBack: (() -> Void)?
     private let onNext: (() -> Void)?
+    private let onCustomize: (() -> Void)?
 
     // MARK: - Init
-    init(viewModel: OnboardingViewModel, onBack: (() -> Void)? = nil, onNext: (() -> Void)? = nil) {
+    init(
+        viewModel: OnboardingViewModel,
+        onBack: (() -> Void)? = nil,
+        onNext: (() -> Void)? = nil,
+        onCustomize: (() -> Void)? = nil
+    ) {
         self.viewModel = viewModel
         self.onBack = onBack
         self.onNext = onNext
+        self.onCustomize = onCustomize
     }
 
     // MARK: - Body / Public API
@@ -31,13 +39,12 @@ struct OnboardingRuleAndPrivacyCardsView: View {
             }
             .padding(.bottom, MassMatesSpacing.sm)
         }
-        .sheet(isPresented: $isCustomizing) { customizationSheet }
     }
 
     // MARK: - Subviews / Private Helpers
     private var topNavigationBar: some View {
         HStack {
-            Button(action: { onBack?() ?? viewModel.navigateBack() }) {
+            Button(action: handleBack) {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.headline)
                     .foregroundStyle(MassMatesPalette.textPrimary)
@@ -45,15 +52,28 @@ struct OnboardingRuleAndPrivacyCardsView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            HStack(spacing: MassMatesSpacing.xs) {
-                ForEach(1...3, id: \.self) { step in
-                    Circle()
-                        .fill(step == 2 ? theme.tint : MassMatesPalette.line)
-                        .frame(width: 8, height: 8)
-                }
-            }
+            stepIndicator
         }
         .frame(height: MassMatesLayout.minTapTarget)
+    }
+
+    private var stepIndicator: some View {
+        HStack(spacing: MassMatesSpacing.xs) {
+            ForEach(1...3, id: \.self) { step in
+                Circle()
+                    .fill(step == 2 ? theme.tint : MassMatesPalette.line)
+                    .frame(width: 8, height: 8)
+            }
+        }
+    }
+
+    private func handleBack() {
+        if let onBack {
+            onBack()
+        } else {
+            viewModel.navigateBack()
+            navigator?.pop()
+        }
     }
 
     private var titleHeader: some View {
@@ -117,7 +137,11 @@ struct OnboardingRuleAndPrivacyCardsView: View {
 
     private var personalizeButton: some View {
         Button {
-            isCustomizing = true
+            if let onCustomize {
+                onCustomize()
+            } else {
+                navigator?.present(.customizeRule)
+            }
         } label: {
             Text("Personalizar")
                 .font(MassMatesFont.callout)
@@ -131,36 +155,13 @@ struct OnboardingRuleAndPrivacyCardsView: View {
     private var continueButton: some View {
         MassMatesPrimaryButton(title: "Continuar") {
             viewModel.acknowledgedLocalDiaryWarning = true
-            onNext?()
+            if let onNext {
+                onNext()
+            } else {
+                navigator?.navigate(to: .consent)
+            }
         }
         .padding(.bottom, MassMatesSpacing.sm)
-    }
-
-    private var customizationSheet: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: MassMatesSpacing.md) {
-                Text("Práticas Incluídas").font(MassMatesFont.headline).foregroundStyle(MassMatesPalette.textPrimary)
-                ForEach(viewModel.practicePreviewItems) { item in
-                    Button { viewModel.togglePracticePreview(id: item.id) } label: {
-                        HStack {
-                            Image(systemName: item.systemImage)
-                                .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.textSecondary)
-                            Text(item.title).font(MassMatesFont.body).foregroundStyle(MassMatesPalette.textPrimary)
-                            Spacer()
-                            Image(systemName: item.isEnabled ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(item.isEnabled ? theme.tint : MassMatesPalette.line)
-                        }
-                        .frame(minHeight: MassMatesLayout.minTapTarget)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                MassMatesPrimaryButton(title: "Pronto") { isCustomizing = false }
-                    .padding(.top, MassMatesSpacing.md)
-            }
-            .padding(MassMatesSpacing.lg)
-        }
-        .background(MassMatesPalette.bg)
     }
 }
 

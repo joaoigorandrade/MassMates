@@ -50,61 +50,63 @@ struct GroupFeedPostMediaView: View, Equatable {
 
     private func witnessPhotoView(_ url: URL) -> some View {
         Button {
-            isShowingFullPhoto = true
+            withAnimation(.snappy) { isShowingFullPhoto = true }
         } label: {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxHeight: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                        .overlay(photoBorder)
-                case .failure:
-                    EmptyView()
-                case .empty:
-                    Rectangle()
-                        .fill(MassMatesPalette.surfaceMuted)
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(.rect(cornerRadius: MassMatesRadius.photo))
-                        .overlay(photoBorder)
-                @unknown default:
-                    EmptyView()
-                }
-            }
-            .contentShape(.rect(cornerRadius: MassMatesRadius.photo))
+            photoThumbnail(url)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Ver foto do testemunho")
-        .sheet(isPresented: $isShowingFullPhoto) {
-            fullPhotoSheet(url)
+        .overlay {
+            if isShowingFullPhoto { fullPhotoLightbox(url) }
         }
+        .animation(.snappy, value: isShowingFullPhoto)
     }
 
-    private func fullPhotoSheet(_ url: URL) -> some View {
-        NavigationStack {
-            ZStack {
-                MassMatesPalette.bg.ignoresSafeArea()
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let img):
-                        img.resizable().scaledToFit().padding()
-                    default:
-                        ProgressView()
-                    }
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fechar") { isShowingFullPhoto = false }
-                        .foregroundStyle(MassMatesPalette.textPrimary)
-                }
+    private func photoThumbnail(_ url: URL) -> some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let img):
+                img.resizable().scaledToFill().frame(maxHeight: 180).frame(maxWidth: .infinity)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo)).overlay(photoBorder)
+            case .empty:
+                Rectangle().fill(MassMatesPalette.surfaceMuted).frame(height: 180).frame(maxWidth: .infinity)
+                    .clipShape(.rect(cornerRadius: MassMatesRadius.photo)).overlay(photoBorder)
+            default:
+                EmptyView()
             }
         }
-        .presentationCornerRadius(MassMatesRadius.sheet)
+        .contentShape(.rect(cornerRadius: MassMatesRadius.photo))
+    }
+
+    private func fullPhotoLightbox(_ url: URL) -> some View {
+        ZStack(alignment: .topTrailing) {
+            MassMatesPalette.bg.ignoresSafeArea()
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFit().padding()
+                default:
+                    ProgressView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Button {
+                withAnimation(.snappy) {
+                    isShowingFullPhoto = false
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(MassMatesFont.callout)
+                    .foregroundStyle(MassMatesPalette.textPrimary)
+                    .frame(width: MassMatesLayout.minTapTarget, height: MassMatesLayout.minTapTarget)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fechar")
+            .padding(MassMatesSpacing.sm)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var photoBorder: some View {

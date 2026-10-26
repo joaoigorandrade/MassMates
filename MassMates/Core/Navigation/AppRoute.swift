@@ -29,6 +29,7 @@ enum AppRoute: @preconcurrency ModalRoute, URLRoutable {
         AppRouteDestinationHost(route: self)
     }
 
+    @MainActor
     @ViewBuilder
     var unwrappedDestination: some View {
         switch self {

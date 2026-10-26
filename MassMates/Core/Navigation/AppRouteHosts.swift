@@ -1,7 +1,7 @@
 import Navigation
 import SwiftUI
 
-private final class HostBox<T>: @unchecked Sendable {
+@MainActor private final class HostBox<T> {
     var value: T?
 }
 
@@ -27,7 +27,7 @@ struct DailyGospelRouteHostView: View {
     private let reading: DailyLiturgicalReading
     private let season: LiturgicalColor
 
-    nonisolated init(reading: DailyLiturgicalReading, season: LiturgicalColor) {
+    init(reading: DailyLiturgicalReading, season: LiturgicalColor) {
         self.reading = reading; self.season = season
     }
 
@@ -53,7 +53,7 @@ struct PrayerTimerRouteHostView: View {
     private let mode: PrayerTimerMode
     private let season: LiturgicalColor
 
-    nonisolated init(mode: PrayerTimerMode, season: LiturgicalColor) {
+    init(mode: PrayerTimerMode, season: LiturgicalColor) {
         self.mode = mode; self.season = season
     }
 
@@ -79,7 +79,7 @@ struct CreateJoinGroupRouteHostView: View {
     private let prefilledInviteCode: String
     private let season: LiturgicalColor
 
-    nonisolated init(initialTab: CreateJoinGroupTab, prefilledInviteCode: String, season: LiturgicalColor) {
+    init(initialTab: CreateJoinGroupTab, prefilledInviteCode: String, season: LiturgicalColor) {
         self.initialTab = initialTab
         self.prefilledInviteCode = prefilledInviteCode
         self.season = season
@@ -113,7 +113,7 @@ struct GroupDetailRouteHostView: View {
     private let group: CommunityGroup
     private let season: LiturgicalColor
 
-    nonisolated init(group: CommunityGroup, season: LiturgicalColor) {
+    init(group: CommunityGroup, season: LiturgicalColor) {
         self.group = group
         self.season = season
     }
@@ -146,7 +146,7 @@ struct NewCheckInRouteHostView: View {
     private let preselectedPractice: SpiritualPractice
     private let season: LiturgicalColor
 
-    nonisolated init(preselectedPractice: SpiritualPractice, season: LiturgicalColor) {
+    init(preselectedPractice: SpiritualPractice, season: LiturgicalColor) {
         self.preselectedPractice = preselectedPractice
         self.season = season
     }

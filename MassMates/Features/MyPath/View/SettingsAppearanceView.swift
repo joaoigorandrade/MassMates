@@ -4,8 +4,6 @@ import SwiftUI
 struct SettingsAppearanceView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
-    @OptionalNavigator<AppRoute> private var navigator
     private let viewModel: SettingsViewModel
     private let onBack: () -> Void
 
@@ -140,9 +138,6 @@ struct SettingsAppearanceView: View {
 
     private func handleBack() {
         onBack()
-        if let navigator, navigator.canPop() {
-            navigator.pop()
-        }
     }
 
     private var hairline: some View {

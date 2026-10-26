@@ -1,47 +1,34 @@
+import Navigation
 import SwiftUI
 
 struct OnboardingFlowView: View {
     // MARK: - Dependencies & State
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @StateObject private var onboardingNavigator: Navigator<OnboardingRoute>
     @Bindable private var viewModel: OnboardingViewModel
 
     // MARK: - Init
-    init(viewModel: OnboardingViewModel) {
+    init(
+        viewModel: OnboardingViewModel,
+        navigator: Navigator<OnboardingRoute> = Navigator<OnboardingRoute>()
+    ) {
         self.viewModel = viewModel
+        _onboardingNavigator = StateObject(wrappedValue: navigator)
     }
 
     // MARK: - Body / Public API
     var body: some View {
-        VStack(alignment: .leading, spacing: MassMatesSpacing.lg) {
-            stepBody
-                .transition(reduceMotion ? .opacity : .asymmetric(insertion: .push(from: .trailing), removal: .push(from: .leading)))
+        NavigationStackWrapper(navigator: onboardingNavigator) {
+            OnboardingSlidesScreenView(viewModel: viewModel)
+                .optionalNavigator(onboardingNavigator)
         }
-        .animation(reduceMotion ? .none : .snappy(duration: 0.28), value: viewModel.currentStep)
+        .optionalNavigator(onboardingNavigator)
+        .environmentObject(onboardingNavigator)
+        .environment(\.onboardingViewModel, viewModel)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.bottom, MassMatesSpacing.xl)
-        .padding(.top, MassMatesSpacing.xs)
         .background(MassMatesPalette.bg.ignoresSafeArea())
     }
 
     // MARK: - Subviews / Private Helpers
-    @ViewBuilder
-    private var stepBody: some View {
-        switch viewModel.currentStep {
-        case .welcomeSlides:
-            OnboardingSlidesStepView(
-                slides: viewModel.slides,
-                currentIndex: viewModel.currentSlideIndex,
-                isOnFinalSlide: viewModel.isOnFinalSlide,
-                onSelectIndex: { index in viewModel.selectSlide(at: index) },
-                onAdvance: { viewModel.advanceSlideOrProceedToAuth() },
-                onSkip: { viewModel.skipSlidesToAuth() }
-            )
-        case .authSignIn:
-            OnboardingAuthStepView(viewModel: viewModel)
-        case .profileAndRuleSetup, .privacyAndAdConsent:
-            OnboardingProfileAndConsentStepView(viewModel: viewModel)
-        }
-    }
 }
 
 #Preview("Onboarding Flow — 5 Seasons (Light / Dark / AX3)") {

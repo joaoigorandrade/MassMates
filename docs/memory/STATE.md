@@ -1,10 +1,11 @@
-Current Focus: Fixed collapsed Daily Gospel modal sheet and verified full scripture text rendering.
+Current Focus: Eliminated all banned navigation APIs across the app and overhauled Onboarding into discrete Navigator screens.
 Completed:
-- NavigationPackage: Made `SelfSizingSheetModifier` opt-in via `.selfSizingSheet` and restored unconstrained standard `.sheet` presentation.
-- DailyGospelModalView: Added `.frame(maxWidth: .infinity, maxHeight: .infinity)` to `pagedReadingView` and `readingTabView`.
-- AppRouteHosts: Configured `.presentationDetents([.large])` and `.presentationDragIndicator(.visible)` for `DailyGospelRouteHostView`.
-- MassMatesTests: Added unit test verifying `AppRoute.dailyGospel` presentation style.
-- Verification: Clean compilation with zero warnings, all 83 NavigationPackage tests and 80+ MassMates tests passing.
-Next Step: Run on simulator or device to visually verify the Gospel reading sheet presentation.
+- Onboarding: Removed transition navigation; created `OnboardingRoute` and dedicated screens (`OnboardingSlidesScreenView`, `OnboardingAuthScreenView`, `OnboardingProfileScreenView`, `OnboardingRuleScreenView`, `OnboardingConsentScreenView`, `OnboardingCustomizeRuleSheetView`, `OnboardingAdPreferencesSheetView`) using `NavigationStackWrapper(navigator:)`.
+- Groups: Replaced raw `.sheet` and raw `NavigationStack` in `GroupFeedPostMediaView` with full-screen lightbox overlay.
+- PrayerTimer: Replaced raw `.sheet` in `PrayerTimerModalView` with in-view bottom drawer overlay.
+- MyPath: Replaced raw `.sheet` in `SpiritualDiaryModalView` with interactive in-view overlays; removed spurious `navigator.pop()` from subviews.
+- RouteHosts: Added proper `navigator.dismiss()` coordination in `AuthenticationCallbackRouteHostView` and `AppRouteHosts+MyPath`; replaced `@unchecked Sendable` on `HostBox<T>`.
+- Verification: Clean compilation with zero warnings, 100% of unit tests passing via `make test`.
+Next Step: Verify on simulator or device.
 Blockers/Quirks:
 - Operator secrets pending in Supabase dashboard for production AdMob SSV and APNs.

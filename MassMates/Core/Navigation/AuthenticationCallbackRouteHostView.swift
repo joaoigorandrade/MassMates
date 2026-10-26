@@ -8,13 +8,14 @@ struct AuthenticationCallbackRouteHostView: View {
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.sharedAuthCallbackHandler) private var handler
     @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var statusText: String = "Retomando sua sessão…"
     @State private var hasFailed = false
     private let payload: AuthCallbackPayload
     private let season: LiturgicalColor
 
     // MARK: - Init
-    nonisolated init(payload: AuthCallbackPayload, season: LiturgicalColor) {
+    init(payload: AuthCallbackPayload, season: LiturgicalColor) {
         self.payload = payload
         self.season = season
     }
@@ -31,7 +32,7 @@ struct AuthenticationCallbackRouteHostView: View {
                 .multilineTextAlignment(.center)
             if hasFailed {
                 MassMatesPrimaryButton(title: "Voltar ao MassMates", systemImage: "arrow.left") {
-                    dismiss()
+                    dismissHost()
                 }
             }
         }
@@ -63,10 +64,18 @@ struct AuthenticationCallbackRouteHostView: View {
                 return
             }
             statusText = "Sessão restaurada. Bem-vindo de volta!"
-            dismiss()
+            dismissHost()
         } catch {
             hasFailed = true
             statusText = "Não foi possível concluir o acesso agora. Tente novamente pelo link."
+        }
+    }
+
+    private func dismissHost() {
+        if let navigator {
+            navigator.dismiss()
+        } else {
+            dismiss()
         }
     }
 }

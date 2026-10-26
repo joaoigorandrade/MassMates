@@ -1,22 +1,25 @@
-import Navigation
 import SwiftUI
 
 struct NewDiaryEntrySheetView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
-    @OptionalNavigator<AppRoute> private var navigator
     @State private var selectedPractice: SpiritualPractice = .mentalPrayer
     @State private var reflectionText: String = ""
     @State private var isSaving: Bool = false
-    let onSave: (SpiritualPractice, String) async -> Void
+    private let onDismiss: (() -> Void)?
+    private let onSave: (SpiritualPractice, String) async -> Void
 
     private let availablePractices: [SpiritualPractice] = [
         .mentalPrayer, .rosary, .dailyGospel, .confession, .adoration
     ]
 
     // MARK: - Init
-    init(onSave: @escaping (SpiritualPractice, String) async -> Void) {
+    init(
+        onDismiss: (() -> Void)? = nil,
+        onSave: @escaping (SpiritualPractice, String) async -> Void
+    ) {
+        self.onDismiss = onDismiss
         self.onSave = onSave
     }
 
@@ -140,10 +143,16 @@ struct NewDiaryEntrySheetView: View {
     }
 
     private func dismissModal() {
-        if let navigator {
-            navigator.dismiss()
+        if let onDismiss {
+            onDismiss()
         } else {
             dismiss()
         }
+    }
+}
+
+#Preview("New Diary Entry Sheet — 5 Seasons (Light / Dark / AX3)") {
+    LiturgicalSeasonPreviewMatrix { _ in
+        NewDiaryEntrySheetView { _, _ in }
     }
 }

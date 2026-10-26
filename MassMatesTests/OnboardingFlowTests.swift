@@ -1,4 +1,5 @@
 import Foundation
+import Navigation
 import Testing
 @testable import MassMates
 
@@ -114,5 +115,32 @@ struct OnboardingFlowTests {
         #expect(!completed.personalizedAdsConsented)
         #expect(finishedProfile == completed)
         #expect(ruleService.loadTodayProgress().selectedPreset == .asceticLenten)
+    }
+
+    @Test("OnboardingRoute conforms to ModalRoute and supports Navigator navigation")
+    func onboardingRouteNavigatorNavigation() {
+        let navigator = Navigator<OnboardingRoute>()
+        #expect(navigator.isEmpty)
+
+        navigator.navigate(to: .auth)
+        #expect(navigator.depth == 1)
+        #expect(navigator.currentRoute == .auth)
+
+        navigator.navigate(to: .profile)
+        #expect(navigator.depth == 2)
+        #expect(navigator.currentRoute == .profile)
+
+        navigator.navigate(to: .rule)
+        #expect(navigator.depth == 3)
+
+        navigator.present(.customizeRule)
+        #expect(navigator.activeSheet == .customizeRule)
+
+        navigator.dismiss()
+        #expect(navigator.activeSheet == nil)
+
+        navigator.pop()
+        #expect(navigator.depth == 2)
+        #expect(navigator.currentRoute == .profile)
     }
 }

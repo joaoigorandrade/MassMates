@@ -6,7 +6,7 @@ enum SacredRiteKind: Sendable, Equatable {
     case holyMassGuide
 }
 
-private final class HostBox<T>: @unchecked Sendable {
+@MainActor private final class HostBox<T> {
     var value: T?
 }
 
@@ -18,7 +18,7 @@ struct SacredRiteRouteHostView: View {
     private let kind: SacredRiteKind
     private let season: LiturgicalColor
 
-    nonisolated init(kind: SacredRiteKind, season: LiturgicalColor) {
+    init(kind: SacredRiteKind, season: LiturgicalColor) {
         self.kind = kind
         self.season = season
     }

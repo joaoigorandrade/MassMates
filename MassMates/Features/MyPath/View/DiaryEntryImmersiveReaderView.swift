@@ -1,29 +1,27 @@
-import Navigation
 import SwiftUI
 
 struct DiaryEntryImmersiveReaderView: View {
     // MARK: - Dependencies & State
     @Environment(\.liturgicalTheme) private var theme
     @Environment(\.dismiss) private var dismiss
-    @OptionalNavigator<AppRoute> private var navigator
     @State private var currentEntry: PrivateDiaryCheckInEntry
     @State private var cachedParagraphs: [String]
     private let allEntries: [PrivateDiaryCheckInEntry]
     private let hasAttachedPhoto: Bool
-    private let onBack: (() -> Void)?
+    private let onDismiss: (() -> Void)?
 
     // MARK: - Init
     init(
         entry: PrivateDiaryCheckInEntry = SpiritualDiaryViewModel.defaultSampleEntries()[0],
         allEntries: [PrivateDiaryCheckInEntry] = SpiritualDiaryViewModel.defaultSampleEntries(),
         hasAttachedPhoto: Bool = true,
-        onBack: (() -> Void)? = nil
+        onDismiss: (() -> Void)? = nil
     ) {
         self._currentEntry = State(initialValue: entry)
         self._cachedParagraphs = State(initialValue: Self.computeParagraphs(for: entry))
         self.allEntries = allEntries
         self.hasAttachedPhoto = hasAttachedPhoto
-        self.onBack = onBack
+        self.onDismiss = onDismiss
     }
 
     // MARK: - Body / Public API
@@ -52,7 +50,7 @@ struct DiaryEntryImmersiveReaderView: View {
     private var topNavigationBar: some View {
         HStack {
             Button {
-                if let onBack { onBack() } else if let navigator, navigator.canPop() { navigator.pop() } else if let navigator { navigator.dismiss() } else { dismiss() }
+                dismissReader()
             } label: {
                 Image(systemName: "chevron.left")
                     .font(MassMatesFont.callout).foregroundStyle(MassMatesPalette.textSecondary)
@@ -71,6 +69,10 @@ struct DiaryEntryImmersiveReaderView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, MassMatesLayout.readingMargin).frame(minHeight: MassMatesLayout.minRowHeight)
+    }
+
+    private func dismissReader() {
+        if let onDismiss { onDismiss() } else { dismiss() }
     }
 
     private var metadataAndTitleSection: some View {

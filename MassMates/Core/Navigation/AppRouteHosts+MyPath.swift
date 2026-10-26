@@ -1,7 +1,7 @@
 import Navigation
 import SwiftUI
 
-private final class HostBox<T>: @unchecked Sendable {
+@MainActor private final class HostBox<T> {
     var value: T?
 }
 
@@ -41,7 +41,7 @@ struct SpiritualDiaryRouteHostView: View {
     @State private var box = HostBox<SpiritualDiaryViewModel>()
     private let season: LiturgicalColor
 
-    nonisolated init(season: LiturgicalColor) {
+    init(season: LiturgicalColor) {
         self.season = season
     }
 
@@ -63,10 +63,11 @@ struct SpiritualDiaryRouteHostView: View {
 struct SettingsRouteHostView: View {
     @Environment(\.sharedMyPathService) private var myPathService
     @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator
     @State private var box = HostBox<SettingsViewModel>()
     private let season: LiturgicalColor
 
-    nonisolated init(season: LiturgicalColor) {
+    init(season: LiturgicalColor) {
         self.season = season
     }
 
@@ -82,7 +83,13 @@ struct SettingsRouteHostView: View {
         let vm = SettingsViewModel(
             settingsService: resolvedService,
             milestonesService: resolvedService,
-            onOpenDiaryBackup: { dismiss() }
+            onOpenDiaryBackup: {
+                if let navigator {
+                    navigator.dismiss()
+                } else {
+                    dismiss()
+                }
+            }
         )
         box.value = vm
         return vm
@@ -93,10 +100,11 @@ struct OnboardingRouteHostView: View {
     @Environment(\.sharedOnboardingService) private var onboardingService
     @Environment(\.sharedTodayViewModel) private var todayViewModel
     @Environment(\.dismiss) private var dismiss
+    @OptionalNavigator<AppRoute> private var navigator: Navigator<AppRoute>?
     @State private var box = HostBox<OnboardingViewModel>()
     private let season: LiturgicalColor
 
-    nonisolated init(season: LiturgicalColor) {
+    init(season: LiturgicalColor) {
         self.season = season
     }
 
@@ -114,7 +122,11 @@ struct OnboardingRouteHostView: View {
             completingService: resolvedService,
             onOnboardingFinished: { config in
                 todayViewModel?.selectPreset(config.selectedPreset)
-                dismiss()
+                if let navigator {
+                    navigator.dismiss()
+                } else {
+                    dismiss()
+                }
             }
         )
         box.value = vm

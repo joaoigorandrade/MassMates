@@ -7,7 +7,7 @@ struct RuleOfLifeRouteHostView: View {
     private let season: LiturgicalColor
 
     // MARK: - Init
-    nonisolated init(season: LiturgicalColor) {
+    init(season: LiturgicalColor) {
         self.season = season
     }
 
